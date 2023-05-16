@@ -1,0 +1,16 @@
+program DServer;
+
+uses
+  Vcl.Forms,
+  UServer in 'UServer.pas' {Server},
+  UContainer in 'UContainer.pas' {Container: TDataModule};
+
+{$R *.res}
+
+begin
+  Application.Initialize;
+  Application.MainFormOnTaskbar := True;
+  Application.CreateForm(TServer, Server);
+  Application.CreateForm(TContainer, Container);
+  Application.Run;
+end.

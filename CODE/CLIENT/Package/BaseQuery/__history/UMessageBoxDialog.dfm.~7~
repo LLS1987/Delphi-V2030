@@ -1,0 +1,34 @@
+object MessageBoxDialog: TMessageBoxDialog
+  Left = 0
+  Top = 0
+  Caption = 'MessageBoxDialog'
+  ClientHeight = 147
+  ClientWidth = 464
+  Color = clBtnFace
+  Font.Charset = DEFAULT_CHARSET
+  Font.Color = clWindowText
+  Font.Height = -12
+  Font.Name = 'Segoe UI'
+  Font.Style = []
+  PixelsPerInch = 96
+  TextHeight = 15
+  object Image1: TImage
+    Left = 32
+    Top = 33
+    Width = 32
+    Height = 32
+    AutoSize = True
+  end
+  object Panel_Button: TPanel
+    Left = 0
+    Top = 106
+    Width = 464
+    Height = 41
+    Align = alBottom
+    BevelOuter = bvNone
+    TabOrder = 0
+    ExplicitLeft = 184
+    ExplicitTop = 112
+    ExplicitWidth = 185
+  end
+end

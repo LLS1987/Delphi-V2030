@@ -1,0 +1,28 @@
+unit UBaseInfoSel;
+
+interface
+
+uses
+  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
+  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, UBaseDialogForm, System.ImageList,
+  Vcl.ImgList, System.Actions, Vcl.ActnList, Vcl.StdCtrls, Vcl.ExtCtrls;
+
+type
+  TBaseInfoSel = class(TBaseDialogForm)
+    Panel3: TPanel;
+    edt_Find: TButtonedEdit;
+    btn_Find: TButton;
+  private
+    { Private declarations }
+  public
+    { Public declarations }
+  end;
+
+var
+  BaseInfoSel: TBaseInfoSel;
+
+implementation
+
+{$R *.dfm}
+
+end.

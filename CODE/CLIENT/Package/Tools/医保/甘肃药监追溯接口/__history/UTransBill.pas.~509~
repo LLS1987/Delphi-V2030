@@ -1,0 +1,425 @@
+unit UTransBill;
+
+interface
+
+uses
+  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
+  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, UBaseMdiForm, System.ImageList,
+  Vcl.ImgList, System.Actions, Vcl.ActnList, Vcl.ExtCtrls, Vcl.StdCtrls,
+  Vcl.Buttons, IdBaseComponent, IdComponent, IdTCPConnection, IdTCPClient,
+  IdHTTP, IdIOHandler, IdIOHandlerSocket, IdIOHandlerStack, IdSSL,
+  IdSSLOpenSSL, UParamList, UBaseNormalForm, Data.DB, Vcl.ComCtrls, Vcl.Grids,
+  Vcl.DBGrids, Datasnap.DBClient, System.JSON;
+
+type
+  TTransBill = class(TBaseMdiForm)
+    BitBtn1: TBitBtn;
+    btn_Upload: TBitBtn;
+    BitBtn3: TBitBtn;
+    dtp_bgndate: TDateTimePicker;
+    dtp_enddate: TDateTimePicker;
+    lbl_BgnDate: TLabel;
+    Label2: TLabel;
+    MainDataSet: TClientDataSet;
+    btn_Find: TBitBtn;
+    DataSource1: TDataSource;
+    chk_AutoOpen: TCheckBox;
+    edt_Minute: TEdit;
+    Label1: TLabel;
+    edt_Day: TEdit;
+    Label3: TLabel;
+    Timer1: TTimer;
+    PageControl1: TPageControl;
+    TabSheet1: TTabSheet;
+    自动传输记录: TTabSheet;
+    DBGrid1: TDBGrid;
+    Memo_Log: TMemo;
+    procedure btn_UploadClick(Sender: TObject);
+    procedure BitBtn3Click(Sender: TObject);
+    procedure btn_FindClick(Sender: TObject);
+    procedure chk_AutoOpenClick(Sender: TObject);
+    procedure FormShow(Sender: TObject);
+    procedure Timer1Timer(Sender: TObject);
+  private
+    { Private declarations }
+    FLastErrorCode:Integer;
+    FLastErrorMsg,FLastErrorData:string;
+    function Post(url,injson:string;header:TParamList=nil):string;
+    function GetToken(const loginid,password:string):string;
+    function DataSetToJSON(DataSet: TDataSet): TJSONArray;
+    function DBGridToJSON(DataSet: TDataSet): TJSONArray;
+    procedure AddLog(const msg:string);
+  published
+    { Public declarations }
+    function Salesaledata(DataSet: TDataSet): Boolean;
+    class function ShowSalesaledata(AParam:TParamList = nil):Boolean;
+  end;
+
+var
+  TransBill: TTransBill;
+
+implementation
+
+uses
+  UComvar,REST.Types, REST.Client, System.Net.HttpClient;
+
+{$R *.dfm}
+
+procedure TTransBill.AddLog(const msg: string);
+var
+  LogFile: TextFile;
+  path:string;
+begin
+  if not DirectoryExists(ExtractFilePath(Application.ExeName)+'Log') then ForceDirectories(ExtractFilePath(Application.ExeName)+'Log');
+  path := ExtractFilePath(Application.ExeName)+'Log\'+FormatDateTime('yyyy-mm-dd',Now)+'log.txt';
+  AssignFile(LogFile, path);
+  if FileExists(path) then
+    Append(LogFile)
+  else
+    Rewrite(LogFile);
+  try
+    Writeln(LogFile, FormatDateTime('yyyy-mm-dd hh:nn:ss', Now) + ': ' + msg);
+  finally
+    CloseFile(LogFile);
+  end;
+
+end;
+
+procedure TTransBill.btn_UploadClick(Sender: TObject);
+begin
+  inherited;
+  if not Salesaledata(MainDataSet) then 
+  begin
+    Goo.Msg.ShowError('销售上传失败[%d]：%s,%s',[FLastErrorCode,FLastErrorMsg,FLastErrorData]);
+  end else begin
+    Goo.Msg.ShowMsg('上传成功');
+    btn_Find.OnClick(Sender);
+  end;
+end;
+
+procedure TTransBill.BitBtn3Click(Sender: TObject);
+var RESTClient1: TRESTClient;
+begin
+  goo.Reg.ShowModal('TPosInfoSelect');
+  if not MainDataSet.Active then Exit;
+  if MainDataSet.RecordCount=0 then Exit;
+  var json := DBGridToJSON(MainDataSet);
+  ShowMessage(json.ToString);
+  json.Free;
+end;
+
+procedure TTransBill.btn_FindClick(Sender: TObject);
+begin
+  inherited;
+  MainDataSet.Active := False;
+  Goo.DB.OpenProc('GP_SPDA_QueryBill',['@PosID','@BgnDate','@EndDate'],[0,dtp_bgndate.Date,dtp_enddate.Date],MainDataSet);
+  PageControl1.ActivePageIndex := 0;
+end;
+
+procedure TTransBill.chk_AutoOpenClick(Sender: TObject);
+begin
+  inherited;
+  Timer1.Enabled   := False;
+  Timer1.Interval  := StrToIntDef(edt_Minute.Text,0) * 1000 * 60;
+  btn_Find.Enabled := not chk_AutoOpen.Checked;
+  btn_Upload.Enabled := not chk_AutoOpen.Checked;
+  if not chk_AutoOpen.Checked then Exit;
+  PageControl1.ActivePageIndex := 1;
+  Timer1.Enabled := True;
+end;
+
+function TTransBill.DataSetToJSON(DataSet: TDataSet): TJSONArray;
+var
+  Field: TField;
+  Row: TJSONObject;
+begin
+  Result := TJSONArray.Create;
+  DataSet.DisableControls;
+  try
+    DataSet.First;
+    while not DataSet.Eof do
+    begin
+      Row := TJSONObject.Create;
+      try
+        for Field in DataSet.Fields do
+        begin
+          if Field.FullName='AppKey' then Continue;
+          if Field.FullName='Password' then Continue;
+          if Field.FullName='billid' then Continue;
+          if Field.FullName='ord' then Continue;  
+          if Field.FullName='BillCode' then Continue;
+          Row.AddPair(Field.FieldName, Field.AsString);
+        end;
+        Result.AddElement(Row);
+      except
+        Row.Free;
+        raise;
+      end;
+      DataSet.Next;
+    end;
+  finally
+    DataSet.EnableControls;
+  end;
+end;
+
+function TTransBill.DBGridToJSON(DataSet: TDataSet): TJSONArray;
+var
+  Field: TField;
+  Row: TJSONObject;
+begin
+  Result := TJSONArray.Create;
+  DataSet.DisableControls;
+  try
+    //DataSet.First;
+    //while not DataSet.Eof do
+    //begin
+      Row := TJSONObject.Create;
+      try
+        for Field in DataSet.Fields do
+        begin
+          if Field.FullName='AppKey' then Continue;
+          if Field.FullName='Password' then Continue;
+          if Field.FullName='billid' then Continue;
+          if Field.FullName='ord' then Continue;
+          if Field.FullName='BillCode' then Continue;
+          Row.AddPair(Field.FieldName, Field.AsString);
+        end;
+        Result.AddElement(Row);
+      except
+        Row.Free;
+        raise;
+      end;
+      //DataSet.Next;
+    //end;
+  finally
+    DataSet.EnableControls;
+  end;
+end;
+
+procedure TTransBill.FormShow(Sender: TObject);
+begin
+  inherited;
+  dtp_bgndate.Date := StrToDate(FormatDateTime('yyyy-mm-01',Now));
+  dtp_enddate.Date := Now;
+  with DBGrid1.Columns.Add do
+  begin
+    FieldName := 'drugType';
+    Width := 80;
+    Title.Caption := '医保类型';
+  end;
+  with DBGrid1.Columns.Add do
+  begin
+    FieldName := 'drugName';
+    Width := 100;
+    Title.Caption := '药品名称';
+  end;
+    with DBGrid1.Columns.Add do
+  begin
+    FieldName := 'quantity';
+    Width := 80;
+    Title.Caption := '数量';
+  end;
+  with DBGrid1.Columns.Add do
+  begin
+    FieldName := 'purchaserName';
+    Width := 80;
+    Title.Caption := '购药人';
+  end;
+  with DBGrid1.Columns.Add do
+  begin
+    FieldName := 'purchaserld';
+    Width := 80;
+    Title.Caption := '身份证';
+  end;
+  with DBGrid1.Columns.Add do
+  begin
+    FieldName := 'purchaserPhone';
+    Width := 80;
+    Title.Caption := '电话';
+  end;
+  with DBGrid1.Columns.Add do
+  begin
+    FieldName := 'purchaserResidence';
+    Width := 80;
+    Title.Caption := '住址';
+  end;
+  //drugstoreName=pos.StoreName,--药店名称
+  with DBGrid1.Columns.Add do
+  begin
+    FieldName := 'drugstoreName';
+    Width := 80;
+    Title.Caption := '药店名称';
+  end;
+	//pos.AppKey,
+  with DBGrid1.Columns.Add do
+  begin
+    FieldName := 'AppKey';
+    Width := 80;
+    Title.Caption := '授权码';
+  end;
+	//drugstoreTyshxydm=pos.StoreCode,--社会统一信用代码
+  with DBGrid1.Columns.Add do
+  begin
+    FieldName := 'drugstoreTyshxydm';
+    Width := 80;
+    Title.Caption := '社会统一信息用代码';
+  end;
+	//saleTime=i.BillDate,
+  with DBGrid1.Columns.Add do
+  begin
+    FieldName := 'saleTime';
+    Width := 80;
+    Title.Caption := '销售时间';
+  end;
+	//approvalNo=p.PermitNo,
+  with DBGrid1.Columns.Add do
+  begin
+    FieldName := 'approvalNo';
+    Width := 80;
+    Title.Caption := '批准文号';
+  end;
+	//dataSource='1'				--数据来源（1 ERP系统对接，2互联网采集，3其它)
+  with DBGrid1.Columns.Add do
+  begin
+    FieldName := 'dataSource';
+    Width := 80;
+    Title.Caption := '数据来源';
+  end;
+  with DBGrid1.Columns.Add do
+  begin
+    FieldName := 'BillID';
+    Width := 80;
+    Title.Caption := 'BillID';
+    Visible := False;
+  end;
+  with DBGrid1.Columns.Add do
+  begin
+    FieldName := 'ORD';
+    Width := 80;
+    Title.Caption := 'ORD';
+    Visible := False;
+  end;
+end;
+
+{ TTransBill }
+
+function TTransBill.GetToken(const loginid,password:string): string;
+begin
+  Result := Post('token/getToken',format('{"loginId":"%s","password":"%s"}',[loginid,password]));
+end;
+
+function TTransBill.Post(url,injson: string; header: TParamList): string;
+var RESTClient1: TRESTClient;
+    RESTRequest1: TRESTRequest;
+    RESTResponse1: TRESTResponse;
+begin
+  Result := EmptyStr;
+  AddLog('injson='+injson);
+  RESTClient1:= TRESTClient.Create('https://sly.yjj.gansu.gov.cn:8100/'+url);
+  RESTRequest1:= TRESTRequest.Create(nil);
+  RESTResponse1:= TRESTResponse.Create(nil);
+  try
+    var LSecProts: THTTPSecureProtocols := [THTTPSecureProtocol.SSL2, THTTPSecureProtocol.SSL3, THTTPSecureProtocol.TLS1, THTTPSecureProtocol.TLS11, THTTPSecureProtocol.TLS12, THTTPSecureProtocol.TLS13];
+    //RESTClient1.SecureProtocols := LSecProts;
+    RESTClient1.Accept          := 'application/json;q=0.9,text/plain;q=0.9,text/html';
+    RESTClient1.AcceptCharset   := 'UTF-8';
+    RESTRequest1.AssignedValues := [TCustomRESTRequest.TAssignedValue.rvAccept,
+        TCustomRESTRequest.TAssignedValue.rvAcceptCharset, TCustomRESTRequest.TAssignedValue.rvConnectTimeout,
+        TCustomRESTRequest.TAssignedValue.rvReadTimeout];
+    RESTRequest1.Client  := RESTClient1;
+    RESTRequest1.Response:= RESTResponse1;
+    RESTRequest1.Timeout := 0;
+    RESTRequest1.Method  :=rmPOST;
+    if Assigned(header) then
+    begin
+      for var p in header do
+      begin
+        //RESTClient1.Params.AddHeader(p.Key,p.Value.AsString);
+        //RESTClient1.AddParameter(p.Key,p.Value.AsString,TRESTRequestParameterKind.pkHTTPHEADER);
+        //RESTRequest1.Params.AddHeader(p.Key,p.Value.AsString);
+        RESTRequest1.AddParameter(p.Key,p.Value.AsString,TRESTRequestParameterKind.pkHTTPHEADER,[poDoNotEncode]);
+        //RESTRequest1.AddParameter(ParamJson.Pairs[J].JsonString.Value,ParamJson.Pairs[J].JSONValue.Value,TRESTRequestParameterKind.pkHTTPHEADER,[poDoNotEncode]);
+      end;
+    end;
+//    RESTRequest1.AddParameter('<Name>','<Value>',TRESTRequestParameterKind.pkHTTPHEADER);
+    RESTRequest1.AddBody(injson,ContentTypeFromString(CONTENTTYPE_APPLICATION_JSON));
+    RESTRequest1.Execute;
+    var outjson := RESTResponse1.Content;
+    AddLog('outjson='+outjson);
+    var json := TJSONObject.ParseJSONValue(outjson);
+    try
+      FLastErrorCode := json.GetValue<Integer>('code');
+      FLastErrorMsg  := json.GetValue<string>('msg');
+      FLastErrorData := json.GetValue<string>('data');
+      if not SameText(FLastErrorMsg,'success') then Exit;
+      Result := json.GetValue<string>('data');
+    finally
+      json.Free;
+    end;
+  finally
+    RESTClient1.Free;
+    RESTRequest1.Free;
+    RESTResponse1.Free;
+  end;
+end;
+
+function TTransBill.salesaledata(DataSet: TDataSet): Boolean;
+var AParam:TParamList;
+  json:TJSONArray;
+  _loginId,_password,_appKey:string;
+  _billid,_ord:Integer;
+begin
+  inherited;
+  Result := False;
+  if not DataSet.Active then Exit;
+  if DataSet.RecordCount=0 then Exit;
+  //{"loginId":"91621122MA7410UY83","password":"Xx0eWQHGgcvYlLDUCHj8Rw=="}
+  _appKey   := DataSet.FieldByName('AppKey').AsString;
+  _loginId  := DataSet.FieldByName('drugstoreTyshxydm').AsString;
+  _password := DataSet.FieldByName('Password').AsString;
+  _billid   := DataSet.FieldByName('billid').AsInteger;
+  _ord      := DataSet.FieldByName('ord').AsInteger;
+  var token := GetToken(_loginId,_password);
+  Result := token<>EmptyStr;
+  if not Result then Exit;    
+  AParam := TParamList.Create;
+  json := DBGridToJSON(DataSet);
+  try
+    AParam.Add('Authorization',token);
+    AParam.Add('appKey',_appKey);   //'0PacHbe5GNFM02tzAe+FmUW5GNL1fSmLvMzLFohszjI='
+    var data := Post('api/v1/saveSaleData',json.ToString,AParam);
+    Result := FLastErrorCode=200;
+    if not Result then Exit;
+    goo.DB.ExecSQL('INSERT INTO dbo.SPDA_TransBillRecord(BillID,Ord,DoDate,out_code,out_msg)VALUES(%d,%d,GETDATE(),%d,''%s'')',[_billid,_ord,FLastErrorCode,FLastErrorMsg]);
+  finally
+    json.Free;
+    AParam.Free;
+  end;
+end;
+
+class function TTransBill.ShowSalesaledata(AParam: TParamList): Boolean;
+begin
+
+end;
+
+procedure TTransBill.Timer1Timer(Sender: TObject);
+begin
+  inherited;
+  var ds := TClientDataSet.Create(nil);
+  try
+    Goo.DB.OpenProc('GP_SPDA_QueryBill',['@PosID','@BgnDate','@EndDate','@Day'],[0,dtp_bgndate.Date,dtp_enddate.Date,strtointdef(edt_day.Text,2)],ds);
+    while not ds.Eof do
+    begin
+      Salesaledata(ds);
+      Memo_Log.Lines.Add(Format('%s %s：%s %d:%s,%s',[FormatDateTime('yyyy-mm-dd hh:nn:ss', Now),ds.FieldValues['BillCode'],ds.FieldValues['drugName'],FLastErrorCode,FLastErrorMsg,FLastErrorData]));
+      ds.Next;      
+    end;    
+  finally
+    ds.Free;
+  end;  
+end;
+
+initialization
+  Goo.Reg.RegisterClass(TTransBill);
+  Goo.Reg.RegisterClass(TTransBill.ShowSalesaledata)
+end.

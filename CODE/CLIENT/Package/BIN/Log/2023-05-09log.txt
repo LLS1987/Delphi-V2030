@@ -1,0 +1,4 @@
+2023-05-09 20:44:52: injson={"loginId":"91621122MA7410UY83","password":"Xx0eWQHGgcvYlLDUCHj8Rw=="}
+2023-05-09 20:44:53: outjson={"code":200,"msg":"success","data":"eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJhdXRoMCIsImFwcEtleSI6IjBQYWNIYmU1R05GTTAydHpBZStGbVVXNUdOTDFmU21Mdk16TEZvaHN6akk9IiwiZXhwIjoxNjgzNjM3MzM5LCJ1c2VybmFtZSI6IjkxNjIxMTIyTUE3NDEwVVk4MyJ9.h8er15DcrR8wACAR-TmYxM19IBUDCvJUVAznXBFYBeY"}
+2023-05-09 20:44:53: injson=[{"drugType":"YB","drugName":"转移因子口服溶液","quantity":"1","purchaserName":"","purchaserld":"23","purchaserPhone":"123","purchaserResidence":"3123","drugstoreName":"门店","drugstoreTyshxydm":"91621122MA7410UY83","saleTime":"2023-05-09 16:22:46","approvalNo":"国药准字H310227591","dataSource":"1"}]
+2023-05-09 20:44:53: outjson={"code":200,"msg":"success","data":null}

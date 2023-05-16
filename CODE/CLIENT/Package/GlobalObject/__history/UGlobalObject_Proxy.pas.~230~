@@ -1,0 +1,150 @@
+///基础包的代理类
+// Created by LLS the UGlobalObject_Proxy
+// 2023-04-09 22:49:16
+//
+
+unit UGlobalObject_Proxy;
+
+interface
+
+uses
+  UGlobalInterface, UComObject,UParamList, System.UITypes;
+
+type
+  TLoginCommObject = class(TBaseCommObject)
+  private
+    FLoginUserRec: Integer;
+    FLoginUserName: string;
+    FLoginUserCode: string;
+  public
+    function LoginServer:Boolean;
+    function LoginUser:Boolean;
+    ///职员登录信息
+    property LoginUserRec:Integer read FLoginUserRec;
+    property LoginUserCode:string read FLoginUserCode;
+    property LoginUserName:string read FLoginUserName;
+  end;
+  TFormatCommObject = class(TBaseCommObject)
+
+  end;
+  TMessageBoxObject = class(TBaseCommObject)
+  public
+    function MessageBox(const AMsg,ATitle:string;ADlgType:TMsgDlgType;ADlgButtons:TMsgDlgButtons):Integer;
+    procedure ShowMsg(const AMsg:string);overload;
+    procedure ShowMsg(const AMsg:string; Args:array of const);overload;
+    procedure ShowError(Const AMsg:String); overload;
+    procedure ShowError(Const AMsg:String;const Args: array of const); overload;
+    procedure ShowErrorAndAbort(Const AMsg:String); overload;
+    procedure ShowErrorAndAbort(Const AMsg:String;const Args: array of const); overload;
+    function Question(Const AMsg:String;Const ATitle:string='提示'): Boolean; overload;
+    function Question(Const AMsg:String;const Args: array of const;Const ATitle:string='提示'): Boolean; overload;
+    //判断信息
+    procedure CheckAndAbort(AResult:Boolean); overload;
+    procedure CheckAndAbort(AResult:Boolean;Const AMSG:String); overload;
+    procedure CheckAndAbort(AResult:Boolean;Const AMSG:String; const Args: array of const); overload;
+  end;
+
+implementation
+
+uses
+  Vcl.Forms,Vcl.Controls,UComvar, Vcl.Dialogs, System.SysUtils, System.Rtti;
+
+{ TLoginCommObject }
+
+function TLoginCommObject.LoginServer: Boolean;
+begin
+  Result := Goo.Reg.ShowModal('TLoginServer') = mrOk;
+end;
+
+function TLoginCommObject.LoginUser: Boolean;
+var AParamList:TParamList;
+begin
+  AParamList := TParamList.Create;
+  try
+    Result := Goo.Reg.ShowModal('TLoginUser',AParamList) = mrOk;
+    if Result then
+    begin
+      FLoginUserRec := AParamList.AsInteger('@LoginUserRec');
+      FLoginUserCode := AParamList.AsString('@LoginUserCode');
+      FLoginUserName := AParamList.AsString('@LoginUserName');
+    end;
+  finally
+    AParamList.Free;
+  end;
+end;
+
+{ TMessageBoxObject }
+
+procedure TMessageBoxObject.ShowMsg(const AMsg:string);
+begin
+  MessageBox(AMsg,'提示',mtWarning,[mbOK]);
+end;
+
+procedure TMessageBoxObject.CheckAndAbort(AResult: Boolean; const AMSG: String);
+begin
+  if Not AResult then ShowErrorAndAbort(AMSG);
+end;
+
+procedure TMessageBoxObject.CheckAndAbort(AResult: Boolean);
+begin
+  if Not AResult then Abort;
+end;
+
+procedure TMessageBoxObject.CheckAndAbort(AResult: Boolean; const AMSG: String; const Args: array of const);
+begin
+  CheckAndAbort(AResult,Format(AMSG,Args));
+end;
+
+function TMessageBoxObject.MessageBox(const AMsg, ATitle: string; ADlgType: TMsgDlgType; ADlgButtons: TMsgDlgButtons): Integer;
+var AParam:TParamList;
+begin
+  AParam := TParamList.Create;
+  try
+    AParam.Add('@Caption',ATitle);
+    AParam.Add('@Message',AMsg);
+    AParam.Add('@DlgType',ADlgType);
+    AParam.AddOrSetValue('@Buttons',TValue.From<TMsgDlgButtons>(ADlgButtons));
+    Result := Goo.Reg.ShowModal('TMessageBoxDialog',AParam);
+  finally
+    AParam.Free;
+  end;
+
+end;
+
+function TMessageBoxObject.Question(const AMsg: String; const Args: array of const; const ATitle: string): Boolean;
+begin
+
+end;
+
+function TMessageBoxObject.Question(const AMsg, ATitle: string): Boolean;
+begin
+  Result := MessageBox(AMsg,'提示',mtError,[mbOK]) = mrOk;
+end;
+
+procedure TMessageBoxObject.ShowError(const AMsg: String; const Args: array of const);
+begin
+  ShowError(Format(AMsg,Args));
+end;
+
+procedure TMessageBoxObject.ShowErrorAndAbort(const AMsg: String; const Args: array of const);
+begin
+  ShowErrorAndAbort(Format(AMsg,Args));
+end;
+
+procedure TMessageBoxObject.ShowErrorAndAbort(const AMsg: String);
+begin
+  ShowError(AMsg);
+  Abort;
+end;
+
+procedure TMessageBoxObject.ShowError(const AMsg: String);
+begin
+  MessageBox(AMsg,'提示',mtError,[mbOK]);
+end;
+
+procedure TMessageBoxObject.ShowMsg(const AMsg:string; Args: array of const);
+begin
+  ShowMsg(Format(AMsg,Args));
+end;
+
+end.

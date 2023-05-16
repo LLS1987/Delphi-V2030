@@ -1,0 +1,56 @@
+2023-04-27 00:03:33: injson={"loginId":"91621122MA7410UY83","password":"Xx0eWQHGgcvYlLDUCHj8Rw=="}
+2023-04-27 00:03:34: outjson={"code":200,"msg":"success","data":"eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJhdXRoMCIsImFwcEtleSI6IjBQYWNIYmU1R05GTTAydHpBZStGbVVXNUdOTDFmU21Mdk16TEZvaHN6akk9IiwiZXhwIjoxNjgyNTI2MDcxLCJ1c2VybmFtZSI6IjkxNjIxMTIyTUE3NDEwVVk4MyJ9.maLNebUNr2rBV2QTuZ5P9ZvU3MepsP-J1OpQnk98crs"}
+2023-04-27 00:04:14: injson=[{"drugType":"YD","drugName":"强的松片(醋酸泼尼松)","quantity":"1","purchaserName":"123","purchaserld":"511381198710264514","purchaserPhone":"1898090","purchaserResidence":"成都","drugstoreName":"门店","drugstoreTyshxydm":"91621122MA7410UY83","saleTime":"2023-04-26 17:51:43","approvalNo":"","dataSource":"1"}]
+2023-04-27 00:04:14: outjson={"code":454,"msg":"参数检验失败","data":"批准文号不能为空"}
+2023-04-27 00:07:09: injson={"loginId":"91621122MA7410UY83","password":"Xx0eWQHGgcvYlLDUCHj8Rw=="}
+2023-04-27 00:07:09: outjson={"code":200,"msg":"success","data":"eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJhdXRoMCIsImFwcEtleSI6IjBQYWNIYmU1R05GTTAydHpBZStGbVVXNUdOTDFmU21Mdk16TEZvaHN6akk9IiwiZXhwIjoxNjgyNTI2Mjg2LCJ1c2VybmFtZSI6IjkxNjIxMTIyTUE3NDEwVVk4MyJ9._3RAVam5A_Nw2OYqbC53BdHRYtWCxv6TO1ow2HcdqGo"}
+2023-04-27 00:07:09: injson=[{"drugType":"YD","drugName":"强的松片(醋酸泼尼松)","quantity":"1","purchaserName":"123","purchaserld":"511381198710264514","purchaserPhone":"1898090","purchaserResidence":"成都","drugstoreName":"门店","drugstoreTyshxydm":"91621122MA7410UY83","saleTime":"2023-04-26 17:51:43","approvalNo":"","dataSource":"1"}]
+2023-04-27 00:07:09: outjson={"code":454,"msg":"参数检验失败","data":"批准文号不能为空"}
+2023-04-27 00:08:13: injson={"loginId":"91621122MA7410UY83","password":"Xx0eWQHGgcvYlLDUCHj8Rw=="}
+2023-04-27 00:08:13: outjson={"code":200,"msg":"success","data":"eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJhdXRoMCIsImFwcEtleSI6IjBQYWNIYmU1R05GTTAydHpBZStGbVVXNUdOTDFmU21Mdk16TEZvaHN6akk9IiwiZXhwIjoxNjgyNTI2MzUxLCJ1c2VybmFtZSI6IjkxNjIxMTIyTUE3NDEwVVk4MyJ9.5nd4tvg9xILRTTk-Ri1vZor326FQriaGh_5lvTlImFc"}
+2023-04-27 00:08:13: injson=[{"drugType":"YD","drugName":"强的松片(醋酸泼尼松)","quantity":"1","purchaserName":"123","purchaserld":"511381198710264514","purchaserPhone":"1898090","purchaserResidence":"成都","drugstoreName":"门店","drugstoreTyshxydm":"91621122MA7410UY83","saleTime":"2023-04-26 17:51:43","approvalNo":"","dataSource":"1"}]
+2023-04-27 00:08:13: outjson={"code":454,"msg":"参数检验失败","data":"批准文号不能为空"}
+2023-04-27 00:08:56: injson={"loginId":"91621122MA7410UY83","password":"Xx0eWQHGgcvYlLDUCHj8Rw=="}
+2023-04-27 00:08:57: outjson={"code":200,"msg":"success","data":"eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJhdXRoMCIsImFwcEtleSI6IjBQYWNIYmU1R05GTTAydHpBZStGbVVXNUdOTDFmU21Mdk16TEZvaHN6akk9IiwiZXhwIjoxNjgyNTI2Mzk0LCJ1c2VybmFtZSI6IjkxNjIxMTIyTUE3NDEwVVk4MyJ9.65PUClTpsVdJ0sD7oA-mHC2CIcxE5GZ0stXjt33acWs"}
+2023-04-27 00:08:57: injson=[{"drugType":"YD","drugName":"强的松片(醋酸泼尼松)","quantity":"1","purchaserName":"123","purchaserld":"511381198710264514","purchaserPhone":"1898090","purchaserResidence":"成都","drugstoreName":"门店","drugstoreTyshxydm":"91621122MA7410UY83","saleTime":"2023-04-26 17:51:43","approvalNo":"","dataSource":"1"}]
+2023-04-27 00:08:57: outjson={"code":454,"msg":"参数检验失败","data":"批准文号不能为空"}
+2023-04-27 00:12:59: injson={"loginId":"91621122MA7410UY83","password":"Xx0eWQHGgcvYlLDUCHj8Rw=="}
+2023-04-27 00:13:00: outjson={"code":200,"msg":"success","data":"eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJhdXRoMCIsImFwcEtleSI6IjBQYWNIYmU1R05GTTAydHpBZStGbVVXNUdOTDFmU21Mdk16TEZvaHN6akk9IiwiZXhwIjoxNjgyNTI2NjM4LCJ1c2VybmFtZSI6IjkxNjIxMTIyTUE3NDEwVVk4MyJ9.PzxZwkqcypgtR5jAz1BZdd7YwRzrPS3z50A0fcYBCkA"}
+2023-04-27 00:13:00: injson=[{"drugType":"YD","drugName":"强的松片(醋酸泼尼松)","quantity":"1","purchaserName":"123","purchaserld":"511381198710264514","purchaserPhone":"1898090","purchaserResidence":"成都","drugstoreName":"门店","drugstoreTyshxydm":"91621122MA7410UY83","saleTime":"2023-04-26 17:51:43","approvalNo":"","dataSource":"1"}]
+2023-04-27 00:13:00: outjson={"code":454,"msg":"参数检验失败","data":"批准文号不能为空"}
+2023-04-27 00:13:38: injson={"loginId":"91621122MA7410UY83","password":"Xx0eWQHGgcvYlLDUCHj8Rw=="}
+2023-04-27 00:13:38: outjson={"code":200,"msg":"success","data":"eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJhdXRoMCIsImFwcEtleSI6IjBQYWNIYmU1R05GTTAydHpBZStGbVVXNUdOTDFmU21Mdk16TEZvaHN6akk9IiwiZXhwIjoxNjgyNTI2Njc2LCJ1c2VybmFtZSI6IjkxNjIxMTIyTUE3NDEwVVk4MyJ9.mNEus5yHkJLGkkQIlz7E3BQTan3h-hquR04J3eg57c8"}
+2023-04-27 00:13:38: injson=[{"drugType":"YD","drugName":"利福平胶囊","quantity":"1","purchaserName":"123","purchaserld":"511381198710264514","purchaserPhone":"1898090","purchaserResidence":"成都","drugstoreName":"门店","drugstoreTyshxydm":"91621122MA7410UY83","saleTime":"2023-04-26 17:51:43","approvalNo":"","dataSource":"1"}]
+2023-04-27 00:13:38: outjson={"code":454,"msg":"参数检验失败","data":"批准文号不能为空"}
+2023-04-27 00:13:49: injson={"loginId":"91621122MA7410UY83","password":"Xx0eWQHGgcvYlLDUCHj8Rw=="}
+2023-04-27 00:13:49: outjson={"code":200,"msg":"success","data":"eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJhdXRoMCIsImFwcEtleSI6IjBQYWNIYmU1R05GTTAydHpBZStGbVVXNUdOTDFmU21Mdk16TEZvaHN6akk9IiwiZXhwIjoxNjgyNTI2Njg2LCJ1c2VybmFtZSI6IjkxNjIxMTIyTUE3NDEwVVk4MyJ9.CUfleF5TZHhsSbdooKIkJVz6Vn54DqVFGcV0tbAz11w"}
+2023-04-27 00:13:49: injson=[{"drugType":"YD","drugName":"强的松片(醋酸泼尼松)","quantity":"1","purchaserName":"123","purchaserld":"511381198710264514","purchaserPhone":"1898090","purchaserResidence":"成都","drugstoreName":"门店","drugstoreTyshxydm":"91621122MA7410UY83","saleTime":"2023-04-26 17:51:43","approvalNo":"","dataSource":"1"}]
+2023-04-27 00:13:49: outjson={"code":454,"msg":"参数检验失败","data":"批准文号不能为空"}
+2023-04-27 00:13:55: injson={"loginId":"91621122MA7410UY83","password":"Xx0eWQHGgcvYlLDUCHj8Rw=="}
+2023-04-27 00:13:55: outjson={"code":200,"msg":"success","data":"eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJhdXRoMCIsImFwcEtleSI6IjBQYWNIYmU1R05GTTAydHpBZStGbVVXNUdOTDFmU21Mdk16TEZvaHN6akk9IiwiZXhwIjoxNjgyNTI2NjkzLCJ1c2VybmFtZSI6IjkxNjIxMTIyTUE3NDEwVVk4MyJ9.IkjrkByrY8HtVULTZylLBCY1eQMMiXrxy72XSbiBW_0"}
+2023-04-27 00:13:55: injson=[{"drugType":"YB","drugName":"转移因子口服溶液","quantity":"1","purchaserName":"123","purchaserld":"511381198710264514","purchaserPhone":"1898090","purchaserResidence":"成都","drugstoreName":"门店","drugstoreTyshxydm":"91621122MA7410UY83","saleTime":"2023-04-26 17:51:43","approvalNo":"国药准字H310227591","dataSource":"1"}]
+2023-04-27 00:13:55: outjson={"code":200,"msg":"success","data":null}
+2023-04-27 00:16:22: injson={"loginId":"91621122MA7410UY83","password":"Xx0eWQHGgcvYlLDUCHj8Rw=="}
+2023-04-27 00:16:22: outjson={"code":200,"msg":"success","data":"eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJhdXRoMCIsImFwcEtleSI6IjBQYWNIYmU1R05GTTAydHpBZStGbVVXNUdOTDFmU21Mdk16TEZvaHN6akk9IiwiZXhwIjoxNjgyNTI2ODQwLCJ1c2VybmFtZSI6IjkxNjIxMTIyTUE3NDEwVVk4MyJ9.Spi-ekvvWGoNOlYSkYtmcx1abfazalZpm7Zu39uxHVc"}
+2023-04-27 00:16:22: injson=[{"drugType":"YB","drugName":"转移因子口服溶液","quantity":"1","purchaserName":"","purchaserld":"23","purchaserPhone":"23","purchaserResidence":"23","drugstoreName":"门店","drugstoreTyshxydm":"91621122MA7410UY83","saleTime":"2023-04-25 10:20:41","approvalNo":"国药准字H310227591","dataSource":"1"}]
+2023-04-27 00:16:22: outjson={"code":200,"msg":"success","data":null}
+2023-04-27 00:16:26: injson={"loginId":"91621122MA7410UY83","password":"Xx0eWQHGgcvYlLDUCHj8Rw=="}
+2023-04-27 00:16:26: outjson={"code":200,"msg":"success","data":"eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJhdXRoMCIsImFwcEtleSI6IjBQYWNIYmU1R05GTTAydHpBZStGbVVXNUdOTDFmU21Mdk16TEZvaHN6akk9IiwiZXhwIjoxNjgyNTI2ODQ0LCJ1c2VybmFtZSI6IjkxNjIxMTIyTUE3NDEwVVk4MyJ9.yHlA29Z7aZW68SbHD-5OKs5qwqJZEMkx3_4vfLo4caw"}
+2023-04-27 00:16:26: injson=[{"drugType":"YD","drugName":"强的松片(醋酸泼尼松)","quantity":"1","purchaserName":"123","purchaserld":"511381198710264514","purchaserPhone":"1898090","purchaserResidence":"成都","drugstoreName":"门店","drugstoreTyshxydm":"91621122MA7410UY83","saleTime":"2023-04-26 17:51:43","approvalNo":"","dataSource":"1"}]
+2023-04-27 00:16:26: outjson={"code":454,"msg":"参数检验失败","data":"批准文号不能为空"}
+2023-04-27 00:17:38: injson={"loginId":"91621122MA7410UY83","password":"Xx0eWQHGgcvYlLDUCHj8Rw=="}
+2023-04-27 00:17:38: outjson={"code":200,"msg":"success","data":"eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJhdXRoMCIsImFwcEtleSI6IjBQYWNIYmU1R05GTTAydHpBZStGbVVXNUdOTDFmU21Mdk16TEZvaHN6akk9IiwiZXhwIjoxNjgyNTI2OTE1LCJ1c2VybmFtZSI6IjkxNjIxMTIyTUE3NDEwVVk4MyJ9.8UZ8VUk0ISD1lK6S7ZN15nfrKoBWsGFvohT8VEzMBEw"}
+2023-04-27 00:17:38: injson=[{"drugType":"YD","drugName":"强的松片(醋酸泼尼松)","quantity":"1","purchaserName":"123","purchaserld":"511381198710264514","purchaserPhone":"1898090","purchaserResidence":"成都","drugstoreName":"门店","drugstoreTyshxydm":"91621122MA7410UY83","saleTime":"2023-04-26 17:51:43","approvalNo":"","dataSource":"1"}]
+2023-04-27 00:17:38: outjson={"code":454,"msg":"参数检验失败","data":"批准文号不能为空"}
+2023-04-27 00:17:38: injson={"loginId":"91621122MA7410UY83","password":"Xx0eWQHGgcvYlLDUCHj8Rw=="}
+2023-04-27 00:17:38: outjson={"code":200,"msg":"success","data":"eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJhdXRoMCIsImFwcEtleSI6IjBQYWNIYmU1R05GTTAydHpBZStGbVVXNUdOTDFmU21Mdk16TEZvaHN6akk9IiwiZXhwIjoxNjgyNTI2OTE2LCJ1c2VybmFtZSI6IjkxNjIxMTIyTUE3NDEwVVk4MyJ9.Qg1hsV0KKJprLXkDbDhmaDjp_5rjjD73eJohj_uy2R4"}
+2023-04-27 00:17:38: injson=[{"drugType":"YD","drugName":"利福平胶囊","quantity":"1","purchaserName":"123","purchaserld":"511381198710264514","purchaserPhone":"1898090","purchaserResidence":"成都","drugstoreName":"门店","drugstoreTyshxydm":"91621122MA7410UY83","saleTime":"2023-04-26 17:51:43","approvalNo":"","dataSource":"1"}]
+2023-04-27 00:17:38: outjson={"code":454,"msg":"参数检验失败","data":"批准文号不能为空"}
+2023-04-27 00:18:38: injson={"loginId":"91621122MA7410UY83","password":"Xx0eWQHGgcvYlLDUCHj8Rw=="}
+2023-04-27 00:18:38: outjson={"code":200,"msg":"success","data":"eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJhdXRoMCIsImFwcEtleSI6IjBQYWNIYmU1R05GTTAydHpBZStGbVVXNUdOTDFmU21Mdk16TEZvaHN6akk9IiwiZXhwIjoxNjgyNTI2OTc2LCJ1c2VybmFtZSI6IjkxNjIxMTIyTUE3NDEwVVk4MyJ9.mvUd8m2z3uXW-9E3XILq_-5ZRPOLvPThvjSf_Yqr8-8"}
+2023-04-27 00:18:38: injson=[{"drugType":"YD","drugName":"强的松片(醋酸泼尼松)","quantity":"1","purchaserName":"123","purchaserld":"511381198710264514","purchaserPhone":"1898090","purchaserResidence":"成都","drugstoreName":"门店","drugstoreTyshxydm":"91621122MA7410UY83","saleTime":"2023-04-26 17:51:43","approvalNo":"","dataSource":"1"}]
+2023-04-27 00:18:38: outjson={"code":454,"msg":"参数检验失败","data":"批准文号不能为空"}
+2023-04-27 00:18:38: injson={"loginId":"91621122MA7410UY83","password":"Xx0eWQHGgcvYlLDUCHj8Rw=="}
+2023-04-27 00:18:38: outjson={"code":200,"msg":"success","data":"eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJhdXRoMCIsImFwcEtleSI6IjBQYWNIYmU1R05GTTAydHpBZStGbVVXNUdOTDFmU21Mdk16TEZvaHN6akk9IiwiZXhwIjoxNjgyNTI2OTc2LCJ1c2VybmFtZSI6IjkxNjIxMTIyTUE3NDEwVVk4MyJ9.mvUd8m2z3uXW-9E3XILq_-5ZRPOLvPThvjSf_Yqr8-8"}
+2023-04-27 00:18:38: injson=[{"drugType":"YD","drugName":"利福平胶囊","quantity":"1","purchaserName":"123","purchaserld":"511381198710264514","purchaserPhone":"1898090","purchaserResidence":"成都","drugstoreName":"门店","drugstoreTyshxydm":"91621122MA7410UY83","saleTime":"2023-04-26 17:51:43","approvalNo":"","dataSource":"1"}]
+2023-04-27 00:18:38: outjson={"code":454,"msg":"参数检验失败","data":"批准文号不能为空"}

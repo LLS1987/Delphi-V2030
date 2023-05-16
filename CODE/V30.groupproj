@@ -1,0 +1,108 @@
+﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <PropertyGroup>
+        <ProjectGuid>{E800CB7D-FB59-4212-80A7-042C6A28F1D1}</ProjectGuid>
+    </PropertyGroup>
+    <ItemGroup>
+        <Projects Include="SERVER\DServer.dproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="CLIENT\Package\GlobalObject\GlobalObject.dproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="CLIENT\Package\BaseForm\BaseForm.dproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="CLIENT\Package\BaseQuery\BaseQuery.dproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="CLIENT\Package\Login\Login.dproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="CLIENT\Package\Tools\医保\甘肃药监追溯接口\SPDA_GanSu.dproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="CLIENT\Package\MainForm\DClient.dproj">
+            <Dependencies/>
+        </Projects>
+    </ItemGroup>
+    <ProjectExtensions>
+        <Borland.Personality>Default.Personality.12</Borland.Personality>
+        <Borland.ProjectType/>
+        <BorlandProject>
+            <Default.Personality/>
+        </BorlandProject>
+    </ProjectExtensions>
+    <Target Name="DServer">
+        <MSBuild Projects="SERVER\DServer.dproj"/>
+    </Target>
+    <Target Name="DServer:Clean">
+        <MSBuild Projects="SERVER\DServer.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="DServer:Make">
+        <MSBuild Projects="SERVER\DServer.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="GlobalObject">
+        <MSBuild Projects="CLIENT\Package\GlobalObject\GlobalObject.dproj"/>
+    </Target>
+    <Target Name="GlobalObject:Clean">
+        <MSBuild Projects="CLIENT\Package\GlobalObject\GlobalObject.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="GlobalObject:Make">
+        <MSBuild Projects="CLIENT\Package\GlobalObject\GlobalObject.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="BaseForm">
+        <MSBuild Projects="CLIENT\Package\BaseForm\BaseForm.dproj"/>
+    </Target>
+    <Target Name="BaseForm:Clean">
+        <MSBuild Projects="CLIENT\Package\BaseForm\BaseForm.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="BaseForm:Make">
+        <MSBuild Projects="CLIENT\Package\BaseForm\BaseForm.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="BaseQuery">
+        <MSBuild Projects="CLIENT\Package\BaseQuery\BaseQuery.dproj"/>
+    </Target>
+    <Target Name="BaseQuery:Clean">
+        <MSBuild Projects="CLIENT\Package\BaseQuery\BaseQuery.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="BaseQuery:Make">
+        <MSBuild Projects="CLIENT\Package\BaseQuery\BaseQuery.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="Login">
+        <MSBuild Projects="CLIENT\Package\Login\Login.dproj"/>
+    </Target>
+    <Target Name="Login:Clean">
+        <MSBuild Projects="CLIENT\Package\Login\Login.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="Login:Make">
+        <MSBuild Projects="CLIENT\Package\Login\Login.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="SPDA_GanSu">
+        <MSBuild Projects="CLIENT\Package\Tools\医保\甘肃药监追溯接口\SPDA_GanSu.dproj"/>
+    </Target>
+    <Target Name="SPDA_GanSu:Clean">
+        <MSBuild Projects="CLIENT\Package\Tools\医保\甘肃药监追溯接口\SPDA_GanSu.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="SPDA_GanSu:Make">
+        <MSBuild Projects="CLIENT\Package\Tools\医保\甘肃药监追溯接口\SPDA_GanSu.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="DClient">
+        <MSBuild Projects="CLIENT\Package\MainForm\DClient.dproj"/>
+    </Target>
+    <Target Name="DClient:Clean">
+        <MSBuild Projects="CLIENT\Package\MainForm\DClient.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="DClient:Make">
+        <MSBuild Projects="CLIENT\Package\MainForm\DClient.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="Build">
+        <CallTarget Targets="DServer;GlobalObject;BaseForm;BaseQuery;Login;SPDA_GanSu;DClient"/>
+    </Target>
+    <Target Name="Clean">
+        <CallTarget Targets="DServer:Clean;GlobalObject:Clean;BaseForm:Clean;BaseQuery:Clean;Login:Clean;SPDA_GanSu:Clean;DClient:Clean"/>
+    </Target>
+    <Target Name="Make">
+        <CallTarget Targets="DServer:Make;GlobalObject:Make;BaseForm:Make;BaseQuery:Make;Login:Make;SPDA_GanSu:Make;DClient:Make"/>
+    </Target>
+    <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
+</Project>

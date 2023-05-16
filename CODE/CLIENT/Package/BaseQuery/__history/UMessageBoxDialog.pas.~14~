@@ -1,0 +1,40 @@
+unit UMessageBoxDialog;
+
+interface
+
+uses
+  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
+  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.ExtCtrls, UBaseDialogForm,
+  System.ImageList, Vcl.ImgList, System.Actions, Vcl.ActnList;
+
+type
+  TMessageBoxDialog = class(TBaseDialogForm)
+    Image1: TImage;
+    Panel_Button: TPanel;
+  private
+    { Private declarations }
+  protected
+    procedure BeforeFormShow; override;
+  public
+    { Public declarations }
+  end;
+
+implementation
+
+uses
+  UComvar;
+
+{$R *.dfm}
+
+{ TMessageBoxDialog }
+
+procedure TMessageBoxDialog.BeforeFormShow;
+begin
+  inherited;
+s
+end;
+
+initialization
+  Goo.Reg.RegisterClass(TMessageBoxDialog)
+
+end.

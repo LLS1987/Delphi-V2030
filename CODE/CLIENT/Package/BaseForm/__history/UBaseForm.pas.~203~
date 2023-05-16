@@ -1,0 +1,166 @@
+unit UBaseForm;
+
+interface
+
+uses
+  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
+  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, System.ImageList, Vcl.ImgList,
+  System.Actions, Vcl.ActnList, UGlobalInterface, UParamList, Datasnap.DBClient,
+  Vcl.ExtCtrls, UComConst;
+
+type
+  TBaseForm = class(TForm,IForm)
+    ActionList: TActionList;
+    ImageList: TImageList;
+    procedure FormCreate(Sender: TObject);
+  private
+    FParamList: TParamList;
+    FGridDataSet: TClientDataSet;
+    { Private declarations }
+    function GetObject: TObject;virtual;
+    function GetForm: TForm;
+    function GetActionList:TActionList;
+    function GetParamList: TParamList;
+    procedure SetParamList(AParamList:TParamList);
+    procedure Action_CloseExecute(Sender: TObject);
+    procedure ShowFindDialog(var Message: TMessage); message REFRESH_FIND_MESSAGE;
+  protected
+    procedure DoShow; override;
+    procedure BeforeFormShow; virtual;
+    property GridDataSet: TClientDataSet read FGridDataSet;
+    procedure InitParamList; virtual;//产品可以在窗口创建之前先对参数进行处理
+    function Find(const Msg:string;Reverse,Whole,Match:Boolean):Boolean;virtual;
+  public
+    { Public declarations }
+    constructor Create(AOwner: TComponent; AParam: TParamList);overload;
+    destructor Destroy; override;
+    procedure IniComponent(AForm:TForm); overload;
+    procedure IniComponent(AComponent: TComponent); overload;
+    procedure IniComponent(APanel:TPanel); overload;
+    property ParamList:TParamList read GetParamList write FParamList;
+  end;
+
+var
+  BaseForm: TBaseForm;
+const Default_Color = clWhite;
+
+implementation
+
+uses
+  UComvar, System.TypInfo;
+
+{$R *.dfm}
+
+procedure TBaseForm.BeforeFormShow;
+begin
+  IniComponent(Self);
+end;
+
+constructor TBaseForm.Create(AOwner: TComponent; AParam: TParamList);
+begin
+  FParamList := TParamList.Create;
+  InitParamList;
+  if Assigned(AParam) then FParamList.Assign(AParam);
+  inherited Create(AOwner); //创建窗口实例 MDI一创建就显示，
+end;
+
+destructor TBaseForm.Destroy;
+begin
+  if Assigned(FParamList) then FParamList.Free;
+  if Assigned(FGridDataSet) then FreeAndNil(FGridDataSet);
+  inherited;
+end;
+
+procedure TBaseForm.Action_CloseExecute(Sender: TObject);
+begin
+  if Self.BorderStyle = bsDialog then ModalResult := mrCancel;
+end;
+
+procedure TBaseForm.DoShow;
+begin
+  inherited;
+  BeforeFormShow;
+end;
+
+function TBaseForm.Find(const Msg: string; Reverse, Whole, Match: Boolean): Boolean;
+begin
+  Result := False;
+end;
+
+procedure TBaseForm.ShowFindDialog(var Message: TMessage);
+var strMSG: string;
+  AFlag:Integer;
+begin
+  strMSG := string(Pointer(Message.WParam)^);
+  AFlag  := Message
+  Find(strMSG,False,False,False);
+end;
+
+procedure TBaseForm.FormCreate(Sender: TObject);
+begin
+  FGridDataSet := TClientDataSet.Create(Self);
+end;
+
+function TBaseForm.GetActionList: TActionList;
+begin
+  Result := ActionList;
+end;
+
+function TBaseForm.GetForm: TForm;
+begin
+  Result := Self;
+end;
+
+function TBaseForm.GetObject: TObject;
+begin
+  Result := Self;
+end;
+
+function TBaseForm.GetParamList: TParamList;
+begin
+  if not Assigned(FParamList) then
+  begin
+    FParamList := TParamList.Create;
+    InitParamList;
+  end;
+  Result := FParamList;
+end;
+
+procedure TBaseForm.IniComponent(AForm: TForm);
+var APropInfo:PPropInfo;
+begin
+  AForm.Color := Default_Color;
+  for var i := 0 to AForm.ComponentCount - 1 do
+  begin
+    if AForm.Components[i] is TWinControl then
+    begin
+      IniComponent(TWinControl(AForm.Components[i]));
+      //清除输入法
+      APropInfo:=GetPropInfo(AForm.Components[i], 'IMENAME');
+      if Assigned(APropInfo) then SetStrProp(AForm.Components[i],APropInfo,'');
+    end;
+  end;
+end;
+
+procedure TBaseForm.IniComponent(APanel: TPanel);
+begin
+  APanel.Color := Default_Color;
+end;
+
+procedure TBaseForm.IniComponent(AComponent: TComponent);
+begin
+  if AComponent is TPanel then
+    IniComponent(TPanel(AComponent))
+end;
+
+procedure TBaseForm.InitParamList;
+begin
+
+end;
+
+procedure TBaseForm.SetParamList(AParamList: TParamList);
+begin
+  Self.ParamList.Assign(AParamList);
+end;
+
+end.

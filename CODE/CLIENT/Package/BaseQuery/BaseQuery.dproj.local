@@ -1,0 +1,16 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<BorlandProject>
+	<Transactions>
+    <Transaction>1899-12-30 00:00:00.000.457,D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\BaseQuery\Unit1.dfm=D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\BaseQuery\UMessageBoxDialog.dfm</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.247,D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\BaseQuery\UMessageBoxDialog.pas=</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.123,=rtl.dcp</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.751,=BaseForm.dcp</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.774,=GlobalObject.dcp</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.253,D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\BaseQuery\Unit1.dfm=D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\BaseQuery\UBaseInfoSel.dfm</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.457,D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\BaseQuery\Unit1.pas=D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\BaseQuery\UMessageBoxDialog.pas</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.253,D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\BaseQuery\Unit1.pas=D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\BaseQuery\UBaseInfoSel.pas</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.599,=D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\BaseQuery\Unit1.pas</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.119,=D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\BaseQuery\Unit1.pas</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.218,D:\LLS\Documents\Embarcadero\Studio\Projects\Package1.dproj=D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\BaseQuery\BaseQuery.dproj</Transaction>
+  </Transactions>
+</BorlandProject>

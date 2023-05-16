@@ -1,0 +1,52 @@
+{
+    "item": [
+        {
+            "action": "",
+            "caption": "采购管理",
+            "item": [
+                {
+                    "action": "",
+                    "caption": "采购订单",
+                    "classname": "",
+                    "classtype": 0,
+                    "sort": 0
+                },
+                {
+                    "action": "",
+                    "caption": "采购入库单",
+                    "classname": "",
+                    "classtype": 0,
+                    "sort": 0
+                }
+            ],
+            "sort": 0
+        },
+        {
+            "action": "",
+            "caption": "零售管理",
+            "item": [
+                {},
+                {}
+            ],
+            "sort": 1
+        },
+        {
+            "action": "",
+            "caption": "销售管理",
+            "classname": "",
+            "classtype": 0,
+            "item": [
+                {},
+                {}
+            ],
+            "sort": 2
+        },
+        {
+            "action": "",
+            "caption": "退出系统",
+            "classname": "",
+            "classtype": 0,
+            "sort": 3
+        }
+    ]
+}

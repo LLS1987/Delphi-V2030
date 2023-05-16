@@ -1,0 +1,14 @@
+回执正式系统相关信息
+*正式系统访问地址 https://sly.yjj.gansu.gov.cn:8100/
+*系统账号 91621122MA7410UY83
+*密码 Xx0eWQHGgcvYlLDUCHj8Rw==
+*授权码 0PacHbe5GNFM02tzAe+FmUW5GNL1fSmLvMzLFohszjI=
+
+
+[Window Title]
+千方客户端
+
+[Content]
+[{"drugType":"YB","drugName":"转移因子口服溶液","quantity":"1","purchaserName":"","purchaserld":"23","purchaserPhone":"23","purchaserResidence":"23","drugstoreName":"门店","AppKey":"0PacHbe5GNFM02tzAe+FmUW5GNL1fSmLvMzLFohszjI=","drugstoreTyshxydm":"91621122MA7410UY83","saleTime":"2023-04-25 10:20:41","approvalNo":"国药准字H310227591","dataSource":"1"}]
+
+[OK]

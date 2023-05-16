@@ -1,0 +1,72 @@
+unit UDBSET;
+
+interface
+
+uses
+  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
+  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, Vcl.ExtCtrls, Vcl.Mask;
+
+type
+  TDBSET = class(TForm)
+    Panel1: TPanel;
+    Button1: TButton;
+    Button2: TButton;
+    edt_Address: TLabeledEdit;
+    edt_User: TLabeledEdit;
+    edt_PassWord: TLabeledEdit;
+    edt_DSPort: TLabeledEdit;
+    edt_HttpPort: TLabeledEdit;
+    procedure Button1Click(Sender: TObject);
+  private
+    { Private declarations }
+  public
+    { Public declarations }
+  end;
+
+function ShowServerDBSET:Boolean;
+
+implementation
+
+uses
+  UCOMM, System.IniFiles;
+
+{$R *.dfm}
+
+function ShowServerDBSET:Boolean;
+var ff:TDBSET;
+begin
+  ff := TDBSET.Create(nil);
+  try
+    ff.edt_Address.Text  := DataBaseAddress;
+    ff.edt_User.Text     := DataBaseUser;
+    ff.edt_PassWord.Text := DataBasePassword;
+    ff.edt_DSPort.Text   := DataSnapPort.ToString;
+    ff.edt_HttpPort.Text :=
+    Result := ff.ShowModal = mrOk;
+  finally
+    ff.Free;
+  end;
+end;
+
+procedure TDBSET.Button1Click(Sender: TObject);
+var iniFile:TIniFile;
+begin
+  DataBaseAddress  := Trim(edt_Address.Text);
+  DataBaseUser     := Trim(edt_User.Text);
+  DataBasePassword := Trim(edt_PassWord.Text);
+  //服务器端口信息
+  DataSnapPort := 212;   //DataSnap端口
+  HttpPort     := 8080;  //HTTP 端口
+  iniFile := TIniFile.Create(ExtractFilePath(Application.ExeName)+'ServerConfig.ini');
+  try
+    iniFile.WriteString('SERVER','DBADDR',DataBaseAddress);
+    iniFile.WriteString('SERVER','DBUSER',DataBaseUser);
+    iniFile.WriteString('SERVER','DBPASS',DataBasePassword);
+    iniFile.WriteInteger('SERVER','DataSnapPort',DataSnapPort);
+    iniFile.WriteInteger('SERVER','HttpPort',HttpPort);
+  finally
+    iniFile.Free;
+  end;
+end;
+
+end.

@@ -1,0 +1,78 @@
+unit UFindDialog;
+
+interface
+
+uses
+  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants,
+  System.Classes, Vcl.Graphics, UBaseDialogForm, Vcl.Controls, Vcl.ExtCtrls,
+  System.ImageList, Vcl.ImgList, System.Actions, Vcl.ActnList, Vcl.StdCtrls,
+  Vcl.Mask;
+
+type
+  TFindDialog = class(TBaseDialogForm)
+    edt_Find: TLabeledEdit;
+    chk_Reverse: TCheckBox;
+    chk_Whole: TCheckBox;
+    chk_Match: TCheckBox;
+    btn_Find: TButton;
+    Button2: TButton;
+    procedure btn_FindClick(Sender: TObject);
+    procedure edt_FindKeyPress(Sender: TObject; var Key: Char);
+  private
+    { Private declarations }
+  public
+    { Public declarations }
+  end;
+
+var
+  FindDialog: TFindDialog;
+
+implementation
+
+uses
+  UComvar, UComConst;
+
+{$R *.dfm}
+
+procedure TFindDialog.btn_FindClick(Sender: TObject);
+var
+  H: HWND;
+  AWParam, ALParam: Longint;
+  msg:string;
+  Data: tagCOPYDATASTRUCT;
+  pBuf: PChar;
+begin
+  inherited;
+  H := ParamList.AsInteger('@SoureHandle');
+  if H=0 then Exit;
+  msg := edt_Find.Text;
+  ALParam := 0;
+  ALParam := SetBitValue(ALParam,1,chk_Reverse.Checked);
+  ALParam := SetBitValue(ALParam,2,chk_Whole.Checked);
+  ALParam := SetBitValue(ALParam,3,chk_Match.Checked);
+  //SendMessage(H, REFRESH_FIND_MESSAGE, ALParam, Longint(@msg));
+  GetMem(pBuf, Length(edt_Find.Text) + 1);
+  try
+    ZeroMemory(pBuf, Length(edt_Find.Text) + 1);
+    StrPCopy(pBuf, edt_Find.Text);
+
+    Data.cbData:= Length(edt_Find.Text);
+    Data.dwData:= Length(edt_Find.Text);
+    Data.lpData:= pBuf;
+
+    SendMessage(H, WM_COPYDATA, Integer(Self.Handle), Integer(@Data));
+  finally
+    FreeMem(pBuf);
+  end;
+end;
+
+procedure TFindDialog.edt_FindKeyPress(Sender: TObject; var Key: Char);
+begin
+  inherited;
+  if Key=#13 then btn_Find.OnClick(Sender);  
+end;
+
+initialization
+  Goo.Reg.RegisterClass(TFindDialog);
+
+end.

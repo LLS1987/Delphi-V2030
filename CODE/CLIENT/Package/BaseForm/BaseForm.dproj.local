@@ -1,0 +1,25 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<BorlandProject>
+	<Transactions>
+    <Transaction>1899-12-30 00:00:00.000.071,D:\LLS\Documents\Embarcadero\Studio\Projects\Package1.dproj=D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\BaseForm\BaseForm.dproj</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.472,D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\BaseForm\UFindDialog.pas=D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\BaseForm\Unit1.pas</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.820,=D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\BaseForm\Unit2.pas</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.437,D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\BaseForm\Unit2.pas=D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\BaseForm\UBaseNormalForm.pas</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.972,D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\BaseForm\UBaseForm.pas=D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\BaseForm\Unit1.pas</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.437,D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\BaseForm\Unit2.dfm=D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\BaseForm\UBaseNormalForm.dfm</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.272,D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\BaseForm\UBaseDialogForm.dfm=D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\BaseForm\Unit1.dfm</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.972,D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\BaseForm\UBaseForm.dfm=D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\BaseForm\Unit1.dfm</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.044,=vcl.dcp</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.272,D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\BaseForm\UBaseDialogForm.pas=D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\BaseForm\Unit1.pas</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.930,=D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\BaseForm\Unit1.pas</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.432,=D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\BaseForm\Unit1.pas</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.881,=D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\BaseForm\Unit1.pas</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.363,D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\BaseForm\Unit1.pas=D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\BaseForm\UBaseMdiForm.pas</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.472,D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\BaseForm\UFindDialog.dfm=D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\BaseForm\Unit1.dfm</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.477,=D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\BaseForm\UMessageBoxDialog.pas</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.363,D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\BaseForm\Unit1.dfm=D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\BaseForm\UBaseMdiForm.dfm</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.799,=rtl.dcp</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.704,=GlobalObject.dcp</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.500,=D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\BaseForm\Unit1.pas</Transaction>
+  </Transactions>
+</BorlandProject>

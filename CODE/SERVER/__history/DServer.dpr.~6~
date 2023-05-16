@@ -1,0 +1,20 @@
+program DServer;
+
+uses
+  Vcl.Forms,
+  UServer in 'UServer.pas' {Server},
+  UContainer in 'UContainer.pas' {Container: TDataModule},
+  UModuleUnit in 'UModuleUnit.pas' {ModuleUnit: TDSServerModule},
+  UCOMM in 'UCOMM.pas',
+  UDBSET in 'UDBSET.pas' {DBSET};
+
+{$R *.res}
+
+begin
+  Application.Initialize;
+  Application.MainFormOnTaskbar := True;
+  Application.CreateForm(TServer, Server);
+  Application.CreateForm(TContainer, Container);
+  Application.CreateForm(TDBSET, DBSET);
+  Application.Run;
+end.

@@ -1,0 +1,24 @@
+unit UBaseMdiForm;
+
+interface
+
+uses
+  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
+  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, UBaseNormalForm;
+
+type
+  TBaseMdiForm = class(TBaseNormalForm)
+  private
+    { Private declarations }
+  public
+    { Public declarations }
+  end;
+
+var
+  BaseMdiForm: TBaseMdiForm;
+
+implementation
+
+{$R *.dfm}
+
+end.

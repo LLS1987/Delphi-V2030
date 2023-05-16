@@ -1,0 +1,10 @@
+inherited BaseInfoSel: TBaseInfoSel
+  Caption = #22522#26412#20449#24687#36873#25321
+  ClientHeight = 480
+  ClientWidth = 854
+  Color = clBtnFace
+  ExplicitWidth = 870
+  ExplicitHeight = 519
+  PixelsPerInch = 96
+  TextHeight = 15
+end

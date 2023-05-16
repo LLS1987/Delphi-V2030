@@ -1,0 +1,21 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<BorlandProject>
+	<Transactions>
+    <Transaction>1899-12-30 00:00:00.000.781,=D:\LLS_WORK\Delphi 11\V2030\CODE\SERVER\Unit1.pas</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.905,D:\LLS_WORK\Delphi 11\V2030\CODE\SERVER\Unit1.pas=D:\LLS_WORK\Delphi 11\V2030\CODE\SERVER\UCOMM.pas</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.083,=D:\LLS_WORK\Delphi 11\V2030\CODE\SERVER\Unit2.pas</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.655,D:\LLS_WORK\Delphi 11\V2030\CODE\SERVER\Unit2.pas=D:\LLS_WORK\Delphi 11\V2030\CODE\SERVER\UDBSET.pas</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.189,D:\LLS_WORK\Delphi 11\V2030\CODE\SERVER\Server.dproj=D:\LLS_WORK\Delphi 11\V2030\CODE\SERVER\DServer.dproj</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.655,D:\LLS_WORK\Delphi 11\V2030\CODE\SERVER\Unit2.dfm=D:\LLS_WORK\Delphi 11\V2030\CODE\SERVER\UDBSET.dfm</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.834,D:\LLS_WORK\Delphi 11\V2030\CODE\SERVER\UContainer.pas=D:\LLS_WORK\Delphi 11\V2030\CODE\SERVER\Unit1.pas</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.299,=D:\LLS_WORK\Delphi 11\V2030\CODE\SERVER\Unit1.pas</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.142,D:\LLS\Documents\Embarcadero\Studio\Projects\Project1.dproj=D:\LLS_WORK\Delphi 11\V2030\CODE\SERVER\Server.dproj</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.742,=D:\LLS\Documents\Embarcadero\Studio\Projects\Unit1.pas</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.852,D:\LLS\Documents\Embarcadero\Studio\Projects\Unit1.pas=D:\LLS_WORK\Delphi 11\V2030\CODE\SERVER\UServer.pas</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.167,=D:\LLS\Documents\Embarcadero\Studio\Projects\ServerContainerUnit1.pas</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.834,D:\LLS_WORK\Delphi 11\V2030\CODE\SERVER\UContainer.dfm=D:\LLS_WORK\Delphi 11\V2030\CODE\SERVER\Unit1.dfm</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.852,D:\LLS\Documents\Embarcadero\Studio\Projects\Unit1.dfm=D:\LLS_WORK\Delphi 11\V2030\CODE\SERVER\UServer.dfm</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.232,=D:\LLS_WORK\Delphi 11\V2030\CODE\SERVER\UModuleUnit.pas</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.786,=D:\LLS\Documents\Embarcadero\Studio\Projects\ServerMethodsUnit1.pas</Transaction>
+  </Transactions>
+</BorlandProject>

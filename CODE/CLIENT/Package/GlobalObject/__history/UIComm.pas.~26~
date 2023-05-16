@@ -1,0 +1,24 @@
+///
+/// 对口对象
+/// LLS
+/// 2023-04-15
+///
+unit UIComm;
+
+interface
+
+uses
+  System.SysUtils;
+
+type
+  IBase = interface(IUnknown)
+
+  end;
+  //窗体文件的公共接口
+  IForm = interface(IBase)
+    ['{71674D27-53AB-43C8-95DF-F9B3B2E53B1F}']
+  end;
+
+implementation
+
+end.

@@ -1,0 +1,20 @@
+unit UComConst;
+
+interface
+
+type
+              //全部,   批发办    配送版   门店  查询    单体     收银     普及   实时自营门店  独立自营店   独立加盟店   实时加盟店
+  TLimitVer  =(lvAll,lvWholeSale,lvCenter,lvPos,lvQuery,lvSingle,lvInCome,lvPJB,lvPosRealTime,lvPosSelf,lvPosJoined,lvPosRealJoined);
+  TLimitVers = set of TLimitVer;
+  TRegisterType = (rmtForm,rmtBill,rmtRepot,rmtMethod,rmtFile,rmtURL);
+  //用于显示 boolean类型对应的数数
+  aryIntBool:array[boolean]of integer=(0,1);
+  aryCharBool:array[boolean]of char=('0','1');
+  aryStrYesNo:array[Boolean] OF string=('否','是');
+  aryStrSELECT:array[Boolean] OF string=('','√');
+  aryStrYESNOE:array[Boolean] OF string=('NO','YES');
+  aryBoolInt:array[0..1]of Boolean=(False,True);
+
+implementation
+
+end.
