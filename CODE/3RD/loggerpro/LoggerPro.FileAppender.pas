@@ -56,6 +56,7 @@ type
     function CreateWriter(const aFileName: string): TStreamWriter;
     procedure RetryMove(const aFileSrc, aFileDest: string);
   protected
+    //获取日志文件名称
     function GetLogFileName(const aTag: string; const aFileNumber: Integer): string;
     procedure WriteToStream(const aStreamWriter: TStreamWriter; const aValue: string); inline;
     procedure RotateFile(const aLogTag: string; out aNewFileName: string); virtual;
@@ -158,8 +159,9 @@ begin
   if TFileAppenderOption.IncludePID in fFileAppenderOptions then
     lModuleName := lModuleName + '_pid_' + IntToStr(CurrentProcessId).PadLeft(6, '0');
 
-  lPath := fLogsFolder;
-  lExt := Format(lFormat, [lModuleName, aFileNumber, aTag]);
+  lPath := fLogsFolder+'\Log\'+aTag;
+  if not TDirectory.Exists(lPath) then TDirectory.CreateDirectory(lPath);
+  lExt := Format(lFormat, [lModuleName, aFileNumber, FormatDateTime('YYYY-MM-DD',Now)]);
   Result := TPath.Combine(lPath, lExt);
 end;
 
@@ -169,12 +171,12 @@ begin
 
   if fLogsFolder = '' then
   begin
-{$IF (Defined(MSWINDOWS) or Defined(POSIX)) and (not Defined(MOBILE))}
-    fLogsFolder := TPath.GetDirectoryName(GetModuleName(HInstance));
-{$ENDIF}
-{$IF Defined(Android) or Defined(IOS)}
-    fLogsFolder := TPath.GetSharedDocumentsPath();
-{$ENDIF}
+    {$IF (Defined(MSWINDOWS) or Defined(POSIX)) and (not Defined(MOBILE))}
+        fLogsFolder := TPath.GetDirectoryName(GetModuleName(HInstance));
+    {$ENDIF}
+    {$IF Defined(Android) or Defined(IOS)}
+        fLogsFolder := TPath.GetSharedDocumentsPath();
+    {$ENDIF}
   end;
   if not TDirectory.Exists(fLogsFolder) then
     TDirectory.CreateDirectory(fLogsFolder);
@@ -346,13 +348,14 @@ begin
   begin
     AddWriter(aLogItem.LogTag, lWriter, lLogFileName);
   end;
-
   InternalWriteLog(lWriter, aLogItem);
 
   if lWriter.BaseStream.Size > fMaxFileSizeInKiloByte * 1024 then
   begin
     RotateLog(aLogItem.LogTag, lWriter);
   end;
+  //删除节点，避免多开程序的时候写入异常
+  fWritersDictionary.Remove(aLogItem.LogTag);
 end;
 
 { TLoggerProSimpleFileAppender }
