@@ -22,6 +22,7 @@ type
     { Private declarations }
   public
     { Public declarations }
+    class function CompareString(A,B:string;Whole:Boolean=False;Match:Boolean=False):Boolean;
   end;
 
 var
@@ -49,6 +50,21 @@ begin
   ALParam := SetBitValue(ALParam,2,chk_Whole.Checked);
   ALParam := SetBitValue(ALParam,3,chk_Match.Checked);
   SendMessage(H, REFRESH_FIND_MESSAGE, Integer(@msg),ALParam);
+end;
+
+class function TFindDialog.CompareString(A, B: string; Whole, Match: Boolean): Boolean;
+begin
+  Result := False;
+  if not Match then
+  begin
+    A := A.ToUpper;
+    B := B.ToUpper;
+  end;
+  if Whole then
+  begin
+    if string.Compare(A,B)=0 then Result := True;
+  end
+  else if Pos(A,B)>0 then Result := True;
 end;
 
 procedure TFindDialog.edt_FindKeyPress(Sender: TObject; var Key: Char);

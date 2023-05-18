@@ -47,7 +47,7 @@ var
 implementation
 
 uses
-  UComvar, Datasnap.DBClient, System.IniFiles, UComDB, UParamList;
+  UComvar, Datasnap.DBClient, System.IniFiles, UComDB, UParamList, UFindDialog;
 
 {$R *.dfm}
 
@@ -64,7 +64,7 @@ begin
     Goo.DB.HostName := Trim(edt_DBAddr.Text);
     Goo.DB.UserName := Trim(edt_DBSa.Text);
     Goo.DB.Password := Trim(edt_DBPass.Text);
-    Goo.DB.DatabaseName := 'master';
+    Goo.DB.DatabaseName := 'qfmaster';
   end;
   Goo.DB.Connected:= True;
   GetZTDB;
@@ -110,49 +110,25 @@ begin
   if not Goo.DB.Connected then Exit;
   if Reverse then   //反向
   begin
-    for var i := GridAccount.Row downto 0 do
+    for var i := GridAccount.Row-1 downto 0 do
     begin
-      if Match then
+      if TFindDialog.CompareString(Msg,GridAccount.Cells[1,i],Whole,Match) or TFindDialog.CompareString(Msg,GridAccount.Cells[2,i],Whole,Match) then
       begin
-        if (GridAccount.Cells[1,i]=Msg) or (GridAccount.Cells[2,i]=Msg) then
-        begin
-          GridAccount.Row := i;
-          Result := True;
-          Break;
-        end;
-      end
-      else
-      begin
-        if SameText(GridAccount.Cells[1,i],Msg) or SameText(GridAccount.Cells[2,i],Msg) then
-        begin
-          GridAccount.Row := i;
-          Result := True;
-          Break;
-        end;
+        GridAccount.Row := i;
+        Result := True;
+        Break;
       end;
     end;
   end
   else              //正向
   begin
-    for var i := GridAccount.Row to GridAccount.RowCount-1 do
+    for var i := GridAccount.Row+1 to GridAccount.RowCount-1 do
     begin
-      if Match then
+      if TFindDialog.CompareString(Msg,GridAccount.Cells[1,i],Whole,Match) or TFindDialog.CompareString(Msg,GridAccount.Cells[2,i],Whole,Match) then
       begin
-        if (GridAccount.Cells[1,i]=Msg) or (GridAccount.Cells[2,i]=Msg) then
-        begin
-          GridAccount.Row := i;
-          Result := True;
-          Break;
-        end;
-      end
-      else
-      begin
-        if SameText(GridAccount.Cells[1,i],Msg) or SameText(GridAccount.Cells[2,i],Msg) then
-        begin
-          GridAccount.Row := i;
-          Result := True;
-          Break;
-        end;
+        GridAccount.Row := i;
+        Result := True;
+        Break;
       end;
     end;
   end;
@@ -186,6 +162,7 @@ end;
 function TLoginServer.GetZTDB: Boolean;
 var ds: TClientDataSet;
 begin
+  Goo.Logger.Debug('开始账套选择','系统');
   if not Goo.DB.Connected then Exit;
   btn_SelectDB.Visible := Goo.DB.Connected;
   btn_SelectDB.SetFocus;

@@ -23,15 +23,7 @@ inherited FindDialog: TFindDialog
     Caption = #20840#35789#21305#37197
     TabOrder = 2
   end
-  object chk_Match: TCheckBox [2]
-    Left = 24
-    Top = 110
-    Width = 97
-    Height = 17
-    Caption = #21305#37197#22823#23567#20889
-    TabOrder = 3
-  end
-  object edt_Find: TLabeledEdit [3]
+  object edt_Find: TLabeledEdit [2]
     Left = 88
     Top = 16
     Width = 321
@@ -44,7 +36,7 @@ inherited FindDialog: TFindDialog
     Text = ''
     OnKeyPress = edt_FindKeyPress
   end
-  object Button2: TButton [4]
+  object Button2: TButton [3]
     Left = 419
     Top = 46
     Width = 75
@@ -54,7 +46,7 @@ inherited FindDialog: TFindDialog
     ModalResult = 2
     TabOrder = 5
   end
-  object btn_Find: TButton [5]
+  object btn_Find: TButton [4]
     Left = 419
     Top = 15
     Width = 75
@@ -62,6 +54,14 @@ inherited FindDialog: TFindDialog
     Caption = #26597#25214#19979#19968#20010
     TabOrder = 4
     OnClick = btn_FindClick
+  end
+  object chk_Match: TCheckBox [5]
+    Left = 24
+    Top = 110
+    Width = 97
+    Height = 17
+    Caption = #21305#37197#22823#23567#20889
+    TabOrder = 3
   end
   inherited ActionList: TActionList
     Left = 176
