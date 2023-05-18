@@ -54,7 +54,7 @@ type
 implementation
 
 uses
-  System.Variants, UClientModule_Local;
+  System.Variants, UClientModule_Local, UComVar;
 
 { TDataBaseCommObject }
 
@@ -65,6 +65,7 @@ begin
   try
     Result := ClientDM.ChangeDataBase(ADataBaseName);
   except on E: Exception do
+    Goo.Logger.Error('切换数据库异常:%s',[e.Message],'系统');
   end;
 end;
 
@@ -267,6 +268,7 @@ begin
       ClientDM.Conn.Connected := Value;
     end;
   except on E: Exception do
+    Goo.Logger.Error('数据库连接错误:%s',[e.Message],'系统');
   end;
 end;
 
