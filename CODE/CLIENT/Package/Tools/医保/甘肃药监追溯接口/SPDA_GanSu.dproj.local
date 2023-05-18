@@ -1,27 +1,27 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <BorlandProject>
 	<Transactions>
-    <Transaction>1899-12-30 00:00:00.000.927,D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\Tools\医保\甘肃药监追溯接口\UTransBill.pas=D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\Tools\医保\甘肃药监追溯接口\Unit1.pas</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.175,D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\Tools\医保\甘肃药监追溯接口\Unit1.pas=D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\Tools\医保\甘肃药监追溯接口\UPosInfoSelect.pas</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.634,D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\Tools\医保\甘肃药监追溯接口\Unit1.pas=D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\Tools\医保\甘肃药监追溯接口\UConfig_PosSet.pas</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.927,D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\Tools\医保\甘肃药监追溯接口\Unit1.pas=D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\Tools\医保\甘肃药监追溯接口\UTransBill.pas</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.880,=bindcomp.dcp</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.634,D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\Tools\医保\甘肃药监追溯接口\Unit1.dfm=D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\Tools\医保\甘肃药监追溯接口\UConfig_PosSet.dfm</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.892,D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\Tools\医保\甘肃药监追溯接口\Unit1.pas=D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\Tools\医保\甘肃药监追溯接口\UConfig.pas</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.209,D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\Tools\医保\甘肃药监追溯接口\UConfig.dfm=D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\Tools\医保\甘肃药监追溯接口\UConfig_GanSu.dfm</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.749,=D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\Tools\医保\甘肃药监追溯接口\Unit1.pas</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.494,=D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\Tools\医保\甘肃药监追溯接口\Unit1.pas</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.548,=D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\Tools\医保\甘肃药监追溯接口\Unit1.pas</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.452,=D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\Tools\医保\甘肃药监追溯接口\Unit1.pas</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.564,=GlobalObject.dcp</Transaction>
     <Transaction>1899-12-30 00:00:00.000.903,=RESTComponents.dcp</Transaction>
     <Transaction>1899-12-30 00:00:00.000.138,=vcldb.dcp</Transaction>
-    <Transaction>1899-12-30 00:00:00.000.634,D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\Tools\医保\甘肃药监追溯接口\UConfig_PosSet.pas=D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\Tools\医保\甘肃药监追溯接口\Unit1.pas</Transaction>
-    <Transaction>1899-12-30 00:00:00.000.687,D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\Tools\医保\甘肃药监追溯接口\SPDA_GanSu.dproj=D:\LLS\Documents\Embarcadero\Studio\Projects\Package1.dproj</Transaction>
-    <Transaction>1899-12-30 00:00:00.000.209,D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\Tools\医保\甘肃药监追溯接口\UConfig_GanSu.pas=D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\Tools\医保\甘肃药监追溯接口\UConfig.pas</Transaction>
-    <Transaction>1899-12-30 00:00:00.000.175,D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\Tools\医保\甘肃药监追溯接口\UPosInfoSelect.dfm=D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\Tools\医保\甘肃药监追溯接口\Unit1.dfm</Transaction>
-    <Transaction>1899-12-30 00:00:00.000.927,D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\Tools\医保\甘肃药监追溯接口\UTransBill.dfm=D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\Tools\医保\甘肃药监追溯接口\Unit1.dfm</Transaction>
-    <Transaction>1899-12-30 00:00:00.000.880,=bindcomp.dcp</Transaction>
-    <Transaction>1899-12-30 00:00:00.000.543,=BaseForm.dcp</Transaction>
-    <Transaction>1899-12-30 00:00:00.000.209,D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\Tools\医保\甘肃药监追溯接口\UConfig_GanSu.dfm=D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\Tools\医保\甘肃药监追溯接口\UConfig.dfm</Transaction>
-    <Transaction>1899-12-30 00:00:00.000.301,=rtl.dcp</Transaction>
-    <Transaction>1899-12-30 00:00:00.000.175,D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\Tools\医保\甘肃药监追溯接口\UPosInfoSelect.pas=D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\Tools\医保\甘肃药监追溯接口\Unit1.pas</Transaction>
-    <Transaction>1899-12-30 00:00:00.000.564,=GlobalObject.dcp</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.209,D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\Tools\医保\甘肃药监追溯接口\UConfig.pas=D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\Tools\医保\甘肃药监追溯接口\UConfig_GanSu.pas</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.687,D:\LLS\Documents\Embarcadero\Studio\Projects\Package1.dproj=D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\Tools\医保\甘肃药监追溯接口\SPDA_GanSu.dproj</Transaction>
     <Transaction>1899-12-30 00:00:00.000.083,=vclwinx.dcp</Transaction>
-    <Transaction>1899-12-30 00:00:00.000.892,D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\Tools\医保\甘肃药监追溯接口\UConfig.pas=D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\Tools\医保\甘肃药监追溯接口\Unit1.pas</Transaction>
-    <Transaction>1899-12-30 00:00:00.000.634,D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\Tools\医保\甘肃药监追溯接口\UConfig_PosSet.dfm=D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\Tools\医保\甘肃药监追溯接口\Unit1.dfm</Transaction>
-    <Transaction>1899-12-30 00:00:00.000.892,D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\Tools\医保\甘肃药监追溯接口\UConfig.dfm=D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\Tools\医保\甘肃药监追溯接口\Unit1.dfm</Transaction>
-    <Transaction>1899-12-30 00:00:00.000.452,=D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\Tools\医保\甘肃药监追溯接口\Unit1.pas</Transaction>
-    <Transaction>1899-12-30 00:00:00.000.548,=D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\Tools\医保\甘肃药监追溯接口\Unit1.pas</Transaction>
-    <Transaction>1899-12-30 00:00:00.000.494,=D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\Tools\医保\甘肃药监追溯接口\Unit1.pas</Transaction>
-    <Transaction>1899-12-30 00:00:00.000.749,=D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\Tools\医保\甘肃药监追溯接口\Unit1.pas</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.892,D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\Tools\医保\甘肃药监追溯接口\Unit1.dfm=D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\Tools\医保\甘肃药监追溯接口\UConfig.dfm</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.927,D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\Tools\医保\甘肃药监追溯接口\Unit1.dfm=D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\Tools\医保\甘肃药监追溯接口\UTransBill.dfm</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.175,D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\Tools\医保\甘肃药监追溯接口\Unit1.dfm=D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\Tools\医保\甘肃药监追溯接口\UPosInfoSelect.dfm</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.543,=BaseForm.dcp</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.301,=rtl.dcp</Transaction>
   </Transactions>
 </BorlandProject>
