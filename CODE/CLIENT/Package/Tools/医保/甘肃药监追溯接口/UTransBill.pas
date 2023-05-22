@@ -60,7 +60,7 @@ var
 implementation
 
 uses
-  UComvar,REST.Types, REST.Client, System.Net.HttpClient;
+  UComvar,REST.Types, REST.Client, System.Net.HttpClient, UCertManage;
 
 {$R *.dfm}
 
@@ -87,7 +87,7 @@ end;
 procedure TTransBill.btn_UploadClick(Sender: TObject);
 begin
   inherited;
-  if not Salesaledata(MainDataSet) then 
+  if not Salesaledata(MainDataSet) then
   begin
     Goo.Msg.ShowError('销售上传失败[%d]：%s,%s',[FLastErrorCode,FLastErrorMsg,FLastErrorData]);
   end else begin
@@ -97,7 +97,6 @@ begin
 end;
 
 procedure TTransBill.BitBtn3Click(Sender: TObject);
-var RESTClient1: TRESTClient;
 begin
   goo.Reg.ShowModal('TPosInfoSelect');
   if not MainDataSet.Active then Exit;
@@ -378,6 +377,7 @@ begin
   _password := DataSet.FieldByName('Password').AsString;
   _billid   := DataSet.FieldByName('billid').AsInteger;
   _ord      := DataSet.FieldByName('ord').AsInteger;
+  goo.Msg.CheckAndAbort(Goo.Cert.CheckRegistered(1660193135694123009,_loginId));
   var token := GetToken(_loginId,_password);
   Result := token<>EmptyStr;
   if not Result then Exit;    

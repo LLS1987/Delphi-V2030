@@ -105,8 +105,7 @@ end;
 procedure TMainClient.Timer_PassWorkTimer(Sender: TObject);
 begin
   Timer_PassWork.Enabled := False;
-  if Now>StrToDate('2023-06-01') then Goo.Msg.ShowErrorAndAbort('工具已经到期！');
-  
+
   if not Goo.Login.LoginServer then
   begin
     Application.Terminate;
