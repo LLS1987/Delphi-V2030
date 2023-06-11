@@ -73,8 +73,9 @@
         <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
         <VerInfo_Locale>1033</VerInfo_Locale>
         <VerInfo_AutoIncVersion>true</VerInfo_AutoIncVersion>
-        <VerInfo_Build>119</VerInfo_Build>
-        <VerInfo_Keys>CompanyName=;FileDescription=$(MSBuildProjectName);FileVersion=1.0.0.119;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProgramID=com.embarcadero.$(MSBuildProjectName);ProductName=$(MSBuildProjectName);ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
+        <VerInfo_Build>194</VerInfo_Build>
+        <VerInfo_Keys>CompanyName=;FileDescription=$(MSBuildProjectName);FileVersion=1.0.0.194;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProgramID=com.embarcadero.$(MSBuildProjectName);ProductName=$(MSBuildProjectName);ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
+        <DCC_UnitSearchPath>$(DXVCL);$(DXVCL)\Library\Sources;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_2)'!=''">
         <DCC_LocalDebugSymbols>false</DCC_LocalDebugSymbols>
@@ -89,6 +90,11 @@
         <DCCReference Include="rtl.dcp"/>
         <DCCReference Include="GlobalObject.dcp"/>
         <DCCReference Include="vcl.dcp"/>
+        <DCCReference Include="dxCoreRS28.dcp"/>
+        <DCCReference Include="cxLibraryRS28.dcp"/>
+        <DCCReference Include="dxGDIPlusRS28.dcp"/>
+        <DCCReference Include="dxSpreadSheetCoreRS28.dcp"/>
+        <DCCReference Include="cxGridRS28.dcp"/>
         <DCCReference Include="UBaseForm.pas">
             <Form>BaseForm</Form>
             <FormType>dfm</FormType>
@@ -111,6 +117,10 @@
         </DCCReference>
         <DCCReference Include="UFindDialog.pas">
             <Form>FindDialog</Form>
+            <FormType>dfm</FormType>
+        </DCCReference>
+        <DCCReference Include="UProgressBarDialog.pas">
+            <Form>ProgressBarDialog</Form>
             <FormType>dfm</FormType>
         </DCCReference>
         <BuildConfiguration Include="Base">

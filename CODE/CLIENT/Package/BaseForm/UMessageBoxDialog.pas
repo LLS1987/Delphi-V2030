@@ -33,11 +33,12 @@ uses
 { TMessageBoxDialog }
 
 procedure TMessageBoxDialog.BeforeFormShow;
-var buttoncount:Integer;
+var buttoncount,nleft:Integer;
 begin
   inherited;
   Self.Caption := ParamList.AsString('@Caption');
   Label1.Caption := ParamList.AsString('@Message');
+  if (Label1.Left+label1.Width)>ClientWidth then ClientWidth := Label1.Left+label1.Width + 30;
   //根据消息动态调整消息框的宽度和高度
   FDlgType     := TMsgDlgType(ParamList.AsInteger('@DlgType'));
   case DlgType of
@@ -50,6 +51,7 @@ begin
   FButtons := ParamList.AsValue('@Buttons').AsType<TMsgDlgButtons>;
   buttoncount := 0;
   for var btn in Buttons do Inc(buttoncount);
+  nleft := (Width - buttoncount*90) div 2;
   for var btn in Buttons do
   begin
     case btn of
@@ -60,8 +62,8 @@ begin
             Parent := Panel_Button;
             Name   := 'btn_'+Ord(mbYes).ToString;
             Tag    := Ord(mbYes);
-            Left   := self.Width - buttoncount*(Width+5) - 20;
-            Inc(buttoncount,-1);
+            Left   := nleft;
+            Inc(nleft,Width+10);
             Caption := '是';
             ModalResult := mrYes;
           end;
@@ -73,8 +75,8 @@ begin
             Parent := Panel_Button;
             Name   := 'btn_'+Ord(mbOK).ToString;
             Tag    := Ord(mbOK);
-            Left   := self.Width - buttoncount*(Width+5) - 20;
-            Inc(buttoncount,-1);
+            Left   := nleft;
+            Inc(nleft,Width+10);
             Caption := '确定';
             ModalResult := mrOk;
           end;
@@ -86,8 +88,8 @@ begin
             Parent := Panel_Button;
             Name   := 'btn_'+Ord(mbNo).ToString;
             Tag    := Ord(mbNo);
-            Left   := self.Width - buttoncount*(Width+5) - 20;
-            Inc(buttoncount,-1);
+            Left   := nleft;
+            Inc(nleft,Width+10);
             Caption := '否';
             ModalResult := mrNo;
           end;
@@ -99,8 +101,8 @@ begin
             Parent := Panel_Button;
             Name   := 'btn_'+Ord(mbCancel).ToString;
             Tag    := Ord(mbCancel);
-            Left   := self.Width - buttoncount*(Width+5) - 20;
-            Inc(buttoncount,-1);
+            Left   := nleft;
+            Inc(nleft,Width+10);
             Caption := '取消';
             ModalResult := mrCancel;
           end;
@@ -112,8 +114,8 @@ begin
             Parent := Panel_Button;
             Name   := 'btn_'+Ord(mbAbort).ToString;
             Tag    := Ord(mbAbort);
-            Left   := self.Width - buttoncount*(Width+5) - 20;
-            Inc(buttoncount,-1);
+            Left   := nleft;
+            Inc(nleft,Width+10);
             Caption := '退出';
             ModalResult := mrAbort;
           end;
@@ -125,8 +127,8 @@ begin
             Parent := Panel_Button;
             Name   := 'btn_'+Ord(mbClose).ToString;
             Tag    := Ord(mbClose);
-            Left   := self.Width - buttoncount*(Width+5) - 20;
-            Inc(buttoncount,-1);
+            Left   := nleft;
+            Inc(nleft,Width+10);
             Caption := '关闭';
             ModalResult := mrClose;
           end;

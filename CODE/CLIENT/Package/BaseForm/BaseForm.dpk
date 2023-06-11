@@ -30,7 +30,12 @@ package BaseForm;
 requires
   rtl,
   GlobalObject,
-  vcl;
+  vcl,
+  dxCoreRS28,
+  cxLibraryRS28,
+  dxGDIPlusRS28,
+  dxSpreadSheetCoreRS28,
+  cxGridRS28;
 
 contains
   UBaseForm in 'UBaseForm.pas' {BaseForm},
@@ -38,6 +43,7 @@ contains
   UBaseNormalForm in 'UBaseNormalForm.pas' {BaseNormalForm},
   UBaseMdiForm in 'UBaseMdiForm.pas' {BaseMdiForm},
   UMessageBoxDialog in 'UMessageBoxDialog.pas' {MessageBoxDialog},
-  UFindDialog in 'UFindDialog.pas' {FindDialog};
+  UFindDialog in 'UFindDialog.pas' {FindDialog},
+  UProgressBarDialog in 'UProgressBarDialog.pas' {ProgressBarDialog};
 
 end.
