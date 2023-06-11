@@ -4,7 +4,8 @@ interface
 
 uses
   System.JSON,System.SysUtils,UComDB,UGlobalObject_Proxy, UGlobalInterface,
-  UComObject, System.Generics.Collections, System.Rtti,UParamList, LoggerPro;
+  UComObject, System.Generics.Collections, System.Rtti,UParamList, UCertManage,
+  UCrypto, UPrintFunc, ULogger;
 
 type
   TGlobalObject = class(TBaseCommObject)
@@ -15,8 +16,11 @@ type
     FLoginCommObject:TLoginCommObject;
     FRegisterClassFactory:TRegisterClassFactory;
     FMessageBoxObject:TMessageBoxObject;
-    FLogger:ILogWriter;
-    _Lock: TObject;
+    FLogger:TLogger;
+    FCertManage:TCertManage;
+    FPrintFuncObject:TPrintFuncObject;
+    FCrypto: TCrypto;
+    FThemeObject:TThemeObject;
     function GetComVar: TParamList;
     function GetDB: TDataBaseCommObject;
     function GetFormat: TFormatCommObject;
@@ -25,7 +29,11 @@ type
     function GetMessageBoxObject: TMessageBoxObject;
     function GetSystemPath: string;
     function GetSystemDataPath: string;
-    function GetLogger: ILogWriter;
+    function GetLogger: TLogger;
+    function GetCertManage: TCertManage;
+    function GetCrypto: TCrypto;
+    function GetPrint: TPrintFuncObject;
+    function GetTheme: TThemeObject;
   protected
 
   public
@@ -47,7 +55,15 @@ type
     ///提示消息类
     property Msg: TMessageBoxObject read GetMessageBoxObject;
     ///日志类
-    property Logger :ILogWriter read GetLogger;
+    property Logger :TLogger read GetLogger;
+    ///注册验证
+    property Cert:TCertManage read GetCertManage;
+    ///加解密
+    property Crypto:TCrypto read GetCrypto;
+    ///打印
+    property Print:TPrintFuncObject read GetPrint;
+    ///样式
+    property Theme:TThemeObject read GetTheme;
   end;
 
 implementation
@@ -59,7 +75,7 @@ uses
 
 constructor TGloBalObject.Create;
 begin
-  _Lock := TObject.Create;
+
 end;
 
 destructor TGloBalObject.Destroy;
@@ -70,15 +86,31 @@ begin
   if Assigned(FComVar) then FreeAndNil(FComVar);
   if Assigned(FRegisterClassFactory) then FreeAndNil(FRegisterClassFactory);
   if Assigned(FMessageBoxObject) then FreeAndNil(FMessageBoxObject);
-  if Assigned(_Lock) then FreeAndNil(_Lock);
-  
+  if Assigned(FLogger) then FreeAndNil(FLogger);
+  if Assigned(FCertManage) then FreeAndNil(FCertManage);
+  if Assigned(FCrypto) then FreeAndNil(FCrypto);
+  if Assigned(FPrintFuncObject) then FreeAndNil(FPrintFuncObject);
+  if Assigned(FThemeObject) then FreeAndNil(FThemeObject);
+
   inherited;
+end;
+
+function TGlobalObject.GetCertManage: TCertManage;
+begin
+  if not Assigned(FCertManage) then FCertManage:=TCertManage.Create;
+  Result := FCertManage;
 end;
 
 function TGloBalObject.GetComVar: TParamList;
 begin
   if not Assigned(FComVar) then FComVar := TParamList.Create;
   Result := FComVar;
+end;
+
+function TGlobalObject.GetCrypto: TCrypto;
+begin
+  if not Assigned(FCrypto) then FCrypto := TCrypto.Create;
+  Result := FCrypto;
 end;
 
 function TGloBalObject.GetDB: TDataBaseCommObject;
@@ -93,20 +125,9 @@ begin
   Result := FFormatObject;
 end;
 
-function TGlobalObject.GetLogger: ILogWriter;
+function TGlobalObject.GetLogger: TLogger;
 begin
-  if FLogger = nil then
-  begin
-      System.TMonitor.Enter(_Lock);
-      try
-        if FLogger = nil then // double check
-        begin
-          FLogger := BuildLogWriter([TLoggerProFileAppender.Create(5,1000,'',[],'%0:s.%1:2.2d.%2:s.log','%0:s [TID %1:-6d][%2:-8s] %3:s')]);
-        end;
-      finally
-        System.TMonitor.Exit(_Lock);
-      end;
-  end;
+  if not Assigned(FLogger) then FLogger := TLogger.Create;
   Result := FLogger;
 end;
 
@@ -120,6 +141,12 @@ function TGlobalObject.GetMessageBoxObject: TMessageBoxObject;
 begin
   if not Assigned(FMessageBoxObject) then FMessageBoxObject:=TMessageBoxObject.Create(Self);
   Result := FMessageBoxObject;
+end;
+
+function TGlobalObject.GetPrint: TPrintFuncObject;
+begin
+  if not Assigned(FPrintFuncObject) then FPrintFuncObject := TPrintFuncObject.Create;
+  Result := FPrintFuncObject;
 end;
 
 function TGlobalObject.GetRegisterClassFactory: TRegisterClassFactory;
@@ -136,6 +163,12 @@ end;
 function TGlobalObject.GetSystemPath: string;
 begin
   Result := ExtractFilePath(Application.ExeName).TrimRight(['\']);
+end;
+
+function TGlobalObject.GetTheme: TThemeObject;
+begin
+  if not Assigned(FThemeObject) then FThemeObject := TThemeObject.Create(Self);  
+  Result := FThemeObject;
 end;
 
 end.

@@ -52,6 +52,7 @@ type
     procedure RegisterClass(AName:string; AClass:TRegisterClassEvent; AVers: TLimitVers=[]; ALimit:Integer=-1;ASubLimit:Integer=-1);overload;
     procedure RegisterClass(AName:string; AClass:TRegisterClassEvent; AVisible:TRegisterClassVisibleEvent; AVers: TLimitVers=[]; ALimit:Integer=-1;ASubLimit:Integer=-1);overload;
     //µ÷ÓÃ
+    function CreateFormClass(AClass:string; AParam:TParamList=nil):TForm;
     function CallFormClass(AClass:string; AParam:TParamList=nil):TForm;
     function ShowModal(AClass:string; AParam:TParamList=nil):TModalResult;
     function Run(AName:string; AParam:TParamList=nil):Boolean;
@@ -109,6 +110,16 @@ constructor TRegisterClassFactory.Create(AOwner: TObject);
 begin
   inherited Create(AOwner);
   FGroupClasses := TList<PRegisterClassItem>.Create;
+end;
+
+function TRegisterClassFactory.CreateFormClass(AClass: string; AParam: TParamList): TForm;
+begin
+  var rf := GetItem(AClass,rmtForm);
+  if Assigned(rf.ClassObject) then
+  begin
+    Result := rf.ClassObject.Create(Application);
+    if Assigned(AParam) then (Result as IForm).SetParamList(AParam);
+  end;
 end;
 
 procedure TRegisterClassFactory.RegisterClass(AClass: TFormClass; AVisible: TRegisterClassVisibleEvent; AVers: TLimitVers; ALimit, ASubLimit: Integer);

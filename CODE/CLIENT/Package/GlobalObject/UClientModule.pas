@@ -23,6 +23,7 @@ type
     destructor Destroy; override;
     function ChangeSQLString(const ASQL: string): Integer;
     function ChangeDataBase(const ADataBaseName: string): Boolean; virtual;
+    function ExecuteFile(const AFileName:string):Boolean; virtual;
     function OpenSQL(const ASQL: string; ADataSet:TClientDataSet):Integer; virtual;
     function ExecSQL(const ASQL: string): Integer;virtual;
     function OpenProc(szProcedureName: string; AParamName: array of string;AParamValue: array of OleVariant; ADataSet:TClientDataSet; AParams: TParams): Integer;overload;virtual;
@@ -145,6 +146,19 @@ begin
   try
     oDataModel := TModuleUnitClient.Create(conn.DBXConnection);
     Result := oDataModel.ExecSQL(ASQL);
+  finally
+    oDataModel.Free;
+  end;
+end;
+
+function TClientModule.ExecuteFile(const AFileName: string): Boolean;
+var
+  oDataModel: TModuleUnitClient;
+begin
+  Result := False;
+  try
+    oDataModel := TModuleUnitClient.Create(conn.DBXConnection);
+    Result := oDataModel.ExecuteFile(AFileName)=0;
   finally
     oDataModel.Free;
   end;

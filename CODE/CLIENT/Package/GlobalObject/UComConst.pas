@@ -13,6 +13,7 @@ type
 
   //自定义消息
 const  REFRESH_FIND_MESSAGE = WM_USER + 100;
+       WM_RefreshData = WM_USER + 101;
 
 implementation
 

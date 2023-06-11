@@ -50,7 +50,8 @@ requires
   vcl,
   vclwinx,
   vcldb,
-  DBXMSSQLDriver;
+  DBXMSSQLDriver,
+  soaprtl;
 
 contains
   UComvar in 'UComvar.pas',
@@ -63,6 +64,12 @@ contains
   UParamList in 'UParamList.pas',
   UComDBStorable in 'UComDBStorable.pas',
   UClientModule_Local in 'UClientModule_Local.pas' {ClientModule_Local: TDataModule},
-  UClientModule in 'UClientModule.pas' {ClientModule: TDataModule};
+  UClientModule in 'UClientModule.pas' {ClientModule: TDataModule},
+  UCertManage in 'UCertManage.pas',
+  UCrypto in 'UCrypto.pas',
+  crReportIntf in 'Print\crReportIntf.pas',
+  UPrintItem in 'Print\UPrintItem.pas',
+  UPrintFunc in 'Print\UPrintFunc.pas',
+  ULogger in 'ULogger.pas';
 
 end.

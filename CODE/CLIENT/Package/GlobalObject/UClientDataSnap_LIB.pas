@@ -14,6 +14,7 @@ type
   private
     FChangeDataBaseCommand: TDBXCommand;
     FChangeSQLStringCommand: TDBXCommand;
+    FExecuteFileCommand: TDBXCommand;
     FOpenSQLCommand: TDBXCommand;
     FExecSQLCommand: TDBXCommand;
     FOpenProcCommand: TDBXCommand;
@@ -24,6 +25,7 @@ type
     destructor Destroy; override;
     function ChangeDataBase(ADataBaseName: string): Boolean;
     function ChangeSQLString(ASQL: string): Integer;
+    function ExecuteFile(AFileName:string):Integer;
     function OpenSQL(ASQL: string): Integer;
     function ExecSQL(ASQL: string): Integer;
     function OpenProc(szProcedureName: string; AParams: OleVariant): OleVariant;
@@ -88,6 +90,20 @@ begin
   Result := FExecSQLCommand.Parameters[1].Value.GetInt32;
 end;
 
+function TModuleUnitClient.ExecuteFile(AFileName: string): Integer;
+begin
+  if FExecuteFileCommand = nil then
+  begin
+    FExecuteFileCommand := FDBXConnection.CreateCommand;
+    FExecuteFileCommand.CommandType := TDBXCommandTypes.DSServerMethod;
+    FExecuteFileCommand.Text := 'TModuleUnit.ExecuteFile';
+    FExecuteFileCommand.Prepare;
+  end;
+  FExecuteFileCommand.Parameters[0].Value.SetWideString(AFileName);
+  FExecuteFileCommand.ExecuteUpdate;
+  Result := FExecuteFileCommand.Parameters[1].Value.GetInt32;
+end;
+
 function TModuleUnitClient.OpenProc(szProcedureName: string; AParams: OleVariant): OleVariant;
 begin
   if FOpenProcCommand = nil then
@@ -132,6 +148,7 @@ destructor TModuleUnitClient.Destroy;
 begin
   FChangeDataBaseCommand.DisposeOf;
   FChangeSQLStringCommand.DisposeOf;
+  FExecuteFileCommand.DisposeOf;
   FOpenSQLCommand.DisposeOf;
   FExecSQLCommand.DisposeOf;
   FOpenProcCommand.DisposeOf;

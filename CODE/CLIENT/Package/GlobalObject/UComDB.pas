@@ -26,6 +26,7 @@ type
     destructor Destroy; override;
     function CheckConnected:Boolean;
     function ChangeDataBase(const ADataBaseName: string): Boolean;
+    function ExecuteFile(const AFileName:string):Boolean;
     function OpenSQL(const ASQL: string; ADataSet:TClientDataSet):Integer; overload;
     function OpenSQL(const ASQL: string; const Args: array of const; ADataSet:TClientDataSet):Integer; overload;
     function ExecSQL(const ASQL: string): Integer;overload;
@@ -40,7 +41,9 @@ type
     function ExecProc(szProcedureName: string): Integer;overload;
     function QueryOneFiled(const ASQL: string):Variant;overload;
     function QueryOneFiled<T>(const ASQL: string):Variant;overload;
-  public
+    function SysCfgValue(czName: string): string;
+    function SetSubValue(czName, czValue: string;ASysflag:Integer=-1;AComment:string = ''): integer;
+  published
     property HostName:string read FHostName write FHostName;
     property Port:Integer read FPort write FPort;
     ///本地连接的时候的sa和密码
@@ -65,7 +68,7 @@ begin
   try
     Result := ClientDM.ChangeDataBase(ADataBaseName);
   except on E: Exception do
-    Goo.Logger.Error('切换数据库异常:%s',[e.Message],'系统');
+    Goo.Logger.Error('切换数据库异常:%s',[e.Message]);
   end;
 end;
 
@@ -157,6 +160,13 @@ end;
 function TDataBaseCommObject.ExecSQL(const ASQL: string; const Args: array of const): Integer;
 begin
   Result := ExecSQL(Format(ASQL,Args));
+end;
+
+function TDataBaseCommObject.ExecuteFile(const AFileName: string): Boolean;
+begin
+  Result := False;
+  if not CheckConnected then Exit;
+  Result := ClientDM.ExecuteFile(AFileName);
 end;
 
 function TDataBaseCommObject.ExecSQL(const ASQL: string): Integer;
@@ -268,7 +278,7 @@ begin
       ClientDM.Conn.Connected := Value;
     end;
   except on E: Exception do
-    Goo.Logger.Error('数据库连接错误:%s',[e.Message],'系统');
+    Goo.Logger.Error('数据库连接错误:%s',[e.Message]);
   end;
 end;
 
@@ -277,6 +287,24 @@ begin
   if FDatabaseName=Value then Exit;
   if not ChangeDataBase(Value) then Exit;
   FDatabaseName := Value;
+end;
+
+function TDataBaseCommObject.SetSubValue(czName, czValue: string; ASysflag: Integer; AComment: string): integer;
+begin
+  Result := ExecProc('Gp_SetSubValue', ['@szName', '@szValue','@SysFlag','@szComment'], [czName,czValue,ASysflag,AComment]);
+end;
+
+function TDataBaseCommObject.SysCfgValue(czName: string): string;
+var  vParams : TParams;
+begin
+  Result := '';
+  vParams := TParams.Create;
+  try
+    ExecProc('gp_GetSubValue', ['@szName', '@szReturn'], [czName,''], vParams);
+    if vParams.Count > 0 then Result := vParams.ParamByName('@szReturn').AsString;
+  finally
+    Vparams.free;
+  end;
 end;
 
 end.
