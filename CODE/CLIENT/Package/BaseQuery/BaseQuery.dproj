@@ -72,6 +72,8 @@
         <DCC_BplOutput>$(LLS)\CODE\CLIENT\Package\BIN</DCC_BplOutput>
         <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
         <VerInfo_Locale>1033</VerInfo_Locale>
+        <Debugger_HostApplication>D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\BIN\DClient.exe</Debugger_HostApplication>
+        <DCC_UnitSearchPath>$(DXVCL);$(DXVCL)\Library\Sources;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_2)'!=''">
         <DCC_LocalDebugSymbols>false</DCC_LocalDebugSymbols>
@@ -86,8 +88,17 @@
         <DCCReference Include="rtl.dcp"/>
         <DCCReference Include="BaseForm.dcp"/>
         <DCCReference Include="GlobalObject.dcp"/>
+        <DCCReference Include="dxSkinsCoreRS28.dcp"/>
         <DCCReference Include="UBaseInfoSel.pas">
             <Form>BaseInfoSel</Form>
+            <FormType>dfm</FormType>
+        </DCCReference>
+        <DCCReference Include="UCustomBaseQuery.pas">
+            <Form>CustomBaseQuery</Form>
+            <FormType>dfm</FormType>
+        </DCCReference>
+        <DCCReference Include="UBaseQuery.pas">
+            <Form>BaseQuery</Form>
             <FormType>dfm</FormType>
         </DCCReference>
         <BuildConfiguration Include="Base">
@@ -845,8 +856,8 @@
                 </DeployClass>
                 <ProjectRoot Platform="OSX32" Name="$(PROJECTNAME)"/>
                 <ProjectRoot Platform="OSX64" Name="$(PROJECTNAME)"/>
-                <ProjectRoot Platform="Win32" Name="$(PROJECTNAME)"/>
                 <ProjectRoot Platform="Android64" Name="$(PROJECTNAME)"/>
+                <ProjectRoot Platform="Win32" Name="$(PROJECTNAME)"/>
                 <ProjectRoot Platform="Android" Name="$(PROJECTNAME)"/>
                 <ProjectRoot Platform="OSXARM64" Name="$(PROJECTNAME)"/>
                 <ProjectRoot Platform="Win64" Name="$(PROJECTNAME)"/>

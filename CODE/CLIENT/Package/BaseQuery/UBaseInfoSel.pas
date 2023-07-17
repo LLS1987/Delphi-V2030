@@ -6,7 +6,28 @@ uses
   Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
   Vcl.Controls, Vcl.Forms, Vcl.Dialogs, UBaseDialogForm, System.ImageList,
   Vcl.ImgList, System.Actions, Vcl.ActnList, Vcl.StdCtrls, Vcl.ExtCtrls,
-  Vcl.Buttons, Data.DB, Vcl.Grids, Vcl.DBGrids;
+  Vcl.Buttons, Data.DB, Vcl.Grids, Vcl.DBGrids, cxStyles, cxClasses, cxGraphics,
+  cxControls, cxLookAndFeels, cxLookAndFeelPainters, dxSkinsCore, dxSkinBasic,
+  dxSkinBlack, dxSkinBlue, dxSkinBlueprint, dxSkinCaramel, dxSkinCoffee,
+  dxSkinDarkroom, dxSkinDarkSide, dxSkinDevExpressDarkStyle,
+  dxSkinDevExpressStyle, dxSkinFoggy, dxSkinGlassOceans, dxSkinHighContrast,
+  dxSkiniMaginary, dxSkinLilian, dxSkinLiquidSky, dxSkinLondonLiquidSky,
+  dxSkinMcSkin, dxSkinMetropolis, dxSkinMetropolisDark, dxSkinMoneyTwins,
+  dxSkinOffice2007Black, dxSkinOffice2007Blue, dxSkinOffice2007Green,
+  dxSkinOffice2007Pink, dxSkinOffice2007Silver, dxSkinOffice2010Black,
+  dxSkinOffice2010Blue, dxSkinOffice2010Silver, dxSkinOffice2013DarkGray,
+  dxSkinOffice2013LightGray, dxSkinOffice2013White, dxSkinOffice2016Colorful,
+  dxSkinOffice2016Dark, dxSkinOffice2019Black, dxSkinOffice2019Colorful,
+  dxSkinOffice2019DarkGray, dxSkinOffice2019White, dxSkinPumpkin, dxSkinSeven,
+  dxSkinSevenClassic, dxSkinSharp, dxSkinSharpPlus, dxSkinSilver,
+  dxSkinSpringtime, dxSkinStardust, dxSkinSummer2008, dxSkinTheAsphaltWorld,
+  dxSkinTheBezier, dxSkinsDefaultPainters, dxSkinValentine,
+  dxSkinVisualStudio2013Blue, dxSkinVisualStudio2013Dark,
+  dxSkinVisualStudio2013Light, dxSkinVS2010, dxSkinWhiteprint,
+  dxSkinXmas2008Blue, cxCustomData, cxFilter, cxData, cxDataStorage, cxEdit,
+  cxNavigator, dxDateRanges, dxScrollbarAnnotations, cxDBData, cxGridLevel,
+  cxGridCustomView, cxGridCustomTableView, cxGridTableView, cxGridDBTableView,
+  cxGrid;
 
 type
   TBaseInfoSel = class(TBaseDialogForm)
@@ -16,7 +37,9 @@ type
     Panel2: TPanel;
     btn_Select: TBitBtn;
     BitBtn2: TBitBtn;
-    MainGrid: TDBGrid;
+    MainGridDBTableView1: TcxGridDBTableView;
+    MainGridLevel1: TcxGridLevel;
+    MainGrid: TcxGrid;
   private
     { Private declarations }
   protected
@@ -64,10 +87,10 @@ begin
           begin
             if A2 is TFieldInfo then //AHa
             begin
-              with MainGrid.Columns.Add do
+              with MainGridDBTableView1.CreateColumn do
               begin
-                FieldName     := TFieldInfo(A2).FieldName;
-                Title.Caption := TFieldInfo(A2).Title;
+                DataBinding.FieldName     := TFieldInfo(A2).FieldName;
+                Caption := TFieldInfo(A2).Title;
                 Width     := TFieldInfo(A2).Width;
                 Visible   := not TFieldInfo(A2).IDENTITY;
               end;
