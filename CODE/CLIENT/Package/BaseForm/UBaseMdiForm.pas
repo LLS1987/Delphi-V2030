@@ -5,7 +5,7 @@ interface
 uses
   Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
   Vcl.Controls, Vcl.Forms, Vcl.Dialogs, UBaseNormalForm, System.ImageList,
-  Vcl.ImgList, System.Actions, Vcl.ActnList, Vcl.ExtCtrls;
+  Vcl.ImgList, System.Actions, Vcl.ActnList, Vcl.ExtCtrls, cxStyles, cxClasses;
 
 type
   TBaseMdiForm = class(TBaseNormalForm)

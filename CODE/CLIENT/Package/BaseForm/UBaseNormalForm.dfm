@@ -30,4 +30,7 @@ inherited BaseNormalForm: TBaseNormalForm
     BevelOuter = bvNone
     TabOrder = 2
   end
+  inherited cxStyleRepository: TcxStyleRepository
+    PixelsPerInch = 96
+  end
 end

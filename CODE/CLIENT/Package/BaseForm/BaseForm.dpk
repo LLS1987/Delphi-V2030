@@ -35,7 +35,8 @@ requires
   cxLibraryRS28,
   dxGDIPlusRS28,
   dxSpreadSheetCoreRS28,
-  cxGridRS28;
+  cxGridRS28,
+  dxSkinsCoreRS28;
 
 contains
   UBaseForm in 'UBaseForm.pas' {BaseForm},
@@ -44,6 +45,7 @@ contains
   UBaseMdiForm in 'UBaseMdiForm.pas' {BaseMdiForm},
   UMessageBoxDialog in 'UMessageBoxDialog.pas' {MessageBoxDialog},
   UFindDialog in 'UFindDialog.pas' {FindDialog},
-  UProgressBarDialog in 'UProgressBarDialog.pas' {ProgressBarDialog};
+  UProgressBarDialog in 'UProgressBarDialog.pas' {ProgressBarDialog},
+  UBaseGridLayout in 'UBaseGridLayout.pas' {BaseGridLayout};
 
 end.
