@@ -1,18 +1,18 @@
 inherited LoginServer: TLoginServer
   ActiveControl = edt_DBAddr
   Caption = #30331#24405#26381#21153#22120
-  ClientHeight = 280
+  ClientHeight = 247
   ClientWidth = 517
   OnShow = FormShow
   ExplicitWidth = 533
-  ExplicitHeight = 319
+  ExplicitHeight = 286
   PixelsPerInch = 96
   TextHeight = 15
   object rg_ServerType: TRadioGroup [0]
     Left = 56
-    Top = 24
+    Top = 7
     Width = 409
-    Height = 65
+    Height = 59
     Caption = #25968#25454#24211#36830#25509#26041#24335
     Columns = 2
     ItemIndex = 0
@@ -24,9 +24,9 @@ inherited LoginServer: TLoginServer
   end
   object PageControl1: TPageControl [1]
     Left = 56
-    Top = 95
+    Top = 69
     Width = 409
-    Height = 138
+    Height = 133
     ActivePage = TabSheet_DataBase
     TabOrder = 1
     object TabSheet_DataSnap: TTabSheet
@@ -102,9 +102,9 @@ inherited LoginServer: TLoginServer
   end
   object GridAccount: TStringGrid [2]
     Left = 56
-    Top = 239
+    Top = 206
     Width = 409
-    Height = 182
+    Height = 227
     ColCount = 3
     Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goRangeSelect, goRowSelect, goFixedRowDefAlign]
     TabOrder = 2
@@ -117,12 +117,13 @@ inherited LoginServer: TLoginServer
   end
   object Panel_Button: TPanel [3]
     Left = 0
-    Top = 239
+    Top = 206
     Width = 517
     Height = 41
     Align = alBottom
     BevelOuter = bvNone
     TabOrder = 3
+    ExplicitTop = 239
     DesignSize = (
       517
       41)

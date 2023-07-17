@@ -162,7 +162,7 @@ end;
 function TLoginServer.GetZTDB: Boolean;
 var ds: TClientDataSet;
 begin
-  Goo.Logger.Debug('开始账套选择','系统');
+  Goo.Logger.Debug('开始账套选择');
   if not Goo.DB.Connected then Exit;
   btn_SelectDB.Visible := Goo.DB.Connected;
   btn_SelectDB.SetFocus;
