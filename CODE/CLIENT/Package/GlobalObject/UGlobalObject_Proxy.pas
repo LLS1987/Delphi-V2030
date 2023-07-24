@@ -44,6 +44,7 @@ type
     function IsNull(ACheckvalue,AReplaceValue:olevariant): olevariant;
     function HtmlToColor(const AHtmlColor: string): TColor;
     function ColorToHtml(AColor: TColor): string;
+    function StringToChinese(const AStr: string): string;
   end;
   {ÑשÊ½}
   TThemeGrid = record
@@ -404,6 +405,18 @@ begin
     Result := AReplaceValue
   else
     Result := ACheckvalue;
+end;
+
+function TFormatCommObject.StringToChinese(const AStr: string): string;
+var
+  Encoding: TEncoding;
+begin
+  Encoding := TEncoding.GetEncoding('GB18030');
+  try
+    Result := Encoding.GetString(TEncoding.Default.GetBytes(AStr));
+  finally
+    Encoding.Free;
+  end;
 end;
 
 end.

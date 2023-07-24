@@ -81,7 +81,7 @@ begin
   var rf := GetItem(AClass,rmtForm);
   if Assigned(rf.ClassObject) then
   begin
-    Result := rf.ClassObject.Create(Application);
+    Result := rf.ClassObject.Create(nil);
     try
       if Assigned(AParam) then (Result as IForm).SetParamList(AParam);
       //Supports
@@ -117,7 +117,7 @@ begin
   var rf := GetItem(AClass,rmtForm);
   if Assigned(rf.ClassObject) then
   begin
-    Result := rf.ClassObject.Create(Application);
+    Result := rf.ClassObject.Create(nil);
     if Assigned(AParam) then (Result as IForm).SetParamList(AParam);
   end;
 end;
@@ -218,7 +218,7 @@ begin
   var p := GetItem(AClass,rmtForm);
   if Assigned(p.ClassObject) then
   begin
-    var ff := p.ClassObject.Create(Application);
+    var ff := p.ClassObject.Create(nil);
     try
       if Assigned(AParam) then (ff as IForm).SetParamList(AParam);
       //Supports
