@@ -8,7 +8,24 @@ uses
   Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, Vcl.ComCtrls, Data.DB,
   Datasnap.DBClient, Vcl.ExtCtrls, Vcl.Menus, System.Actions, Vcl.ActnList,
   Vcl.ToolWin, Vcl.ActnMan, Vcl.ActnCtrls, Vcl.PlatformDefaultStyleActnCtrls,
-  Vcl.ActnMenus, System.JSON;
+  Vcl.ActnMenus, System.JSON, cxPC, dxBarBuiltInMenu, cxClasses, dxTabbedMDI,
+  dxSkinsCore, dxSkinBasic, dxSkinBlack, dxSkinBlue, dxSkinBlueprint,
+  dxSkinCaramel, dxSkinCoffee, dxSkinDarkroom, dxSkinDarkSide,
+  dxSkinDevExpressDarkStyle, dxSkinDevExpressStyle, dxSkinFoggy,
+  dxSkinGlassOceans, dxSkinHighContrast, dxSkiniMaginary, dxSkinLilian,
+  dxSkinLiquidSky, dxSkinLondonLiquidSky, dxSkinMcSkin, dxSkinMetropolis,
+  dxSkinMetropolisDark, dxSkinMoneyTwins, dxSkinOffice2007Black,
+  dxSkinOffice2007Blue, dxSkinOffice2007Green, dxSkinOffice2007Pink,
+  dxSkinOffice2007Silver, dxSkinOffice2010Black, dxSkinOffice2010Blue,
+  dxSkinOffice2010Silver, dxSkinOffice2013DarkGray, dxSkinOffice2013LightGray,
+  dxSkinOffice2013White, dxSkinOffice2016Colorful, dxSkinOffice2016Dark,
+  dxSkinOffice2019Black, dxSkinOffice2019Colorful, dxSkinOffice2019DarkGray,
+  dxSkinOffice2019White, dxSkinPumpkin, dxSkinSeven, dxSkinSevenClassic,
+  dxSkinSharp, dxSkinSharpPlus, dxSkinSilver, dxSkinSpringtime, dxSkinStardust,
+  dxSkinSummer2008, dxSkinTheAsphaltWorld, dxSkinTheBezier,
+  dxSkinsDefaultPainters, dxSkinValentine, dxSkinVisualStudio2013Blue,
+  dxSkinVisualStudio2013Dark, dxSkinVisualStudio2013Light, dxSkinVS2010,
+  dxSkinWhiteprint, dxSkinXmas2008Blue, dxGDIPlusClasses, cxLocalization;
 
 type
   TMainClient = class(TForm)
@@ -23,9 +40,15 @@ type
     Action_Close: TAction;
     Action_ChangeUser: TAction;
     Action_ChangeDB: TAction;
+    Action_Upgrade: TAction;
+    Panel_TopBorder: TPanel;
+    dxTabbedMDIManager1: TdxTabbedMDIManager;
+    Image1: TImage;
+    cxLocalizer1: TcxLocalizer;
     procedure Action_ChangeDBExecute(Sender: TObject);
     procedure Action_ChangeUserExecute(Sender: TObject);
     procedure Action_CloseExecute(Sender: TObject);
+    procedure Action_UpgradeExecute(Sender: TObject);
     procedure Timer_PassWorkTimer(Sender: TObject);
   private
     procedure CreateMenu;overload;
@@ -41,7 +64,7 @@ var
 
 implementation
 
-uses UComvar, UGlobalInterface, UBaseForm, UParamList,
+uses UComvar, UGlobalInterface, UParamList,
   System.IOUtils, System.Generics.Collections, System.Generics.Defaults,
   UComConst, Winapi.ShellAPI;
 
@@ -78,6 +101,11 @@ end;
 procedure TMainClient.Action_CloseExecute(Sender: TObject);
 begin
   Close;
+end;
+
+procedure TMainClient.Action_UpgradeExecute(Sender: TObject);
+begin
+  if Goo.DB.ExecuteFile('SQL\Upgrade.sql') then Goo.Msg.ShowMsg('数据库升级成功！');
 end;
 
 procedure TMainClient.ClearAllMDIForm;
@@ -171,10 +199,10 @@ begin
   Action := Sender as TAction;
   if Action.Hint=EmptyStr then Exit;
   case TRegisterType(Action.Tag) of
-    rmtForm   : Goo.Reg.CallFormClass(Action.Hint);
-    rmtBill   : Goo.Reg.CallFormClass(Action.Hint);
-    rmtRepot  : Goo.Reg.CallFormClass(Action.Hint);
-    rmtMethod : Goo.Reg.Run(Action.Hint);
+    rmtForm   : Goo.Reg.CallFormClass(Action.Hint.Trim);
+    rmtBill   : Goo.Reg.CallFormClass(Action.Hint.Trim);
+    rmtRepot  : Goo.Reg.CallFormClass(Action.Hint.Trim);
+    rmtMethod : Goo.Reg.Run(Action.Hint.Trim);
     rmtFile   : ShellExecute(Handle, 'OPEN', PChar(Trim(Action.Hint)), nil, nil, 1);
     rmtURL    : Goo.MSG.ShowMsg(Action.Hint);
   end;
@@ -185,10 +213,13 @@ var JSON:TJSONObject;
   Pair: TJSONPair;
 
 begin
-  if not FileExists(goo.SystemPath+'\menuinfo.json') then Exit;
+  //data目录为用户自定义的菜单
+  if FileExists(goo.SystemPath+'\Layout\menuinfo.json') then
+    CopyFile(PWideChar(goo.SystemPath+'\Layout\menuinfo.json'),PWideChar(goo.SystemDataPath+'\menuinfo.json'),True);
+  if not FileExists(goo.SystemDataPath+'\menuinfo.json') then Exit;
   //先清除一次菜单
   MainMenu.Items.Clear;
-  JSON := TJSONObject.ParseJSONValue(TFile.ReadAllText(goo.SystemPath+'\menuinfo.json')) as TJSONObject;
+  JSON := TJSONObject.ParseJSONValue(TFile.ReadAllText(goo.SystemDataPath+'\menuinfo.json')) as TJSONObject;
   try
     CreateMenu(JSON);
   finally
@@ -199,7 +230,7 @@ end;
 procedure TMainClient.Timer_PassWorkTimer(Sender: TObject);
 begin
   Timer_PassWork.Enabled := False;
-
+  Panel_TopBorder.Color := RGB(133,193,95);
   if not Goo.Login.LoginServer then
   begin
     Application.Terminate;
@@ -212,7 +243,15 @@ begin
     Abort;
   end;
   StatusBar1.Panels[1].Text := Format('职员：%s',[Goo.Login.LoginUserName]);
+  //创建菜单
   CreateMenu;
+  //cx控件的中文展示
+  if FileExists(Goo.SystemPath + '\Layout\DevChs.ini') then
+  begin
+    cxLocalizer1.FileName := Goo.SystemPath + '\Layout\DevChs.ini';
+    cxLocalizer1.Active := True;
+    cxLocalizer1.Language := '中文(简体，中国)';
+  end;
 end;
 
 initialization
