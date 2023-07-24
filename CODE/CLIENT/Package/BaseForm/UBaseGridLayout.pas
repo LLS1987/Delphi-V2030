@@ -45,8 +45,12 @@ type
     Button_Load: TButton;
     Button_Save: TButton;
     Button2: TButton;
+    Button_Up: TButton;
+    Button_Down: TButton;
+    procedure Button_DownClick(Sender: TObject);
     procedure Button_SaveClick(Sender: TObject);
     procedure Button_LoadClick(Sender: TObject);
+    procedure Button_UpClick(Sender: TObject);
     procedure MainGridTableViewEditing(Sender: TcxCustomGridTableView; AItem:
         TcxCustomGridTableItem; var AAllow: Boolean);
   private
@@ -80,6 +84,32 @@ begin
   end;
 end;
 
+procedure TBaseGridLayout.Button_DownClick(Sender: TObject);
+var
+  AIndex,_NewRow: Integer;
+begin
+  if MainGridTableView.ViewData.RowCount<2 then Exit;
+  if MainGridTableView.DataController.IsEOF then Exit;
+  //MainGridTableView.BeginUpdate;
+  try
+    var AFromIndex := MainGridTableView.ViewData.DataController.FocusedRowIndex;
+    var AToIndex   := AFromIndex+2;
+    var ARecord := MainGridTableView.ViewData.Records[AFromIndex];
+    if AToIndex >= MainGridTableView.ViewData.RowCount then
+      _NewRow := MainGridTableView.ViewData.DataController.AppendRecord
+    else
+      _NewRow := MainGridTableView.ViewData.DataController.InsertRecord(AToIndex);
+    for var i := 0 to MainGridTableView.ColumnCount-1 do
+    begin
+      MainGridTableView.ViewData.Records[_NewRow].Values[I] := ARecord.Values[I];
+    end;
+    MainGridTableView.ViewData.DataController.DeleteRecord(AFromIndex+1);
+    MainGridTableView.Controller.FocusedRowIndex := _NewRow;
+  finally
+    //MainGridTableView.EndUpdate;
+  end;
+end;
+
 procedure TBaseGridLayout.Button_SaveClick(Sender: TObject);
 var Json:TJSONArray;
   JsonField:TJSONObject;
@@ -94,9 +124,12 @@ begin
       JsonField.AddPair('Caption',VarToStr(MainGridTableView.DataController.Values[i,MainGridTableView_Caption.Index]));
       JsonField.AddPair('FieldName',VarToStr(MainGridTableView.DataController.Values[i,MainGridTableView_FiledName.Index]));
       JsonField.AddPair('Width',Integer(MainGridTableView.DataController.Values[i,MainGridTableView_Width.Index]));
+      JsonField.AddPair('SortIndex',Integer(MainGridTableView.DataController.Values[i,MainGridTableView_SortIndex.Index]));
+      JsonField.AddPair('Visible',Boolean(MainGridTableView.DataController.Values[i,MainGridTableView_Visible.Index]));
+      JsonField.AddPair('VisibleForCustomization',Boolean(MainGridTableView.DataController.Values[i,MainGridTableView_VisibleForCustomization.Index]));
       Json.Add(JsonField);
     end;
-    TFile.WriteAllText(Goo.SystemPath+Format('\Layout\%s.Json', [CallForm.ClassName]),Json.ToJSON);
+    TFile.WriteAllText(Goo.SystemPath+Format('\Layout\%s.Json', [CallForm.ClassName]),Json.ToString);
     Goo.Msg.ShowMsg('保存文件成功：%s\Layout\%s.Json',[Goo.SystemPath,CallForm.ClassName]);
   finally
     Json.Free;
@@ -112,11 +145,13 @@ begin
     TcxGridDBTableView(SetView).DataController.CreateAllItems();
     for var i := 0 to TcxGridTableView(SetView).ColumnCount-1 do
     begin
+      TcxGridTableView(SetView).Columns[i].ApplyBestFit;
       TcxGridTableView(SetView).Columns[i].OnGetStoredProperties := DoCustomColumnGetStoredProperties;
       if (TcxGridTableView(SetView).Columns[i].DataBinding as TcxGridItemDBDataBinding).FieldName=EmptyStr then Continue;
       //TcxGridTableView(SetView).Columns[i].Name := (TcxGridTableView(SetView).Columns[i].DataBinding as TcxGridItemDBDataBinding).FieldName;
     end;
   end;
+  MainGridTableView.DataController.RecordCount := 0;
   for var i := 0 to TcxGridTableView(SetView).ColumnCount-1 do
   begin
     var _Row := MainGridTableView.DataController.AppendRecord;
@@ -129,16 +164,39 @@ begin
   end;
 end;
 
+procedure TBaseGridLayout.Button_UpClick(Sender: TObject);
+var
+  AIndex: Integer;
+begin
+  if MainGridTableView.ViewData.RowCount<2 then Exit;
+  if MainGridTableView.DataController.IsBOF then Exit;
+  MainGridTableView.BeginUpdate;
+  try
+    var AFromIndex := MainGridTableView.ViewData.DataController.FocusedRowIndex;
+    var AToIndex   := AFromIndex-1;
+    var ARecord := MainGridTableView.ViewData.Records[AFromIndex+1];
+    MainGridTableView.ViewData.DataController.InsertRecord(AToIndex);
+    for var i := 0 to MainGridTableView.ColumnCount-1 do
+    begin
+      MainGridTableView.ViewData.Records[AToIndex].Values[I] := ARecord.Values[I];
+    end;
+    MainGridTableView.ViewData.DataController.DeleteRecord(AFromIndex+1);
+    MainGridTableView.Controller.FocusedRowIndex := AToIndex;
+  finally
+    MainGridTableView.EndUpdate;
+  end;
+end;
+
 procedure TBaseGridLayout.MainGridTableViewEditing(Sender: TcxCustomGridTableView; AItem: TcxCustomGridTableItem; var AAllow: Boolean);
 begin
   inherited;
   if AItem.EditValue=EmptyStr then Exit;
   if AItem.Name='MainGridTableView_Caption' then
   begin
-    TcxGridTableView(SetView).Columns[Sender.DataController.FocusedRowIndex-1].Caption := AItem.EditValue;
+    TcxGridTableView(SetView).Columns[Sender.DataController.FocusedRowIndex].Caption := AItem.EditValue;
   end else if AItem.Name='MainGridTableView_FiledName' then
   begin
-    (TcxGridTableView(SetView).Columns[Sender.DataController.FocusedRowIndex-1].DataBinding as TcxGridItemDBDataBinding).FieldName := AItem.EditValue;
+    (TcxGridTableView(SetView).Columns[Sender.DataController.FocusedRowIndex].DataBinding as TcxGridItemDBDataBinding).FieldName := AItem.EditValue;
   end;
 end;
 

@@ -46,6 +46,7 @@ contains
   UMessageBoxDialog in 'UMessageBoxDialog.pas' {MessageBoxDialog},
   UFindDialog in 'UFindDialog.pas' {FindDialog},
   UProgressBarDialog in 'UProgressBarDialog.pas' {ProgressBarDialog},
-  UBaseGridLayout in 'UBaseGridLayout.pas' {BaseGridLayout};
+  UBaseGridLayout in 'UBaseGridLayout.pas' {BaseGridLayout},
+  UBaseControlManagerLayout in 'UBaseControlManagerLayout.pas';
 
 end.

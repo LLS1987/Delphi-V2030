@@ -12,7 +12,7 @@ uses
   cxData, cxDataStorage, cxEdit, cxNavigator, dxDateRanges,
   dxScrollbarAnnotations, Data.DB, cxDBData, cxGridLevel, cxGridCustomView,
   cxGridCustomTableView, cxGridTableView, cxGridDBTableView, cxGrid,
-  cxLocalization, cxGridPopupMenu, cxGridCustomPopupMenu, Vcl.Menus;
+  cxGridPopupMenu, cxGridCustomPopupMenu, Vcl.Menus;
 
 type
   TGridOption = (dgAppending, dgEditing, dgAlwaysShowEditor, dgTitles, dgIndicator,
@@ -47,7 +47,6 @@ type
     FPrintItems: TPrintItems;
     FPrintName: string;
     FPrintDetailData: OleVariant;
-    FLocalizer: TcxLocalizer;
     FGridPopupMenu: TcxGridPopupMenu;
     FGridOptions: TGridOptions;
     { Private declarations }
@@ -126,8 +125,7 @@ constructor TBaseForm.Create(AOwner: TComponent; AParam: TParamList);
 begin
   FParamList := TParamList.Create;
   InitParamList;
-  if Assigned(AParam) then
-    FParamList.Assign(AParam);
+  if Assigned(AParam) then FParamList.Assign(AParam);
   inherited Create(AOwner); // 创建窗口实例 MDI一创建就显示，
 end;
 
@@ -144,16 +142,10 @@ end;
 
 destructor TBaseForm.Destroy;
 begin
-  if Assigned(FParamList) then
-    FParamList.Free;
-  if Assigned(FGridDataSet) then
-    FreeAndNil(FGridDataSet);
-  if Assigned(FPrintItems) then
-    FreeAndNil(FPrintItems);
-  if Assigned(FLocalizer) then
-    FreeAndNil(FLocalizer);
-  if Assigned(FGridPopupMenu) then
-    FreeAndNil(FGridPopupMenu);
+  if Assigned(FParamList) then FParamList.Free;
+  if Assigned(FGridDataSet) then FreeAndNil(FGridDataSet);
+  if Assigned(FPrintItems) then FreeAndNil(FPrintItems);
+  if Assigned(FGridPopupMenu) then FreeAndNil(FGridPopupMenu);
 
   inherited;
 end;
@@ -417,6 +409,7 @@ begin
   AForm.Color := Default_Color;
   for var i := 0 to AForm.ComponentCount - 1 do
   begin
+    if AForm.Components[i] is TcxGridColumn then Continue;
     if AForm.Components[i] is TWinControl then
     begin
       IniComponent(TWinControl(AForm.Components[i]));
@@ -425,14 +418,6 @@ begin
       if Assigned(APropInfo) then
         SetStrProp(AForm.Components[i], APropInfo, '');
     end;
-  end;
-  if not Assigned(FLocalizer) and
-    FileExists(Goo.SystemPath + '\Layout\DevChs.ini') then
-  begin
-    FLocalizer := TcxLocalizer.Create(Self);
-    FLocalizer.FileName := Goo.SystemPath + '\Layout\DevChs.ini';
-    FLocalizer.Active := True;
-    FLocalizer.Language := '中文(简体，中国)';
   end;
 end;
 

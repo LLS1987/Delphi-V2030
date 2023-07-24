@@ -32,12 +32,12 @@ inherited BaseGridLayout: TBaseGridLayout
       OnClick = Button_LoadClick
     end
     object Button_Save: TButton
-      Left = 96
+      Left = 250
       Top = 8
       Width = 75
       Height = 25
       Caption = #20445#23384
-      TabOrder = 1
+      TabOrder = 3
       OnClick = Button_SaveClick
     end
     object Button2: TButton
@@ -47,7 +47,25 @@ inherited BaseGridLayout: TBaseGridLayout
       Height = 25
       Action = Action_Close
       Cancel = True
+      TabOrder = 4
+    end
+    object Button_Up: TButton
+      Left = 93
+      Top = 8
+      Width = 75
+      Height = 25
+      Caption = #19978#31227
+      TabOrder = 1
+      OnClick = Button_UpClick
+    end
+    object Button_Down: TButton
+      Left = 172
+      Top = 8
+      Width = 75
+      Height = 25
+      Caption = #19979#31227
       TabOrder = 2
+      OnClick = Button_DownClick
     end
   end
   object MainGrid: TcxGrid [2]
@@ -67,7 +85,7 @@ inherited BaseGridLayout: TBaseGridLayout
       object MainGridTableView_Caption: TcxGridColumn
         Caption = #26174#31034#21517#31216
         HeaderAlignmentHorz = taCenter
-        Width = 126
+        Width = 300
       end
       object MainGridTableView_FiledName: TcxGridColumn
         Caption = #23383#27573#21517#31216
@@ -76,21 +94,25 @@ inherited BaseGridLayout: TBaseGridLayout
       end
       object MainGridTableView_Visible: TcxGridColumn
         Caption = #26159#21542#26174#31034
+        DataBinding.ValueType = 'Boolean'
         PropertiesClassName = 'TcxCheckBoxProperties'
       end
       object MainGridTableView_VisibleForCustomization: TcxGridColumn
         Caption = #26159#21542#33258#23450#20041
+        DataBinding.ValueType = 'Boolean'
         PropertiesClassName = 'TcxCheckBoxProperties'
         HeaderAlignmentHorz = taCenter
         Width = 112
       end
       object MainGridTableView_SortIndex: TcxGridColumn
         Caption = #26174#31034#39034#24207
+        DataBinding.ValueType = 'Integer'
         HeaderAlignmentHorz = taCenter
         Width = 72
       end
       object MainGridTableView_Width: TcxGridColumn
         Caption = #23485#24230
+        DataBinding.ValueType = 'Integer'
         HeaderAlignmentHorz = taCenter
         Width = 76
       end
