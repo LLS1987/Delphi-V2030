@@ -31,6 +31,8 @@ type
     function Decrypt_SM4(AInput: string; AKey: string): string;
   public
     constructor Create(const AID: Int64;const ACertNO:string);
+    function TestNetworkConnection(const AURL: string): Boolean; overload;
+    function TestNetworkConnection(const AHost: string; APort: Integer): Boolean; overload;
     /// 证书ID,唯一
     property ID:Int64 read FID;
     /// 注册编码
@@ -63,14 +65,21 @@ function CheckRegistered(const AID: Int64;const ACertNO:PAnsiChar): Boolean; std
 implementation
 
 uses
-  System.JSON, System.IOUtils, System.DateUtils, Vcl.Dialogs;
+  System.JSON, System.IOUtils, System.DateUtils, Vcl.Dialogs, IdTCPClient,
+  IdURI;
 
 { TRegister }
 
 function CheckRegistered(const AID: Int64;const ACertNO:PAnsiChar): Boolean;
 begin
+  Result := False;
   var Reg := TRegister.Create(AID,StrPas(ACertNO));
   try
+    if Reg.TestNetworkConnection(Cert_URL) then
+    begin
+      ShowMessage('请检查本地与订货平台网络是否通畅！');
+      Exit;
+    end;
     Result := Reg.Registered;
     if not Result then ShowMessage(Reg.Company +'['+reg.CertName+']注册证号：'+ACertNO+'已经过期！');
   finally
@@ -290,6 +299,39 @@ begin
   //取得Dll自身路径
   GetModuleFileName(HInstance, PChar(ModuleName), Length(ModuleName));
   Result := ExtractFilePath(PChar(ModuleName)).TrimRight(['\']);
+end;
+
+function TRegister.TestNetworkConnection(const AURL: string): Boolean;
+var _host,_port:string;
+begin
+  var URI := TIdURI.Create(AURL);
+  try
+    _host := URI.Host;
+    _port := URI.Port;
+  finally
+    URI.Free;
+  end;
+  Result := TestNetworkConnection(_host,StrToIntDef(_port,80));
+end;
+
+function TRegister.TestNetworkConnection(const AHost: string; APort: Integer): Boolean;
+var
+  IdTCPClient: TIdTCPClient;
+begin
+  IdTCPClient := TIdTCPClient.Create(nil);
+  try
+    IdTCPClient.ConnectTimeout := 5000;
+    IdTCPClient.Host := AHost;
+    IdTCPClient.Port := APort;
+    try
+      IdTCPClient.Connect;
+      Result := IdTCPClient.Connected;
+    except
+      Result := False;
+    end;
+  finally
+    IdTCPClient.Free;
+  end;
 end;
 
 end.

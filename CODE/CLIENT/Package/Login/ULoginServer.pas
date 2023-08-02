@@ -6,7 +6,7 @@ uses
   Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
   Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, Vcl.ExtCtrls, Vcl.ComCtrls,
   Vcl.Mask, Vcl.Buttons, Vcl.Grids, UBaseDialogForm, System.ImageList,
-  Vcl.ImgList, System.Actions, Vcl.ActnList;
+  Vcl.ImgList, System.Actions, Vcl.ActnList, cxStyles, cxClasses;
 
 type
   TLoginServer = class(TBaseDialogForm)
@@ -64,7 +64,11 @@ begin
     Goo.DB.HostName := Trim(edt_DBAddr.Text);
     Goo.DB.UserName := Trim(edt_DBSa.Text);
     Goo.DB.Password := Trim(edt_DBPass.Text);
-    Goo.DB.DatabaseName := 'qfmaster';
+    try
+      Goo.DB.DatabaseName := 'qfmaster';
+    except
+      Goo.DB.DatabaseName := 'master';
+    end;
   end;
   Goo.DB.Connected:= True;
   GetZTDB;

@@ -123,7 +123,6 @@ inherited LoginServer: TLoginServer
     Align = alBottom
     BevelOuter = bvNone
     TabOrder = 3
-    ExplicitTop = 239
     DesignSize = (
       517
       41)
@@ -165,5 +164,8 @@ inherited LoginServer: TLoginServer
       Visible = False
       OnClick = btn_SelectDBClick
     end
+  end
+  inherited cxStyleRepository: TcxStyleRepository
+    PixelsPerInch = 96
   end
 end

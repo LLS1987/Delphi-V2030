@@ -52,14 +52,17 @@ begin
   Result := -1;
   proc_exec.Active := False;
   proc_exec.StoredProcName := szProcedureName;
-  //proc_exec.Prepared := True;
-  for var i := Low(AParamName) to High(AParamName) do
+  for var p in proc_exec.Params do
   begin
-    for var j := 0 to proc_exec.Params.Count-1 do
+    case TParam(p).DataType of
+      ftInteger : TParam(p).Value := 0;
+      ftString  : TParam(p).Value := EmptyStr;
+    end;
+    for var i := Low(AParamName) to High(AParamName) do
     begin
-      if SameText(proc_exec.Params[j].Name,AParamName[I]) then
+      if SameText(p.DisplayName,AParamName[i]) then
       begin
-        proc_exec.Params[j].Value := AParamValue[I];
+        TParam(p).Value := AParamValue[I];
         Break;
       end;
     end;
@@ -86,17 +89,21 @@ begin
     DataSetProvider_proc_open.DataSet := proc_open;
     proc_open.Active := False;
     proc_open.StoredProcName := szProcedureName;
-    //proc_open.Prepared := True;
-    for var i := Low(AParamName) to High(AParamName) do
+    for var p in proc_open.Params do
     begin
-      for var j := 0 to proc_open.Params.Count-1 do
+      case TParam(p).DataType of
+        ftInteger : TParam(p).Value := 0;
+        ftString  : TParam(p).Value := EmptyStr;
+      end;
+      for var i := Low(AParamName) to High(AParamName) do
       begin
-        if SameText(proc_open.Params[j].Name,AParamName[I]) then
+        if SameText(p.DisplayName,AParamName[i]) then
         begin
-          proc_open.Params[j].Value := AParamValue[I];
+          TParam(p).Value := AParamValue[I];
           Break;
         end;
       end;
+      //if VarIsEmpty(_temp) or VarIsNull(_temp) or (TVarData(_temp).VType = varDispatch) and (TVarData(_temp).VDispatch = nil) then
     end;
     proc_open.Open;
     ADataSet.Data := DataSetProvider_proc_open.Data;
