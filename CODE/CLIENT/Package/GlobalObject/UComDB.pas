@@ -33,6 +33,7 @@ type
     function ExecSQL(const ASQL: string; const Args: array of const): Integer;overload;
     function OpenProc(szProcedureName: string; AParamName: array of string;AParamValue: array of OleVariant; ADataSet:TClientDataSet; AParams: TParams): Integer;overload;
     function OpenProc(szProcedureName: string; AParamName: array of string;AParamValue: array of OleVariant; ADataSet:TClientDataSet): Integer;overload;
+    function OpenProc(szProcedureName: string; AParamList:TParamList; ADataSet:TClientDataSet): Integer;overload;
     function OpenProc(szProcedureName: string; ADataSet:TClientDataSet): Integer;overload;
     function ExecProc(szProcedureName: string; AParamName: array of string;AParamValue: array of OleVariant; AParams: TParams): Integer;overload;
     function ExecProc(szProcedureName: string; AParamName: array of string;AParamValue: array of OleVariant): Integer;overload;
@@ -65,11 +66,7 @@ function TDataBaseCommObject.ChangeDataBase(const ADataBaseName: string): Boolea
 begin
   Result := False;
   if not CheckConnected then Exit;
-  try
-    Result := ClientDM.ChangeDataBase(ADataBaseName);
-  except on E: Exception do
-    Goo.Logger.Error('ÇÐ»»Êý¾Ý¿âÒì³£:%s',[e.Message]);
-  end;
+  Result := ClientDM.ChangeDataBase(ADataBaseName);
 end;
 
 function TDataBaseCommObject.CheckConnected: Boolean;
@@ -146,9 +143,13 @@ begin
   for var p in AParams do
   begin
     AParamName[i]  := p.Key;
-    case p.Value.Kind of
-      tkInteger : AParamValue[i] := p.Value.AsType<Integer>.ToString;
-      tkFloat   : AParamValue[i] := p.Value.AsCurrency.ToString;
+    case VarType(p.Value.AsVariant) of
+      vtInteger : AParamValue[i] := p.Value.AsInteger;
+      vtInt64   : AParamValue[i] := p.Value.AsInt64;
+      vtCurrency: AParamValue[i] := p.Value.AsCurrency;
+      vtExtended: AParamValue[i] := p.Value.AsExtended;
+      vtString  : AParamValue[i] := p.Value.AsString;
+      vtBoolean : AParamValue[i] := p.Value.AsBoolean;
     else
       AParamValue[i] := p.Value.AsString;
     end;
@@ -184,6 +185,7 @@ end;
 function TDataBaseCommObject.OpenProc(szProcedureName: string; AParamName: array of string; AParamValue: array of OleVariant; ADataSet: TClientDataSet; AParams: TParams): Integer;
 begin
   Result := -1;
+  if szProcedureName=EmptyStr then Exit;  
   if not CheckConnected then Exit;
   try
     Result := ClientDM.OpenProc(szProcedureName,AParamName,AParamValue,ADataSet,AParams);
@@ -205,6 +207,32 @@ end;
 function TDataBaseCommObject.OpenProc(szProcedureName: string; ADataSet: TClientDataSet): Integer;
 begin
   Result := OpenProc(szProcedureName,[],[],ADataSet);
+end;
+
+function TDataBaseCommObject.OpenProc(szProcedureName: string; AParamList: TParamList; ADataSet: TClientDataSet): Integer;
+var AParamName: array of string;
+    AParamValue: array of OleVariant;
+    i:Integer;
+begin
+  i := 0;
+  SetLength(AParamName,AParamList.Count);
+  SetLength(AParamValue,AParamList.Count);
+  for var p in AParamList do
+  begin
+    AParamName[i]  := p.Key;
+    case VarType(p.Value.AsVariant) of
+      vtInteger : AParamValue[i] := p.Value.AsInteger;
+      vtInt64   : AParamValue[i] := p.Value.AsInt64;
+      vtCurrency: AParamValue[i] := p.Value.AsCurrency;
+      vtExtended: AParamValue[i] := p.Value.AsExtended;
+      vtString  : AParamValue[i] := p.Value.AsString;
+      vtBoolean : AParamValue[i] := p.Value.AsBoolean;
+    else
+      AParamValue[i] := p.Value.AsString;
+    end;
+    Inc(i);
+  end;
+  Result := OpenProc(szProcedureName,AParamName,AParamValue,ADataSet);
 end;
 
 function TDataBaseCommObject.OpenSQL(const ASQL: string; const Args: array of const; ADataSet: TClientDataSet): Integer;
