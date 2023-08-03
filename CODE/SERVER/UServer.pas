@@ -37,7 +37,7 @@ type
   private
     { Private declarations }
   public
-    { Public declarations }
+    procedure AddLog(AMSG:string);
   end;
 
 var
@@ -49,6 +49,11 @@ uses UContainer, UCOMM, UDBSET, System.IniFiles,IdTCPConnection,
   Datasnap.DSCommonServer, Data.DBXCommon;
 
 {$R *.dfm}
+
+procedure TServer.AddLog(AMSG: string);
+begin
+  Logger.Debug(AMSG,'·þÎñ¶Ë');
+end;
 
 procedure TServer.btn_CheckClick(Sender: TObject);
 var ds: TDSConnectEventObject;

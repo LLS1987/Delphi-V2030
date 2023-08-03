@@ -109,6 +109,7 @@ begin
       subitems.add(ClientConnection.AppName);
       subitems.add(FormatDateTime('yyyy-mm-dd hh:nn:ss', Now));
     end;
+    Logger.Info('连接成功：IP:%s  ClientID:%d',[ClientConnection.IpAddress + ':' + ClientConnection.ClientPort,DSConnectEventObject.ChannelInfo.Id],'服务端')
     //end;
 end;
 

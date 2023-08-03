@@ -22,7 +22,6 @@ object ModuleUnit: TModuleUnit
     FetchOptions.AssignedValues = [evRowsetSize, evRecordCountMode]
     FetchOptions.RowsetSize = 999999
     FetchOptions.RecordCountMode = cmFetched
-    Connected = True
     LoginPrompt = False
     Left = 112
     Top = 48
@@ -64,5 +63,13 @@ object ModuleUnit: TModuleUnit
     Options = [poAllowCommandText, poUseQuoteChar]
     Left = 458
     Top = 169
+  end
+  object FDScript_Upgrade: TFDScript
+    SQLScripts = <>
+    Connection = FDConnection1
+    Params = <>
+    Macros = <>
+    Left = 208
+    Top = 48
   end
 end

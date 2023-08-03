@@ -12,7 +12,8 @@ uses
   FireDAC.Stan.Def, FireDAC.Stan.Pool, FireDAC.Phys, FireDAC.Phys.MSSQL,
   FireDAC.Phys.MSSQLDef, FireDAC.VCLUI.Wait, FireDAC.Stan.StorageBin,
   IPPeerServer, Datasnap.DSCommonServer, Datasnap.DSTCPServerTransport,
-  FireDAC.Phys.ODBCBase,MidasLib;
+  FireDAC.Phys.ODBCBase,MidasLib, FireDAC.Comp.ScriptCommands,
+  FireDAC.Stan.Util, FireDAC.Comp.Script;
 
 type
 {$METHODINFO ON}
@@ -25,6 +26,7 @@ type
     DataSetProvider_Proc_Open: TDataSetProvider;
     FDStoredProc_Exec: TFDStoredProc;
     DataSetProvider_Proc_Exec: TDataSetProvider;
+    FDScript_Upgrade: TFDScript;
   private    { Private declarations }
     function CheckConnected: Boolean;
     function UnpackFDParams(const OleVariantValue: OleVariant; const AParams: TFDParams): Boolean;
@@ -33,6 +35,7 @@ type
   public    { Public declarations }
     function ChangeDataBase(const ADataBaseName: string): Boolean;
     function ChangeSQLString(const ASQL: string): Integer;
+    function ExecuteFile(AFileName:string):Integer;
     function OpenSQL(const ASQL: string):Integer;
     function ExecSQL(const ASQL: string):Integer;
     function OpenProc(szProcedureName: string; AParams: OleVariant): OleVariant;
@@ -45,17 +48,18 @@ implementation
 {$R *.dfm}
 
 uses
-  System.StrUtils, UCOMM, System.Variants, Datasnap.DBClient;
+  System.StrUtils, UCOMM, System.Variants, Datasnap.DBClient, vcl.Forms;
 
 function TModuleUnit.ChangeDataBase(const ADataBaseName: string): Boolean;
 begin
   Result := False;
+  Logger.Info('ChangeDataBase=%s',[ADataBaseName],'服务端');
   try
     FDConnection1.Connected       := False;
     FDConnection1.Params.Database := ADataBaseName;
     Result := CheckConnected;
   except
-    on E: Exception do
+    on E: Exception do Logger.Error('ChangeDataBase=%s  Error:%s',[ADataBaseName,e.Message],'服务端');
   end;
 end;
 
@@ -67,23 +71,40 @@ begin
     FDQuery_Open.Open(ASQL);
     Result   := FDQuery_Open.RecordCount;
   except
-    on E: Exception do
+    on E: Exception do Logger.Error('ChangeSQLString=%s Error:%s',[ASQL,e.Message],'服务端');
   end;
 end;
 
 function TModuleUnit.CheckConnected: Boolean;
 begin
+  Logger.Error('CheckConnected DataBaseAddress:%s',[DataBaseAddress],'服务端');
   Result := FDConnection1.Connected;
   if Result then Exit;
   FDConnection1.Connected := False;
   try
+    FDConnection1.DriverName := 'MSSQL';
     FDConnection1.Params.DriverID := 'MSSQL';
     FDConnection1.Params.Values['Address'] := DataBaseAddress;
     FDConnection1.Params.Values['Server']  := DataBaseAddress;
     FDConnection1.Params.UserName          := DataBaseUser;
     FDConnection1.Params.Password          := DataBasePassword;
+      //net copy code
+    FDConnection1.Params.Add('LibraryName=dbxmss.dll');
+    FDConnection1.Params.Add('VendorLibWin64=sqlncli10.dll');
+    FDConnection1.Params.Add('MaxBlobSize=-1');
+    FDConnection1.Params.Add('OSAuthentication=False');
+    FDConnection1.Params.Add('PrepareSQL=True');
+    FDConnection1.Params.Add('SchemaOverride=sa.dbo');
+    FDConnection1.Params.Add('DriverName=MSSQL');
+    FDConnection1.Params.Add('BlobSize=-1');
+    FDConnection1.Params.Add('IsolationLevel=ReadCommitted');
+    FDConnection1.Params.Add('OS Authentication=False');
+    FDConnection1.Params.Add('Prepare SQL=False');
+    FDConnection1.Params.Add('ConnectTimeout=60');
+    FDConnection1.Params.Add('Mars_Connection=False');
     FDConnection1.Connected := True;
-  except on E: Exception do
+  except
+    on E: Exception do Logger.Error('CheckConnected:%s',[e.Message],'服务端');
   end;
   Result := FDConnection1.Connected;
 end;
@@ -115,7 +136,8 @@ begin
     //打开过程
     FDStoredProc_Open.ExecProc;
     Result := PackageFDParams(FDStoredProc_Open.Params);
-  except on E: Exception do
+  except
+    on E: Exception do Logger.Error('ExecProc=%s  Error:%s',[szProcedureName,e.Message],'服务端');
   end;
 end;
 
@@ -127,7 +149,21 @@ begin
     FDQuery_Exec.Close;
     Result := FDQuery_Exec.ExecSQL(ASQL);
   except
-    on E: Exception do
+    on E: Exception do Logger.Error('ExecSQL=%s Error:%s',[ASQL,e.Message],'服务端');
+  end;
+end;
+
+function TModuleUnit.ExecuteFile(AFileName: string): Integer;
+begin
+  Result := -1;
+  if not CheckConnected then Exit;
+  try
+    AFileName := ExtractFilePath(Application.ExeName) + AFileName;
+    if not FileExists(AFileName) then Exit;    
+    FDScript_Upgrade.ExecuteFile(AFileName);
+    Result := FDScript_Upgrade.TotalErrors;
+  except
+    on E: Exception do Logger.Error('ExecuteFile=%s Error:%s',[AFileName,e.Message],'服务端');
   end;
 end;
 
@@ -171,7 +207,8 @@ begin
     //打开过程
     //FDStoredProc_Open.Open;
     Result := PackageFDParams(FDStoredProc_Open.Params);
-  except on E: Exception do
+  except
+    on E: Exception do Logger.Error('OpenProc=%s  Error:%s',[szProcedureName,e.Message],'服务端');
   end;
 end;
 
@@ -186,7 +223,7 @@ begin
     DataSetProvider_Query_Open.Options := DataSetProvider_Query_Open.Options + [poAllowCommandText];
     Result := 0;
   except
-    on E: Exception do
+    on E: Exception do Logger.Error('OpenSQL=%s  Error:%s',[ASQL,e.Message],'服务端');
   end;
 end;
 
