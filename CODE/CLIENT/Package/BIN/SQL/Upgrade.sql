@@ -30,13 +30,14 @@ CREATE PROC GP_SPDA_QueryBill
 	@PosID	ctInt=0,
 	@BgnDate	ctDate,
 	@EndDate	ctDate,
-	@Day INT=0
+	@Day INT=0,
+	@OnlyRX		ctInt=0
 )
 AS
 SET @Day=ISNULL(@Day,0)
 SELECT drugType= CASE WHEN p.RX=1 THEN 'YB' WHEN dbo.GetBitValue(p.Flags,23)=1 THEN 'YC' ELSE 'YD' END,	--药品类型(YB处方药,YC含麻黄碱,YD含麻精)
 	drugName=p.FullName,
-	quantity	= b.Qty,
+	quantity	= CEILING(b.AssQty),
 	purchaserName = i.BuyerName,	--'购药人'
 	purchaserld	= buyer.BuyerNo, --身份证
 	purchaserPhone=buyer.Phone,--电话
@@ -54,6 +55,7 @@ FROM dbo.vRetailBillIndex i INNER JOIN dbo.vRetailBill b ON b.BillID = i.BillID
 WHERE (@Day>0 OR i.BillDate BETWEEN @BgnDate AND @EndDate+1)
 AND (@Day=0 OR DATEDIFF(DAY,BillDate,GETDATE())<@Day)
 AND (@PosID=0 OR i.Posid=@PosID)
+AND (@OnlyRX=0 OR p.RX=1)
 AND NOT EXISTS(SELECT * FROM SPDA_TransBillRecord r WHERE r.BillID=i.BillID AND r.Ord=b.ord)
 ORDER BY i.BillDate,b.BillID
 GO

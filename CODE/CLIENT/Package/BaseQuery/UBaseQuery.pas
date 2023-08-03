@@ -10,13 +10,14 @@ uses
   cxNavigator, dxDateRanges, dxScrollbarAnnotations, Data.DB, cxDBData,
   Vcl.StdCtrls, cxGridLevel, cxGridCustomView, cxGridCustomTableView,
   cxGridTableView, cxGridDBTableView, cxGrid, cxGridCustomPopupMenu,
-  Datasnap.DBClient, Vcl.ComCtrls;
+  Datasnap.DBClient, Vcl.ComCtrls, System.Generics.Collections;
 
 type
   TBaseQuery = class(TCustomBaseQuery)
   private
     FMainGrid: TcxGrid;
     FGridDblClickID: Integer;
+    FQueryDictionary: TDictionary<string, TDictionary<Integer,string>>;
     function GetMainView: TcxGridDBTableView;
     function GetMainIndexView(index: Integer): TcxCustomGridView;
     function GetActiveDataSet: TClientDataSet;
@@ -24,9 +25,11 @@ type
     function GetRowData(AFieldName: string; ARow: Integer): Variant;
     procedure SetRowData(AFieldName: string; ARow: Integer; const Value: Variant);
     function GetActiveRowIndex: Integer;
+    function GetActiveGridView: TcxCustomGridView;
+    function GetQueryDictionary: TDictionary<string, TDictionary<Integer,string>>;
   protected
     procedure SetGrid;override;
-    procedure CustomGrid(FieldList :TDataSet);override;
+    procedure CustomGrid(AView :TcxCustomGridView);virtual;
     procedure LoadData;override;    //本函数用于装载数据
     function AddGridView:TcxCustomGridView;virtual;
     procedure DoAddGridPopupmenus(APopupmenu: TcxPopupMenuInfo); override;  //表格右键菜单
@@ -37,6 +40,8 @@ type
     destructor Destroy; override;
     property MainGrid:TcxGrid read FMainGrid;
     property MainView:TcxGridDBTableView read GetMainView;
+    property QueryDictionary:TDictionary<string,TDictionary<Integer,string>> read GetQueryDictionary;
+    property ActiveGridView: TcxCustomGridView read GetActiveGridView;
     property ActiveDataSet:TClientDataSet read GetActiveDataSet;
     property ActiveRowIndex:Integer read GetActiveRowIndex;
     property ItemView[index:Integer]:TcxCustomGridView read GetMainIndexView;
@@ -44,8 +49,8 @@ type
     property RowData[AFieldName:string;ARow:Integer]: Variant read GetRowData write SetRowData;
   end;
 
-var
-  BaseQuery: TBaseQuery;
+const C_QueryMode_OPENSQL  = 0;    //查询SQL
+const C_QueryMode_OPENPROC = 1;    //查询过程
 
 implementation
 
@@ -67,6 +72,13 @@ begin
   TcxGridDBTableView(Result).DataController.DataSource.DataSet := TClientDataSet.Create(Self);
   //TcxGridDBTableView(Result).DataController.DataModeController.GridMode := True;  //大数据加载速度提升，但是丢失表格的合计
   TcxGridDBTableView(Result).OnDblClick := OnGridViewDblClick;
+  //创建自定义字段
+  Result.BeginUpdate();
+  try
+    CustomGrid(Result);
+  finally
+    Result.EndUpdate;
+  end;
 end;
 
 procedure TBaseQuery.BeforeFormShow;
@@ -75,30 +87,40 @@ begin
 
 end;
 
-procedure TBaseQuery.CustomGrid(FieldList: TDataSet);
-var Json:TJSONArray;
+procedure TBaseQuery.CustomGrid(AView: TcxCustomGridView);
+var Json:TJSONObject;
 begin
   inherited;
-  if not FileExists(Goo.SystemPath+Format('\Layout\%s.Json', [Self.ClassName])) then Exit;
-  Json := Json.ParseJSONValue(UTF8Decode(TFile.ReadAllText(Goo.SystemPath+Format('\Layout\%s.Json', [Self.ClassName])))) as TJSONArray;
+  if not FileExists(LayoutFilePath) then Exit;
+  Json := Json.ParseJSONValue(TFile.ReadAllText(LayoutFilePath)) as TJSONObject;
   try
-    for var item in Json do
+    if not Assigned(Json) then Exit;
+    if not Assigned(Json.Values['GridList']) then Exit;
+    if not Assigned(TJSONObject(Json.Values['GridList']).Values[AView.Name]) then Exit;
+    var _ProceName : string := EmptyStr;
+    var _SQLText   : string := EmptyStr;
+    TJSONObject(Json.Values['GridList']).Values[AView.Name].TryGetValue<string>('ProceName',_ProceName);
+    TJSONObject(Json.Values['GridList']).Values[AView.Name].TryGetValue<string>('SQLText',_SQLText);
+    var _Dic := TDictionary<Integer,string>.Create;
+    _Dic.AddOrSetValue(C_QueryMode_OPENSQL,_SQLText);
+    _Dic.AddOrSetValue(C_QueryMode_OPENPROC,_ProceName);
+    QueryDictionary.AddOrSetValue(AView.Name,_Dic);
+    if not Assigned(TJSONObject(TJSONObject(Json.Values['GridList']).Values[AView.Name]).Values['FieldList']) then Exit;
+    if not (TJSONObject(TJSONObject(Json.Values['GridList']).Values[AView.Name]).Values['FieldList'] is TJSONArray) then Exit;
+    for var item in TJSONObject(TJSONObject(Json.Values['GridList']).Values[AView.Name]).Values['FieldList'] as TJSONArray do
     begin
-      with MainView.CreateColumn do
-      begin
-        Name    := MainView.Name + item.GetValue<string>('FieldName');
-        Caption := item.GetValue<string>('Caption');
-        DataBinding.FieldName := item.GetValue<string>('FieldName');
-        Width   := item.GetValue<Integer>('Width',80);
-        HeaderAlignmentHorz   := taCenter;
-        Visible := item.GetValue<Boolean>('Visible',True);
-        VisibleForCustomization := item.GetValue<Boolean>('VisibleForCustomization',Visible);
-      end;
+      var _Column := (AView as TcxGridDBTableView).CreateColumn;
+      _Column.Name    := AView.Name + item.GetValue<string>('FieldName');
+      _Column.Caption := item.GetValue<string>('Caption');
+      _Column.DataBinding.FieldName := item.GetValue<string>('FieldName');
+      _Column.Width   := item.GetValue<Integer>('Width',80);
+      _Column.HeaderAlignmentHorz   := taCenter;
+      _Column.Visible := item.GetValue<Boolean>('Visible',False);
+      _Column.VisibleForCustomization := item.GetValue<Boolean>('VisibleForCustomization',Visible);
     end;
   finally
     Json.Free;
   end;
-
 end;
 
 destructor TBaseQuery.Destroy;
@@ -122,6 +144,12 @@ begin
       end;
     end;
   end;
+  if Assigned(FQueryDictionary) then
+  begin
+    for var dic in FQueryDictionary.Values do
+      if Assigned(dic) then FreeAndNil(dic);
+    FreeAndNil(FQueryDictionary);
+  end;
   inherited;
 end;
 
@@ -134,6 +162,11 @@ end;
 function TBaseQuery.GetActiveDataSet: TClientDataSet;
 begin
   Result := TcxGridDBTableView(MainGrid.ActiveView).DataController.DataSet as TClientDataSet
+end;
+
+function TBaseQuery.GetActiveGridView: TcxCustomGridView;
+begin
+  Result := MainGrid.ActiveView;
 end;
 
 function TBaseQuery.GetActiveRowIndex: Integer;
@@ -158,6 +191,12 @@ begin
     Result := view as TcxGridDBTableView;
 end;
 
+function TBaseQuery.GetQueryDictionary: TDictionary<string, TDictionary<Integer,string>>;
+begin
+  if not Assigned(FQueryDictionary) then FQueryDictionary := TDictionary<string,TDictionary<Integer,string>>.Create;
+  Result := FQueryDictionary;
+end;
+
 function TBaseQuery.GetRowData(AFieldName: string; ARow: Integer): Variant;
 begin
   Result := null;
@@ -172,7 +211,13 @@ end;
 procedure TBaseQuery.LoadData;
 begin
   inherited;
-  Goo.DB.OpenSQL('select * from vbillindex_query',ActiveDataSet);
+  var _Dic:TDictionary<Integer,string>;
+  var _ProceName:string;
+  if not QueryDictionary.TryGetValue(ActiveGridView.Name,_Dic) then Exit;
+  if _Dic.TryGetValue(C_QueryMode_OPENPROC,_ProceName) and not _ProceName.IsEmpty then
+    Goo.DB.OpenProc(_ProceName,ParamList,ActiveDataSet)
+  else if _Dic.TryGetValue(C_QueryMode_OPENSQL,_ProceName) and not _ProceName.IsEmpty then
+    Goo.DB.OpenSQL(_ProceName,ActiveDataSet);
 end;
 
 procedure TBaseQuery.OnGridViewDblClick(Sender: Tobject);
@@ -190,7 +235,6 @@ begin
   FMainGrid.Align  := alClient;
   {创建数据层}
   AddGridView;
-  CustomGrid(nil);
 end;
 
 procedure TBaseQuery.SetRowData(AFieldName: string; ARow: Integer; const Value: Variant);

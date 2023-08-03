@@ -211,7 +211,6 @@ end;
 procedure TMainClient.CreateMenu;
 var JSON:TJSONObject;
   Pair: TJSONPair;
-
 begin
   //data目录为用户自定义的菜单
   if FileExists(goo.SystemPath+'\Layout\menuinfo.json') then
@@ -245,6 +244,8 @@ begin
   StatusBar1.Panels[1].Text := Format('职员：%s',[Goo.Login.LoginUserName]);
   //创建菜单
   CreateMenu;
+  //首次打开的菜单
+  if Goo.Reg.FirstRunClass <> EmptyStr then Goo.Reg.CallFormClass(Goo.Reg.FirstRunClass);
   //cx控件的中文展示
   if FileExists(Goo.SystemPath + '\Layout\DevChs.ini') then
   begin

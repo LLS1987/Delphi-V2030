@@ -27,7 +27,7 @@ uses
   dxSkinSummer2008, dxSkinTheAsphaltWorld, dxSkinTheBezier,
   dxSkinsDefaultPainters, dxSkinValentine, dxSkinVisualStudio2013Blue,
   dxSkinVisualStudio2013Dark, dxSkinVisualStudio2013Light, dxSkinVS2010,
-  dxSkinWhiteprint, dxSkinXmas2008Blue;
+  dxSkinWhiteprint, dxSkinXmas2008Blue, Vcl.Mask, UBaseForm;
 
 type
   TBaseGridLayout = class(TBaseDialogForm)
@@ -47,16 +47,16 @@ type
     Button2: TButton;
     Button_Up: TButton;
     Button_Down: TButton;
+    edt_ProceName: TLabeledEdit;
     procedure Button_DownClick(Sender: TObject);
     procedure Button_SaveClick(Sender: TObject);
     procedure Button_LoadClick(Sender: TObject);
     procedure Button_UpClick(Sender: TObject);
-    procedure MainGridTableViewEditing(Sender: TcxCustomGridTableView; AItem:
-        TcxCustomGridTableItem; var AAllow: Boolean);
+    procedure MainGridTableViewEditing(Sender: TcxCustomGridTableView; AItem: TcxCustomGridTableItem; var AAllow: Boolean);
   private
     { Private declarations }
     SetView:TcxCustomGridView;
-    CallForm:TForm;
+    CallForm:TBaseForm;
   public
     { Public declarations }
   end;
@@ -68,7 +68,7 @@ var
 implementation
 
 uses
-  UComvar, UBaseForm, cxGridDBDataDefinitions, System.JSON, System.IOUtils;
+  UComvar, cxGridDBDataDefinitions, System.JSON, System.IOUtils;
 
 {$R *.dfm}
 function ShowTablaViewLayout(AForm:TForm;GridView:TcxCustomGridView):Boolean;
@@ -77,7 +77,7 @@ begin
   try
     BaseGridLayout.GridOptions := BaseGridLayout.GridOptions - [dgColumnResize,dgAppending] + [dgEditing];
     BaseGridLayout.SetView := GridView;
-    BaseGridLayout.CallForm := AForm;
+    BaseGridLayout.CallForm := AForm as TBaseForm;
     Result := BaseGridLayout.ShowModal=mrOk;
   finally
     BaseGridLayout.Free;
@@ -112,7 +112,7 @@ end;
 
 procedure TBaseGridLayout.Button_SaveClick(Sender: TObject);
 var Json:TJSONArray;
-  JsonField:TJSONObject;
+  JsonField,JsonLayout:TJSONObject;
 begin
   inherited;  //
   if MainGridTableView.DataController.RowCount=0 then Exit;
@@ -129,10 +129,24 @@ begin
       JsonField.AddPair('VisibleForCustomization',Boolean(MainGridTableView.DataController.Values[i,MainGridTableView_VisibleForCustomization.Index]));
       Json.Add(JsonField);
     end;
-    TFile.WriteAllText(Goo.SystemPath+Format('\Layout\%s.Json', [CallForm.ClassName]),Json.ToString);
-    Goo.Msg.ShowMsg('保存文件成功：%s\Layout\%s.Json',[Goo.SystemPath,CallForm.ClassName]);
+    if FileExists(CallForm.LayoutFilePath) then
+    begin
+      try
+        JsonLayout := JsonLayout.ParseJSONValue(UTF8Decode(TFile.ReadAllText(Goo.SystemPath+Format('\Layout\%s.Json', [CallForm.ClassName])))) as TJSONObject;
+      except on E: Exception do
+      end;
+    end;
+    if not Assigned(JsonLayout) then JsonLayout := TJSONObject.Create;
+    var ViewJson := TJSONObject.Create;
+    ViewJson.AddPair('ProceName',Trim(edt_ProceName.Text));
+    ViewJson.AddPair('FieldList',Json);
+    if not Assigned(JsonLayout.Values['GridList']) then JsonLayout.AddPair('GridList',TJSONObject.Create);
+    TJSONObject(JsonLayout.Values['GridList']).RemovePair(SetView.Name);
+    TJSONObject(JsonLayout.Values['GridList']).AddPair(SetView.Name,ViewJson);
+    TFile.WriteAllText(CallForm.LayoutFilePath,JsonLayout.ToString,TEncoding.ANSI);
+    Goo.Msg.ShowMsg('保存文件成功：%s',[CallForm.LayoutFilePath]);
   finally
-    Json.Free;
+    if Assigned(JsonLayout) then JsonLayout.Free;
   end;
 
 end;
@@ -190,7 +204,7 @@ end;
 procedure TBaseGridLayout.MainGridTableViewEditing(Sender: TcxCustomGridTableView; AItem: TcxCustomGridTableItem; var AAllow: Boolean);
 begin
   inherited;
-  if AItem.EditValue=EmptyStr then Exit;
+  if VarIsStr(AItem.EditValue) and (AItem.EditValue=EmptyStr) then Exit;
   if AItem.Name='MainGridTableView_Caption' then
   begin
     TcxGridTableView(SetView).Columns[Sender.DataController.FocusedRowIndex].Caption := AItem.EditValue;

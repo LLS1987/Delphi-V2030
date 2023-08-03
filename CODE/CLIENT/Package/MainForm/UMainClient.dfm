@@ -35,7 +35,7 @@ object MainClient: TMainClient
     Left = 0
     Top = 0
     Width = 962
-    Height = 56
+    Height = 60
     Align = alTop
     BevelOuter = bvNone
     Color = clWhite
@@ -43,7 +43,7 @@ object MainClient: TMainClient
     TabOrder = 1
     object Image1: TImage
       Left = 48
-      Top = 6
+      Top = 8
       Width = 161
       Height = 43
       Picture.Data = {

@@ -11,9 +11,21 @@ inherited BaseGridLayout: TBaseGridLayout
     Left = 0
     Top = 0
     Width = 875
-    Height = 41
+    Height = 44
     Align = alTop
     TabOrder = 0
+    object edt_ProceName: TLabeledEdit
+      Left = 96
+      Top = 11
+      Width = 369
+      Height = 23
+      EditLabel.Width = 65
+      EditLabel.Height = 15
+      EditLabel.Caption = #36807#31243#21517#31216#65306
+      LabelPosition = lpLeft
+      TabOrder = 0
+      Text = ''
+    end
   end
   object Panel_Button: TPanel [1]
     Left = 0
@@ -70,9 +82,9 @@ inherited BaseGridLayout: TBaseGridLayout
   end
   object MainGrid: TcxGrid [2]
     Left = 0
-    Top = 41
+    Top = 44
     Width = 875
-    Height = 395
+    Height = 392
     Align = alClient
     TabOrder = 2
     object MainGridTableView: TcxGridTableView

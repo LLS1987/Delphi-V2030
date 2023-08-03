@@ -30,8 +30,7 @@ package BaseQuery;
 requires
   rtl,
   BaseForm,
-  GlobalObject,
-  dxSkinsCoreRS28;
+  GlobalObject;
 
 contains
   UBaseInfoSel in 'UBaseInfoSel.pas' {BaseInfoSel},

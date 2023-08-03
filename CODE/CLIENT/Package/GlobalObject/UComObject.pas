@@ -39,12 +39,14 @@ type
     var
     FClassList: TClassDictionary;
     FGroupClasses: TList<PRegisterClassItem>;
+    FFirstRunClass: string;
     function GetItem(const AClass:string):TRegisterClassItem;overload;
     function GetItem(const AClass:string; AType:TRegisterType):TRegisterClassItem;overload;
     function CheckItem(p:TRegisterClassItem):Boolean;
   public
     constructor Create(AOwner: TObject);
     destructor Destroy; override;
+    property FirstRunClass:string read FFirstRunClass write FFirstRunClass;
     //×¢²á Àà
     procedure RegisterClass(AClass:TFormClass; AVers: TLimitVers=[]; ALimit:Integer=-1;ASubLimit:Integer=-1);overload;
     procedure RegisterClass(AClass:TFormClass; AVisible:TRegisterClassVisibleEvent; AVers: TLimitVers=[]; ALimit:Integer=-1;ASubLimit:Integer=-1);overload;
@@ -109,6 +111,7 @@ end;
 constructor TRegisterClassFactory.Create(AOwner: TObject);
 begin
   inherited Create(AOwner);
+  FFirstRunClass := EmptyStr;
   FGroupClasses := TList<PRegisterClassItem>.Create;
 end;
 
@@ -181,7 +184,8 @@ begin
   p^.LimitID       := ALimit;
   p^.SubLimit      := ASubLimit;
   FGroupClasses.Add(p);
-end;
+
+  end;
 
 procedure TRegisterClassFactory.RegisterClass(AName:string; AClass:TRegisterClassEvent; AVisible:TRegisterClassVisibleEvent; AVers: TLimitVers; ALimit, ASubLimit: Integer);
 var p:PRegisterClassItem;

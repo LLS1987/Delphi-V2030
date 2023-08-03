@@ -23,9 +23,9 @@ type
   protected
     procedure DoShow; override;
     procedure SetGrid;virtual;   //表格的数据读取及设置
-    procedure CustomGrid(FieldList :TDataSet);virtual;
     procedure iniForm;virtual;
-    procedure LoadData;virtual;    //本函数用于装载数据
+    procedure LoadFormLayout;virtual; //加载窗体样式（查询条件）
+    procedure LoadData;virtual;       //本函数用于装载数据
     procedure OnIniButton(Sender: TObject); virtual;
   public
     { Public declarations }
@@ -43,23 +43,13 @@ type
     procedure RefreshCondition; override;
     property FindButton:TButton read GetFindButton;
   end;
-var
-  CustomBaseQuery: TCustomBaseQuery;
-const Control_Border_Width = 10;
 
 implementation
 
 uses
-  UComvar;
+  UComvar, System.JSON, System.IOUtils;
 
 {$R *.dfm}
-
-{ TCustomBaseQuery }
-
-procedure TCustomBaseQuery.CustomGrid(FieldList: TDataSet);
-begin
-
-end;
 
 destructor TCustomBaseQuery.Destroy;
 begin
@@ -71,6 +61,7 @@ end;
 procedure TCustomBaseQuery.DoShow;
 begin
   iniForm;
+  LoadFormLayout;
   SetGrid;
   inherited;
 end;
@@ -85,14 +76,48 @@ begin
   ButtonList.OWnerObject := Self;
   //子类继承添加按钮
   OnIniButton(nil);
-
-  Condition.RefreshCondition;
-  ButtonList.RefreshButton;
 end;
 
 procedure TCustomBaseQuery.LoadData;
 begin
 
+end;
+
+procedure TCustomBaseQuery.LoadFormLayout;
+var Json:TJSONObject;
+begin
+  if FileExists(LayoutFilePath) then
+  begin
+    JSON := TJSONObject.ParseJSONValue(TFile.ReadAllText(LayoutFilePath)) as TJSONObject;
+    try
+      if not Assigned(JSON) then Exit;
+      self.Caption := JSON.GetValue<string>('Caption',Caption);
+      if not(JSON.Values['Condition'] is TJSONArray) then Exit;
+      for var item in JSON.Values['Condition'] as TJSONArray do
+      begin
+        var _ControlType:Integer := 0;
+        var _Name:string := EmptyStr;
+        var _Caption:string := EmptyStr;
+        var _TextHint:string := EmptyStr;
+        var _MustField:Boolean := False;
+        var _Visible:Boolean := True;
+
+        if not item.TryGetValue<Integer>('ControlType',_ControlType) then Continue;
+        item.TryGetValue<string>('Name',_Name);
+        item.TryGetValue<string>('Caption',_Caption);
+        item.TryGetValue<string>('TextHint',_TextHint);
+        item.TryGetValue<Boolean>('MustField',_MustField);
+        item.TryGetValue<Boolean>('Visible',_Visible);
+        case _ControlType of
+          17:Condition.AddDateBetween(_Name.TrimLeft(['@']),_Caption.Trim,_MustField,_Visible);   //时间段
+        else
+          Condition.Add(_ControlType,_Name.TrimLeft(['@']),_Caption.Trim,_MustField,_Visible,_TextHint);
+        end;
+      end;
+    finally
+      JSON.Free;
+    end;
+  end;
 end;
 
 procedure TCustomBaseQuery.OnIniButton(Sender: TObject);
@@ -110,7 +135,8 @@ end;
 
 procedure TCustomBaseQuery.SetGrid;
 begin
-
+  Condition.RefreshCondition;
+  ButtonList.RefreshButton;
 end;
 
 destructor TConditionManager.Destroy;

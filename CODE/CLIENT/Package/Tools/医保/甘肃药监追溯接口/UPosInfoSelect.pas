@@ -7,7 +7,28 @@ uses
   Vcl.Controls, Vcl.Forms, Vcl.Dialogs, UBaseDialogForm, System.ImageList,
   Vcl.ImgList, System.Actions, Vcl.ActnList, Vcl.ExtCtrls, Vcl.StdCtrls,
   Vcl.Buttons, UComDBStorable, Data.DB, Vcl.Grids, Vcl.DBGrids,
-  Datasnap.DBClient;
+  Datasnap.DBClient, cxGraphics, cxControls, cxLookAndFeels,
+  cxLookAndFeelPainters, dxSkinsCore, dxSkinBasic, dxSkinBlack, dxSkinBlue,
+  dxSkinBlueprint, dxSkinCaramel, dxSkinCoffee, dxSkinDarkroom, dxSkinDarkSide,
+  dxSkinDevExpressDarkStyle, dxSkinDevExpressStyle, dxSkinFoggy,
+  dxSkinGlassOceans, dxSkinHighContrast, dxSkiniMaginary, dxSkinLilian,
+  dxSkinLiquidSky, dxSkinLondonLiquidSky, dxSkinMcSkin, dxSkinMetropolis,
+  dxSkinMetropolisDark, dxSkinMoneyTwins, dxSkinOffice2007Black,
+  dxSkinOffice2007Blue, dxSkinOffice2007Green, dxSkinOffice2007Pink,
+  dxSkinOffice2007Silver, dxSkinOffice2010Black, dxSkinOffice2010Blue,
+  dxSkinOffice2010Silver, dxSkinOffice2013DarkGray, dxSkinOffice2013LightGray,
+  dxSkinOffice2013White, dxSkinOffice2016Colorful, dxSkinOffice2016Dark,
+  dxSkinOffice2019Black, dxSkinOffice2019Colorful, dxSkinOffice2019DarkGray,
+  dxSkinOffice2019White, dxSkinPumpkin, dxSkinSeven, dxSkinSevenClassic,
+  dxSkinSharp, dxSkinSharpPlus, dxSkinSilver, dxSkinSpringtime, dxSkinStardust,
+  dxSkinSummer2008, dxSkinTheAsphaltWorld, dxSkinTheBezier,
+  dxSkinsDefaultPainters, dxSkinValentine, dxSkinVisualStudio2013Blue,
+  dxSkinVisualStudio2013Dark, dxSkinVisualStudio2013Light, dxSkinVS2010,
+  dxSkinWhiteprint, dxSkinXmas2008Blue, cxStyles, cxCustomData, cxFilter,
+  cxData, cxDataStorage, cxEdit, cxNavigator, dxDateRanges,
+  dxScrollbarAnnotations, cxDBData, cxGridLevel, cxGridCustomView,
+  cxGridCustomTableView, cxGridTableView, cxGridDBTableView, cxGrid, cxClasses,
+  cxLocalization, Vcl.Menus;
 
 type
   [TTable('posinfo','√≈µÍ–≈œ¢', smtRight)]
@@ -18,16 +39,19 @@ type
     BitBtn2: TBitBtn;
     Panel3: TPanel;
     Label1: TLabel;
-    MainGrid: TDBGrid;
     edt_Find: TButtonedEdit;
     btn_Find: TButton;
     DataSource1: TDataSource;
     ClientDataSet1: TClientDataSet;
+    MainGridView: TcxGridDBTableView;
+    cxGrid1Level1: TcxGridLevel;
+    cxGrid1: TcxGrid;
     procedure FormCreate(Sender: TObject);
     procedure btn_FindClick(Sender: TObject);
     procedure btn_SelectClick(Sender: TObject);
     procedure edt_FindKeyPress(Sender: TObject; var Key: Char);
     procedure edt_FindRightButtonClick(Sender: TObject);
+    procedure MainGridViewDblClick(Sender: TObject);
   private
     FPosID: Integer;
     FPosName: string;
@@ -95,6 +119,11 @@ end;
 procedure TPosInfoSelect.btn_SelectClick(Sender: TObject);
 begin
   inherited;
+  if not ClientDataSet1.Active then Exit;
+  if ClientDataSet1.RecordCount=0 then Exit;  
+  ParamList.Add('@PosID',ClientDataSet1.FieldByName('PosID').AsInteger);
+  ParamList.Add('@PosCode',ClientDataSet1.FieldByName('PosCode').AsString);
+  ParamList.Add('@PosName',ClientDataSet1.FieldByName('PosName').AsString);
   ModalResult := mrOk;
 end;
 
@@ -130,10 +159,12 @@ begin
           begin
             if A2 is TFieldInfo then //AHa
             begin
-              with MainGrid.Columns.Add do
+              with MainGridView.CreateColumn do
               begin
-                FieldName     := TFieldInfo(A2).FieldName;
-                Title.Caption := TFieldInfo(A2).Title;
+                Name := MainGridView.Name + '_' + TFieldInfo(A2).FieldName;
+                HeaderAlignmentHorz       := taCenter;
+                DataBinding.FieldName     := TFieldInfo(A2).FieldName;
+                Caption := TFieldInfo(A2).Title;
                 Width     := TFieldInfo(A2).Width;
                 Visible   := not TFieldInfo(A2).IDENTITY;
               end;
@@ -145,6 +176,12 @@ begin
   finally
     Context.Free;
   end;
+end;
+
+procedure TPosInfoSelect.MainGridViewDblClick(Sender: TObject);
+begin
+  inherited;
+  btn_Select.OnClick(Sender);
 end;
 
 { TPosInfo }

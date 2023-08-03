@@ -92,6 +92,8 @@
         <DCCReference Include="vcldb.dcp"/>
         <DCCReference Include="bindcomp.dcp"/>
         <DCCReference Include="RESTComponents.dcp"/>
+        <DCCReference Include="dxSkinsCoreRS28.dcp"/>
+        <DCCReference Include="BaseQuery.dcp"/>
         <DCCReference Include="UConfig_GanSu.pas">
             <Form>Config_GanSu</Form>
             <FormType>dfm</FormType>
@@ -108,6 +110,7 @@
             <Form>PosInfoSelect</Form>
             <FormType>dfm</FormType>
         </DCCReference>
+        <DCCReference Include="UQuery_TransRecord.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>
@@ -865,8 +868,8 @@
                 <ProjectRoot Platform="OSX64" Name="$(PROJECTNAME)"/>
                 <ProjectRoot Platform="Win32" Name="$(PROJECTNAME)"/>
                 <ProjectRoot Platform="Android64" Name="$(PROJECTNAME)"/>
-                <ProjectRoot Platform="Android" Name="$(PROJECTNAME)"/>
                 <ProjectRoot Platform="OSXARM64" Name="$(PROJECTNAME)"/>
+                <ProjectRoot Platform="Android" Name="$(PROJECTNAME)"/>
                 <ProjectRoot Platform="Win64" Name="$(PROJECTNAME)"/>
                 <ProjectRoot Platform="Linux64" Name="$(PROJECTNAME)"/>
                 <ProjectRoot Platform="iOSDevice32" Name="$(PROJECTNAME).app"/>

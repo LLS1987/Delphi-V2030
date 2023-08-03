@@ -49,6 +49,7 @@ type
     FPrintDetailData: OleVariant;
     FGridPopupMenu: TcxGridPopupMenu;
     FGridOptions: TGridOptions;
+    FLayoutFileName: string;
     { Private declarations }
     function GetObject: TObject; virtual;
     function GetForm: TForm;
@@ -57,6 +58,9 @@ type
     procedure SetParamList(AParamList: TParamList);
     procedure ShowFindDialog(var Message: TMessage); message REFRESH_FIND_MESSAGE;
     procedure DealRefreshRefreshDataMessage(var Msg: TMessage); message WM_RefreshData;
+    function GetLayoutFileName: string;
+    procedure SetLayoutFileName(const Value: string);
+    function GetLayoutFilePath: string;
   protected
     procedure DoShow; override;
     procedure DoClose(var Action: TCloseAction); override;
@@ -101,6 +105,9 @@ type
     // 发送页面的刷新消息
     procedure SendRefreshData(ARefreshID: Integer); overload;
     procedure SendRefreshData(ARefreshClass: string); overload;
+    // 页面配置信息
+    property LayoutFileName :string read GetLayoutFileName write SetLayoutFileName;
+    property LayoutFilePath :string read GetLayoutFilePath;
   end;
 
 var
@@ -325,6 +332,7 @@ end;
 
 procedure TBaseForm.DoShow;
 begin
+  FLayoutFileName := EmptyStr;
   inherited;
   BeforeFormShow;
 end;
@@ -385,6 +393,16 @@ end;
 function TBaseForm.GetForm: TForm;
 begin
   Result := Self;
+end;
+
+function TBaseForm.GetLayoutFileName: string;
+begin
+  Result := Goo.Format.iif(FLayoutFileName=EmptyStr,ClassName,ClassName+'_'+FLayoutFileName)
+end;
+
+function TBaseForm.GetLayoutFilePath: string;
+begin
+  Result := Goo.SystemPath+Format('\Layout\%s.Json', [GetLayoutFileName]);
 end;
 
 function TBaseForm.GetObject: TObject;
@@ -454,6 +472,11 @@ procedure TBaseForm.SendRefreshData(ARefreshClass: string);
 begin
   FOR var i := 0 TO Screen.FormCount - 1 DO
     SendMessage(Screen.Forms[i].Handle, WM_RefreshData,Integer(@ARefreshClass), 0);
+end;
+
+procedure TBaseForm.SetLayoutFileName(const Value: string);
+begin
+  FLayoutFileName := Value;
 end;
 
 procedure TBaseForm.SetParamList(AParamList: TParamList);

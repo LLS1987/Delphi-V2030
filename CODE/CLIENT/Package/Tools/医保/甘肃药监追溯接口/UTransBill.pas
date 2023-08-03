@@ -9,7 +9,7 @@ uses
   Vcl.Buttons, IdBaseComponent, IdComponent, IdTCPConnection, IdTCPClient,
   IdHTTP, IdIOHandler, IdIOHandlerSocket, IdIOHandlerStack, IdSSL,
   IdSSLOpenSSL, UParamList, UBaseNormalForm, Data.DB, Vcl.ComCtrls, Vcl.Grids,
-  Vcl.DBGrids, Datasnap.DBClient, System.JSON;
+  Vcl.DBGrids, Datasnap.DBClient, System.JSON, Vcl.Mask, cxStyles, cxClasses;
 
 type
   TTransBill = class(TBaseMdiForm)
@@ -34,10 +34,17 @@ type
     自动传输记录: TTabSheet;
     DBGrid1: TDBGrid;
     Memo_Log: TMemo;
+    edt_PosID: TButtonedEdit;
+    Label4: TLabel;
+    chk_OnlyRX: TCheckBox;
+    BitBtn2: TBitBtn;
+    chk_OnlyBuyer: TCheckBox;
     procedure btn_UploadClick(Sender: TObject);
     procedure BitBtn3Click(Sender: TObject);
     procedure btn_FindClick(Sender: TObject);
     procedure chk_AutoOpenClick(Sender: TObject);
+    procedure edt_PosIDKeyPress(Sender: TObject; var Key: Char);
+    procedure edt_PosIDRightButtonClick(Sender: TObject);
     procedure FormShow(Sender: TObject);
     procedure Timer1Timer(Sender: TObject);
   private
@@ -49,9 +56,12 @@ type
     function DataSetToJSON(DataSet: TDataSet): TJSONArray;
     function DBGridToJSON(DataSet: TDataSet): TJSONArray;
     procedure AddLog(const msg:string);
+    function GetPrintDate:OleVariant;
     { Public declarations }
     function Salesaledata(DataSet: TDataSet): Boolean;
     class function ShowSalesaledata(AParam:TParamList = nil):Boolean;
+  protected
+    procedure DoPrintBtnEvent; override;
   end;
 
 var
@@ -60,7 +70,8 @@ var
 implementation
 
 uses
-  UComvar,REST.Types, REST.Client, System.Net.HttpClient, UCertManage;
+  UComvar,REST.Types, REST.Client, System.Net.HttpClient, UCertManage,
+  crReportIntf, MidasLib, System.IniFiles;
 
 {$R *.dfm}
 
@@ -107,16 +118,27 @@ begin
 end;
 
 procedure TTransBill.btn_FindClick(Sender: TObject);
+const aryIntBool:array[boolean]of integer=(0,1);
 begin
   inherited;
   MainDataSet.Active := False;
-  Goo.DB.OpenProc('GP_SPDA_QueryBill',['@PosID','@BgnDate','@EndDate'],[0,dtp_bgndate.Date,dtp_enddate.Date],MainDataSet);
+  Goo.DB.OpenProc('GP_SPDA_QueryBill',['@PosID','@BgnDate','@EndDate','@OnlyRX'],[edt_PosID.Tag,dtp_bgndate.Date,dtp_enddate.Date,aryIntBool[chk_OnlyRX.Checked]],MainDataSet);
   PageControl1.ActivePageIndex := 0;
+//  Goo.Logger.Memo[Memo_Log].Debug('开始查询','');
+//  Goo.Logger.Memo[Memo_Log].Info('开始查询','');
 end;
 
 procedure TTransBill.chk_AutoOpenClick(Sender: TObject);
 begin
   inherited;
+  var inifile := TIniFile.Create(Goo.SystemDataPath+'\Daterecord.ini');
+  try
+    inifile.WriteBool(LayoutFileName,'chk_OnlyRX',chk_OnlyRX.Checked);
+    inifile.WriteBool(LayoutFileName,'chk_OnlyBuyer',chk_OnlyBuyer.Checked);
+    inifile.WriteBool(LayoutFileName,'chk_AutoOpen',chk_AutoOpen.Checked);
+  finally
+    inifile.Free;
+  end;
   Timer1.Enabled   := False;
   Timer1.Interval  := StrToIntDef(edt_Minute.Text,0) * 1000 * 60;
   btn_Find.Enabled := not chk_AutoOpen.Checked;
@@ -194,11 +216,74 @@ begin
   end;
 end;
 
+procedure TTransBill.DoPrintBtnEvent;
+begin
+  //inherited;
+  PrintItems.Add('门店',edt_PosID.Text);
+  PrintDetailData := MainDataSet.Data;
+  PrintItems.Add('开始时间',dtp_bgndate.Date);
+  PrintItems.Add('结束时间',dtp_enddate.DateTime);
+  inherited;
+  {var ReportIntf := crReportIntf.CreateReport;
+  try
+    with ReportIntf do
+    begin
+      //ReportIntf.OwnerAppHandle := Application.Handle; // 本行可选
+      ReportIntf.MasterData := PrintItems.SaveToData; // 传入主表数据
+      ReportIntf.DetailData := PrintDetailData; // 传入明细数据
+//      ReportIntf.DetailDataSet := MainDataSet;
+      ReportIntf.TemplateName := self.Caption;
+      if False then
+      begin
+        ShowPrintDialog := False;
+        ReportIntf.Print;
+      end
+      else
+      ReportIntf.Execute;
+    end;
+    // 如果需要返回值，可以取属性 LastErrorCode
+  finally
+    ReportIntf := nil;
+  end;}
+end;
+
+procedure TTransBill.edt_PosIDKeyPress(Sender: TObject; var Key: Char);
+begin
+  inherited;
+  case key of
+    #13:edt_PosIDRightButtonClick(Sender);
+    #46,#8:edt_PosID.Tag := 0;
+  end;
+end;
+
+procedure TTransBill.edt_PosIDRightButtonClick(Sender: TObject);
+var AParamList:TParamList;
+begin
+  inherited;
+  AParamList := TParamList.Create;
+  try
+    if Goo.Reg.ShowModal('TPosInfoSelect',AParamList)<>mrOk then Exit;
+    edt_PosID.Tag  := AParamList.AsInteger('@PosID');
+    edt_PosID.Text := AParamList.AsString('@PosName');
+  finally
+    AParamList.Free;
+  end;
+end;
+
 procedure TTransBill.FormShow(Sender: TObject);
 begin
   inherited;
   dtp_bgndate.Date := StrToDate(FormatDateTime('yyyy-mm-01',Now));
   dtp_enddate.Date := Now;
+  //读取文件配置
+  var inifile := TIniFile.Create(Goo.SystemDataPath+'\Daterecord.ini');
+  try
+    chk_OnlyRX.Checked    := inifile.ReadBool(LayoutFileName,'chk_OnlyRX',False);
+    chk_OnlyBuyer.Checked := inifile.ReadBool(LayoutFileName,'chk_OnlyBuyer',False);
+    chk_AutoOpen.Checked  := inifile.ReadBool(LayoutFileName,'chk_AutoOpen',False);
+  finally
+    inifile.Free;
+  end;
   with DBGrid1.Columns.Add do
   begin
     FieldName := 'drugType';
@@ -301,6 +386,24 @@ end;
 
 { TTransBill }
 
+function TTransBill.GetPrintDate: OleVariant;
+var ds:TClientDataSet;
+begin
+  Result := Null;
+  if not MainDataSet.Active then Exit;
+  ds := TClientDataSet.Create(nil);
+  try
+    for var i := 0 to DBGrid1.Columns.Count-1 do
+    begin
+      if not DBGrid1.Columns[i].Visible then Continue;
+      ds.FieldDefs.Add(DBGrid1.Columns[i].Title.Caption,ftString,200);
+    end;
+    ds.CreateDataSet;
+  finally
+    ds.Free;
+  end;
+end;
+
 function TTransBill.GetToken(const loginid,password:string): string;
 begin
   Result := Post('token/getToken',format('{"loginId":"%s","password":"%s"}',[loginid,password]));
@@ -402,14 +505,19 @@ begin
 end;
 
 procedure TTransBill.Timer1Timer(Sender: TObject);
+const aryIntBool:array[boolean]of integer=(0,1);
 begin
   inherited;
   var ds := TClientDataSet.Create(nil);
   try
-    Goo.DB.OpenProc('GP_SPDA_QueryBill',['@PosID','@BgnDate','@EndDate','@Day'],[0,dtp_bgndate.Date,dtp_enddate.Date,strtointdef(edt_day.Text,2)],ds);
+    Goo.DB.OpenProc('GP_SPDA_QueryBill',['@PosID','@BgnDate','@EndDate','@Day','@OnlyRX'],[edt_PosID.Tag,dtp_bgndate.Date,dtp_enddate.Date,strtointdef(edt_day.Text,2),aryIntBool[chk_OnlyRX.Checked]],ds);
     while not ds.Eof do
     begin
-      Salesaledata(ds);
+      try
+        Salesaledata(ds);
+      except
+        Memo_Log.Lines.Add(Format('%s %s：%s %d:%s,%s',[FormatDateTime('yyyy-mm-dd hh:nn:ss', Now),ds.FieldValues['BillCode'],ds.FieldValues['drugName'],500,'导入异','']));
+      end;
       Memo_Log.Lines.Add(Format('%s %s：%s %d:%s,%s',[FormatDateTime('yyyy-mm-dd hh:nn:ss', Now),ds.FieldValues['BillCode'],ds.FieldValues['drugName'],FLastErrorCode,FLastErrorMsg,FLastErrorData]));
       ds.Next;      
     end;    
@@ -419,6 +527,7 @@ begin
 end;
 
 initialization
+  Goo.Reg.FirstRunClass := TTransBill.ClassName;
   Goo.Reg.RegisterClass(TTransBill);
   Goo.Reg.RegisterClass('ShowSalesaledata',TTransBill.ShowSalesaledata)
 end.

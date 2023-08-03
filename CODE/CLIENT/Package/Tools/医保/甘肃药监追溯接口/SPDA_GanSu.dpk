@@ -34,12 +34,15 @@ requires
   vclwinx,
   vcldb,
   bindcomp,
-  RESTComponents;
+  RESTComponents,
+  dxSkinsCoreRS28,
+  BaseQuery;
 
 contains
   UConfig_GanSu in 'UConfig_GanSu.pas' {Config_GanSu},
   UConfig_PosSet in 'UConfig_PosSet.pas' {Config_PosSet},
   UTransBill in 'UTransBill.pas' {TransBill},
-  UPosInfoSelect in 'UPosInfoSelect.pas' {PosInfoSelect};
+  UPosInfoSelect in 'UPosInfoSelect.pas' {PosInfoSelect},
+  UQuery_TransRecord in 'UQuery_TransRecord.pas';
 
 end.
