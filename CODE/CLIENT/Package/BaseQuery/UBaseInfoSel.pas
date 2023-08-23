@@ -7,46 +7,30 @@ uses
   Vcl.Controls, Vcl.Forms, Vcl.Dialogs, UBaseDialogForm, System.ImageList,
   Vcl.ImgList, System.Actions, Vcl.ActnList, Vcl.StdCtrls, Vcl.ExtCtrls,
   Vcl.Buttons, Data.DB, Vcl.Grids, Vcl.DBGrids, cxStyles, cxClasses, cxGraphics,
-  cxControls, cxLookAndFeels, cxLookAndFeelPainters, dxSkinsCore, dxSkinBasic,
-  dxSkinBlack, dxSkinBlue, dxSkinBlueprint, dxSkinCaramel, dxSkinCoffee,
-  dxSkinDarkroom, dxSkinDarkSide, dxSkinDevExpressDarkStyle,
-  dxSkinDevExpressStyle, dxSkinFoggy, dxSkinGlassOceans, dxSkinHighContrast,
-  dxSkiniMaginary, dxSkinLilian, dxSkinLiquidSky, dxSkinLondonLiquidSky,
-  dxSkinMcSkin, dxSkinMetropolis, dxSkinMetropolisDark, dxSkinMoneyTwins,
-  dxSkinOffice2007Black, dxSkinOffice2007Blue, dxSkinOffice2007Green,
-  dxSkinOffice2007Pink, dxSkinOffice2007Silver, dxSkinOffice2010Black,
-  dxSkinOffice2010Blue, dxSkinOffice2010Silver, dxSkinOffice2013DarkGray,
-  dxSkinOffice2013LightGray, dxSkinOffice2013White, dxSkinOffice2016Colorful,
-  dxSkinOffice2016Dark, dxSkinOffice2019Black, dxSkinOffice2019Colorful,
-  dxSkinOffice2019DarkGray, dxSkinOffice2019White, dxSkinPumpkin, dxSkinSeven,
-  dxSkinSevenClassic, dxSkinSharp, dxSkinSharpPlus, dxSkinSilver,
-  dxSkinSpringtime, dxSkinStardust, dxSkinSummer2008, dxSkinTheAsphaltWorld,
-  dxSkinTheBezier, dxSkinsDefaultPainters, dxSkinValentine,
-  dxSkinVisualStudio2013Blue, dxSkinVisualStudio2013Dark,
-  dxSkinVisualStudio2013Light, dxSkinVS2010, dxSkinWhiteprint,
-  dxSkinXmas2008Blue, cxCustomData, cxFilter, cxData, cxDataStorage, cxEdit,
-  cxNavigator, dxDateRanges, dxScrollbarAnnotations, cxDBData, cxGridLevel,
-  cxGridCustomView, cxGridCustomTableView, cxGridTableView, cxGridDBTableView,
-  cxGrid;
+  cxControls, cxLookAndFeels, cxLookAndFeelPainters, UBaseQuery,
+  UComDBStorable, cxGridCustomView, UBaseParams, cxGridDBTableView, cxGridTableView,
+  cxGridCustomTableView;
 
 type
-  TBaseInfoSel = class(TBaseDialogForm)
-    Panel3: TPanel;
+  TBaseInfoSel = class(TBaseQuery)
     edt_Find: TButtonedEdit;
-    btn_Find: TButton;
-    Panel2: TPanel;
-    btn_Select: TBitBtn;
-    BitBtn2: TBitBtn;
-    MainGridDBTableView1: TcxGridDBTableView;
-    MainGridLevel1: TcxGridLevel;
-    MainGrid: TcxGrid;
+    lbl_Caption: TLabel;
+    Action_FindLocat: TAction;
+    procedure Action_FindLocatExecute(Sender: TObject);
+    procedure edt_FindKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
+    procedure edt_FindRightButtonClick(Sender: TObject);
   private
-    { Private declarations }
+    FBaseParam: TBaseParam;
+    procedure OnColnumGetDisplayText(Sender: TcxCustomGridTableItem; ARecord: TcxCustomGridRecord; var AText: string);
+    procedure OnSelectClick(Sender: TObject);
+    function CopyRowToStorable(ARow:Integer):TStorable;
+    procedure InitViewTable(AStorable:TStorable);
   protected
-    procedure InitViewTable;virtual;
-    procedure BeforeFormShow; override;
+    procedure CustomGrid(AView :TcxCustomGridView);override;
+    procedure OnIniButton(Sender: TObject); override;
+    procedure LoadData;override;
   public
-    { Public declarations }
+    property BaseParam:TBaseParam read FBaseParam write FBaseParam;
   end;
 
 var
@@ -55,46 +39,129 @@ var
 implementation
 
 uses
-  System.Rtti, UComDBStorable;
+  System.Rtti, UComvar;
 
 {$R *.dfm}
 
-{ TBaseInfoSel }
-
-procedure TBaseInfoSel.BeforeFormShow;
+procedure TBaseInfoSel.Action_FindLocatExecute(Sender: TObject);
 begin
   inherited;
-  InitViewTable;
+  edt_Find.SetFocus;
 end;
 
-procedure TBaseInfoSel.InitViewTable;
+{ TBaseInfoSel }
+
+function TBaseInfoSel.CopyRowToStorable(ARow: Integer): TStorable;
+var
+  Context:TRttiContext;
+  Prop:TRttiProperty;
+  typ:TRttiType;
+begin
+  Result := BaseParam.Storable.ClassType.Create as TStorable;
+  Context := TRttiContext.Create;
+  try
+    typ := Context.GetType(Result.ClassType);
+    for Prop in typ.GetProperties do
+    begin   
+      if not Prop.IsWritable then Continue;   
+      if not Assigned(MainView.FindItemByName(MainView.Name + '_' + Prop.Name)) then Continue;
+      if VarIsNull(RowData[Result.AttributeFieldName[Prop.Name],ARow]) then Continue;
+      Prop.SetValue(Result,TValue.FromVariant(RowData[Result.AttributeFieldName[Prop.Name],ARow]));
+    end;
+  finally
+    Context.Free;
+  end;
+end;
+
+procedure TBaseInfoSel.CustomGrid(AView: TcxCustomGridView);
+begin
+  inherited;
+  //LayoutCustom := False;
+  TcxGridDBTableView(AView).OptionsView.GroupByBox := False;
+  MainGrid.SetFocus;
+  Condition.FindButton.Top := edt_Find.Top - 1;
+  BaseParam := ParamList.AsObject('@BaseParam_BaseInfoSelect') as TBaseParam;
+  if Assigned(BaseParam) then    
+  begin
+    LayoutFileName := BaseParam.ClassName;
+    if BaseParam.Title<>EmptyStr then lbl_Caption.Caption := BaseParam.Title;
+    InitViewTable(BaseParam.Storable);
+    if BaseParam.MultSel then
+    begin
+      TcxGridDBTableView(AView).OptionsSelection.MultiSelect := True;
+      TcxGridDBTableView(AView).OptionsSelection.CellMultiSelect := True;
+      TcxGridDBTableView(AView).OptionsSelection.CheckBoxVisibility := [cbvDataRow, cbvGroupRow, cbvColumnHeader];
+    end;
+  end;
+  edt_Find.Text := BaseParam.SearchString;
+  RefreshData;
+end;
+
+procedure TBaseInfoSel.edt_FindKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
+begin
+  inherited;
+  case key of
+    13    : RefreshData;
+    38,40 : MainGrid.SetFocus;
+  end;
+end;
+
+procedure TBaseInfoSel.edt_FindRightButtonClick(Sender: TObject);
+begin
+  inherited;
+  RefreshData;
+end;
+
+procedure TBaseInfoSel.InitViewTable(AStorable:TStorable);
 var
   Context:TRttiContext;
   Prop:TRttiProperty;
   typ:TRttiType;
   A1,A2:TCustomAttribute;
 begin
+  if not Assigned(AStorable) then Exit;
   Context := TRttiContext.Create;
   try
-    typ := Context.GetType(ClassType);
-    for A1 in typ.GetAttributes do
+    typ := Context.GetType(AStorable.ClassType);
+    //先父类
+    for Prop in typ.BaseType.GetProperties do
     begin
-      if A1 is TTable then
+      for A2 in Prop.GetAttributes do
       begin
-        for Prop in typ.GetProperties do
+        if A2 is TFieldInfo then //AHa
         begin
-          for A2 in Prop.GetAttributes do
+          with MainView.CreateColumn do
           begin
-            if A2 is TFieldInfo then //AHa
-            begin
-              with MainGridDBTableView1.CreateColumn do
-              begin
-                DataBinding.FieldName     := TFieldInfo(A2).FieldName;
-                Caption := TFieldInfo(A2).Title;
-                Width     := TFieldInfo(A2).Width;
-                Visible   := not TFieldInfo(A2).IDENTITY;
-              end;
-            end;
+            Name := MainView.Name + '_' + Prop.Name;
+            HeaderAlignmentHorz       := taCenter;
+            DataBinding.FieldName     := TFieldInfo(A2).FieldName;
+            Caption   := TFieldInfo(A2).Title;
+            Width     := TFieldInfo(A2).Width;
+            Visible   := TFieldInfo(A2).Visible;
+          end;
+        end;
+      end;
+    end;
+    //在子类
+    for Prop in typ.GetProperties do
+    begin
+      if Assigned(MainView.FindItemByName(MainView.Name + '_' + Prop.Name)) then Continue;
+      for A2 in Prop.GetAttributes do
+      begin
+        if A2 is TFieldInfo then //AHa
+        begin
+          with MainView.CreateColumn do
+          begin
+            Name := MainView.Name + '_' + Prop.Name;
+            HeaderAlignmentHorz       := taCenter;
+            DataBinding.FieldName     := TFieldInfo(A2).FieldName;
+            Caption   := TFieldInfo(A2).Title;
+            Width     := TFieldInfo(A2).Width;
+            Visible   := TFieldInfo(A2).Visible;
+            {$IFNDEF DEBUG}
+            VisibleForCustomization   := TFieldInfo(A2).Visible;
+            {$ENDIF}
+            OnGetDisplayText := OnColnumGetDisplayText;
           end;
         end;
       end;
@@ -102,7 +169,45 @@ begin
   finally
     Context.Free;
   end;
-
 end;
+
+procedure TBaseInfoSel.LoadData;
+begin
+  //inherited;
+  if Assigned(BaseParam) then
+  begin
+    BaseParam.SearchString := Trim(edt_Find.Text);
+    BaseParam.GetBaseInfoDataSet(ActiveDataSet);
+  end;
+end;
+
+procedure TBaseInfoSel.OnColnumGetDisplayText(Sender: TcxCustomGridTableItem; ARecord: TcxCustomGridRecord; var AText: string);
+begin
+  if SameText(Sender.Name,MainView.Name + '_Sex') then
+    AText := Goo.Format.iif(AText='0','男','女');
+end;
+
+procedure TBaseInfoSel.OnIniButton(Sender: TObject);
+begin
+  inherited;
+  GridDblClickID :=  ButtonList.Add('选择',OnSelectClick);
+end;
+
+procedure TBaseInfoSel.OnSelectClick(Sender: TObject);
+begin
+  if BaseParam.MultSel then
+  begin
+    for var i := 0 to ActiveGridView.DataController.GetSelectedCount-1 do
+    begin
+      BaseParam.Return.Add(CopyRowToStorable(ActiveGridView.DataController.GetSelectedRowIndex(i)));
+    end;
+  end 
+  else BaseParam.Return.Add(CopyRowToStorable(ActiveRowIndex));
+
+  ModalResult := mrOk;
+end;
+
+initialization
+  Goo.Reg.RegisterClass(TBaseInfoSel);
 
 end.

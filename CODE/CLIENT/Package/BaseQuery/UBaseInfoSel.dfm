@@ -2,90 +2,67 @@ inherited BaseInfoSel: TBaseInfoSel
   Caption = #22522#26412#20449#24687#36873#25321
   ClientHeight = 480
   ClientWidth = 854
-  Color = clBtnFace
+  FormStyle = fsNormal
+  Position = poMainFormCenter
+  Visible = False
   ExplicitWidth = 870
   ExplicitHeight = 519
   PixelsPerInch = 96
   TextHeight = 15
-  object Panel3: TPanel [0]
-    Left = 0
-    Top = 0
+  inherited Panel_Top: TPanel
     Width = 854
-    Height = 45
-    Align = alTop
-    BevelOuter = bvNone
-    TabOrder = 0
+    Height = 81
+    ExplicitWidth = 854
+    ExplicitHeight = 81
+    object lbl_Caption: TLabel
+      Left = 16
+      Top = 11
+      Width = 114
+      Height = 25
+      Caption = #22522#26412#20449#24687#36873#25321
+      Font.Charset = ANSI_CHARSET
+      Font.Color = clWindowText
+      Font.Height = -19
+      Font.Name = #24494#36719#38597#40657
+      Font.Style = []
+      ParentFont = False
+    end
     object edt_Find: TButtonedEdit
       Left = 16
-      Top = 12
+      Top = 46
       Width = 734
       Height = 23
       Images = ImageList
-      RightButton.HotImageIndex = 1
-      RightButton.ImageIndex = 0
+      RightButton.HotImageIndex = 2
+      RightButton.ImageIndex = 1
       RightButton.Visible = True
       TabOrder = 0
-      TextHint = #24555#25463#26597#35810#65306#32534#21495#12289#21517#31216#12289#25340#38899
-    end
-    object btn_Find: TButton
-      Left = 761
-      Top = 12
-      Width = 75
-      Height = 25
-      Caption = #26597#35810
-      TabOrder = 1
+      TextHint = #24555#25463#26597#35810'[Ctrl+F]'#65306#32534#21495#12289#21517#31216#12289#25340#38899
+      OnKeyDown = edt_FindKeyDown
+      OnRightButtonClick = edt_FindRightButtonClick
     end
   end
-  object Panel2: TPanel [1]
-    Left = 0
-    Top = 439
+  inherited Panel_Client: TPanel
+    Top = 81
     Width = 854
-    Height = 41
-    Align = alBottom
-    BevelOuter = bvNone
-    TabOrder = 1
-    object btn_Select: TBitBtn
-      Left = 16
-      Top = 6
-      Width = 75
-      Height = 25
-      Caption = #36873#25321
-      ModalResult = 1
-      NumGlyphs = 2
-      TabOrder = 0
-    end
-    object BitBtn2: TBitBtn
-      Left = 761
-      Top = 8
-      Width = 75
-      Height = 25
-      Cancel = True
-      Caption = #36864#20986
-      ModalResult = 2
-      NumGlyphs = 2
-      TabOrder = 1
-    end
+    Height = 354
+    ExplicitTop = 81
+    ExplicitWidth = 854
+    ExplicitHeight = 354
   end
-  object MainGrid: TcxGrid [2]
-    Left = 0
-    Top = 45
+  inherited Panel_Button: TPanel
+    Top = 435
     Width = 854
-    Height = 394
-    Align = alClient
-    TabOrder = 2
-    ExplicitLeft = 208
-    ExplicitTop = 184
-    ExplicitWidth = 250
-    ExplicitHeight = 200
-    object MainGridDBTableView1: TcxGridDBTableView
-      Navigator.Buttons.CustomButtons = <>
-      ScrollbarAnnotations.CustomAnnotations = <>
-      DataController.Summary.DefaultGroupSummaryItems = <>
-      DataController.Summary.FooterSummaryItems = <>
-      DataController.Summary.SummaryGroups = <>
-    end
-    object MainGridLevel1: TcxGridLevel
-      GridView = MainGridDBTableView1
+    VerticalAlignment = taAlignBottom
+    ExplicitTop = 435
+    ExplicitWidth = 854
+  end
+  inherited ActionList: TActionList
+    object Action_FindLocat: TAction
+      Category = #21151#33021
+      Caption = #26597#35810#23450#20301
+      ShortCut = 16454
+      OnExecute = Action_FindLocatExecute
     end
   end
   inherited ImageList: TImageList

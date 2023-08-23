@@ -6,7 +6,7 @@ uses
   Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
   Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, Vcl.Mask, Vcl.ExtCtrls,
   Vcl.Buttons, UBaseDialogForm, System.ImageList, Vcl.ImgList, System.Actions,
-  Vcl.ActnList;
+  Vcl.ActnList, cxStyles, cxClasses;
 
 type
   TConfig_PosSet = class(TBaseDialogForm)

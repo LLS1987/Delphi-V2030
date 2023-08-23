@@ -4,7 +4,8 @@ interface
 
 uses
   System.SysUtils,UClientModule, DB, Datasnap.DBClient,RTTI, TypInfo,Types,
-  UComObject, UParamList, Vcl.DBGrids, System.Classes;
+  UComObject, UParamList, Vcl.DBGrids, System.Classes, UComConst,
+  System.Generics.Collections;
 
 type
   /// 查询匹配方式      右匹配(%X)、左匹配(x%)、全匹配(%x%)。
@@ -85,11 +86,24 @@ type
     FSelectMatchType:TSelectMatchType;
     FWheres: TStrings;
     FSelects: TStrings;
+    FRec: Integer;
+    FTypeID: string;
+    FUserCode: string;
+    FSonnum: Integer;
+    FParID: string;
+    FFullName: string;
     function GetFieldTitle(const AFieldName: string): string;
+    procedure SetFieldTitle(const AFieldName, Value: string);
+    function getAttributeFieldName(const AProp: string): string;
+    procedure setAttributeFieldName(const AProp, Value: string);
+    function getAttributeFieldCaption(const AProp: string): string;
+    procedure setAttributeFieldCaption(const AProp, Value: string);
+    function getAttributeFieldVisible(const AProp: string): Boolean;
+    procedure setAttributeFieldVisible(const AProp: string; const Value: Boolean);
   protected
     procedure IniSelectSQL; virtual;
   public
-    constructor Create;
+    constructor Create;virtual;
     destructor Destroy; override;
     procedure InitViewTable(AGrid: TViewGrid); virtual;
     property SelectSQL:string read FSelectSQL;
@@ -98,11 +112,79 @@ type
     //查询表
     function Select: string;
     //获取字段标题
-    property FieldTitle[const AFieldName: string]:string read GetFieldTitle;
+    property FieldCaption[const AFieldName: string]:string     read GetFieldTitle write SetFieldTitle;
+    property AttributeFieldCaption[const AProp: string]:string read getAttributeFieldCaption write setAttributeFieldCaption;
+    property AttributeFieldName[const AProp:string]: string    read getAttributeFieldName write setAttributeFieldName;
+    property AttributeFieldVisible[const AProp:string]:Boolean read getAttributeFieldVisible write setAttributeFieldVisible;
     //设置
     //function SetAttributeValue(const PropName, AttributeValue: string): Boolean;
     property Wheres:TStrings read FWheres;
     property Selects:TStrings read FSelects;
+    //基础信息字段
+    [TFieldInfo('Rec','主键REC',80,False)]
+    property Rec:Integer read FRec write FRec;
+    [TFieldInfo('TypeID','主键TypeID',80,False)]
+    property TypeID:string read FTypeID write FTypeID;
+    [TFieldInfo('ParID','父类编码',80,False)]
+    property ParID:string read FParID write FParID;
+    [TFieldInfo('Sonnum','儿子数',80,False)]
+    property Sonnum:Integer read FSonnum write FSonnum;
+    [TFieldInfo('UserCode','编号',100)]
+    property UserCode: string read FUserCode write FUserCode;
+    [TFieldInfo('FullName','名称',200)]
+    property FullName: string read FFullName write FFullName;
+  end;
+  //商品
+  [TTable('ptype','商品信息')]
+  TStorable_PType = class(TStorable)
+  private
+    FUnit1: string;
+    FType: string;
+    FStandard: string;
+  public
+    constructor Create;override;
+    [TFieldInfo('Unit1','基本单位')]
+    property Unit1: string read FUnit1 write FUnit1;
+    [TFieldInfo('Standard','规格')]
+    property Standard: string read FStandard write FStandard;
+    [TFieldInfo('Type','剂型')]
+    property PType: string read FType write FType;
+  end;
+  //门店
+  [TTable('posinfo','门店信息')]
+  TStorable_MType = class(TStorable)
+  public
+    constructor Create;override;
+  end;
+  //职员
+  [TTable('employee','职员信息')]
+  TStorable_EType = class(TStorable)
+  private
+    FPosid: Integer;
+    FSex: string;
+  public
+    constructor Create;override;
+    [TFieldInfo('Sex','性别')]
+    property Sex: string read FSex write FSex;
+    [TFieldInfo('Posid','门店')]
+    property Posid: Integer read FPosid write FPosid;
+  end;
+
+  TStorableDictionary = class(TObjectDictionary<Integer,TStorable>)
+  public
+    destructor Destroy; override;
+    procedure Add(AItem:TStorable); overload;
+    procedure ClearAndFree;
+    function First:TStorable;
+  end;
+  //管理基本信息本地化的类：TStorableDictionary 系统统一加载和释放
+  TStorableManage = class
+  private
+    FBasicData : array[Low(TBasicType)..High(TBasicType)] of TStorableDictionary;
+    function GetBasicData(ABasicType: TBasicType): TStorableDictionary;
+  public
+    constructor Create;
+    property BasicData[ABasicType:TBasicType]: TStorableDictionary read GetBasicData ;//write SetBasicData;
   end;
 
 implementation
@@ -121,6 +203,57 @@ begin
   if Assigned(FWheres) then FreeAndNil(FWheres);
   if Assigned(FSelects) then FreeAndNil(FSelects);
   inherited;
+end;
+
+function TStorable.getAttributeFieldCaption(const AProp: string): string;
+var
+  Context: TRttiContext;
+  typ: TRttiType;
+  Prop: TRttiProperty;
+begin
+  Context := TRttiContext.Create;
+  try
+    typ := Context.GetType(ClassType);
+    Prop:= typ.GetProperty(AProp);
+    if not Assigned(Prop) then Exit;
+    Result := Prop.GetAttribute<TFieldInfo>.Title;
+  finally
+    Context.Free;
+  end;
+end;
+
+function TStorable.getAttributeFieldName(const AProp: string): string;
+var
+  Context: TRttiContext;
+  typ: TRttiType;
+  Prop: TRttiProperty;
+begin
+  Context := TRttiContext.Create;
+  try
+    typ := Context.GetType(ClassType);
+    Prop:= typ.GetProperty(AProp);
+    if not Assigned(Prop) then Exit;
+    Result := Prop.GetAttribute<TFieldInfo>.FieldName;
+  finally
+    Context.Free;
+  end;
+end;
+
+function TStorable.getAttributeFieldVisible(const AProp: string): Boolean;
+var
+  Context: TRttiContext;
+  typ: TRttiType;
+  Prop: TRttiProperty;
+begin
+  Context := TRttiContext.Create;
+  try
+    typ := Context.GetType(ClassType);
+    Prop:= typ.GetProperty(AProp);
+    if not Assigned(Prop) then Exit;
+    Result := Prop.GetAttribute<TFieldInfo>.Visible;
+  finally
+    Context.Free;
+  end;
 end;
 
 function TStorable.GetFieldTitle(const AFieldName: string): string;
@@ -364,6 +497,83 @@ begin
   end;
 end;
 
+procedure TStorable.setAttributeFieldCaption(const AProp, Value: string);
+var
+  Context: TRttiContext;
+  typ: TRttiType;
+  Prop: TRttiProperty;
+begin
+  Context := TRttiContext.Create;
+  try
+    typ := Context.GetType(ClassType);
+    Prop:= typ.GetProperty(AProp);
+    if not Assigned(Prop) then Exit;
+    Prop.GetAttribute<TFieldInfo>.Title := Value;
+  finally
+    Context.Free;
+  end;
+end;
+
+procedure TStorable.setAttributeFieldName(const AProp, Value: string);
+var
+  Context: TRttiContext;
+  typ: TRttiType;
+  Prop: TRttiProperty;
+begin
+  Context := TRttiContext.Create;
+  try
+    typ := Context.GetType(ClassType);
+    Prop:= typ.GetProperty(AProp);
+    if not Assigned(Prop) then Exit;
+    Prop.GetAttribute<TFieldInfo>.FieldName := Value;
+  finally
+    Context.Free;
+  end;
+end;
+
+procedure TStorable.setAttributeFieldVisible(const AProp: string;  const Value: Boolean);
+var
+  Context: TRttiContext;
+  typ: TRttiType;
+  Prop: TRttiProperty;
+begin
+  Context := TRttiContext.Create;
+  try
+    typ := Context.GetType(ClassType);
+    Prop:= typ.GetProperty(AProp);
+    if not Assigned(Prop) then Exit;
+    Prop.GetAttribute<TFieldInfo>.Visible := Value;
+  finally
+    Context.Free;
+  end;
+end;
+
+procedure TStorable.SetFieldTitle(const AFieldName, Value: string);
+var
+  Context: TRttiContext;
+  typ: TRttiType;
+  A2: TCustomAttribute;
+  Prop: TRttiProperty;
+begin
+  Context := TRttiContext.Create;
+  try
+    typ := Context.GetType(ClassType);
+    for Prop in typ.GetProperties do
+    begin
+      for A2 in Prop.GetAttributes do
+      begin
+        if (A2 is TFieldInfo) and SameText(TFieldInfo(A2).FieldName, AFieldName) then
+        begin
+          TFieldInfo(A2).Title := Value;
+          Break;
+        end;
+      end;
+    end;
+  finally
+    Context.Free;
+  end;
+end;
+
 { TTable }
 
 constructor TTable.Create(ATableName, ATitle: string; AMatchType: TSelectMatchType);
@@ -404,6 +614,77 @@ begin
   FTitle  := ATitle;
   FJoinMode      := AJoinMode;
   FJoinCondition := AJoinCondition;
+end;
+
+{ TStorableManage }
+
+constructor TStorableManage.Create;
+begin
+  for var i:= Low(TBasicType) to High(TBasicType) do
+  begin
+    FBasicData[i] := TStorableDictionary.Create;
+  end;
+end;
+
+function TStorableManage.GetBasicData(ABasicType: TBasicType): TStorableDictionary;
+begin
+  Result := FBasicData[ABasicType];
+end;
+
+{ TStorableDictionary }
+
+procedure TStorableDictionary.Add(AItem:TStorable);
+begin
+  Self.AddOrSetValue(AItem.Rec,AItem);
+end;
+
+procedure TStorableDictionary.ClearAndFree;
+begin
+  for var _item in Self.Values do  if Assigned(_item) then FreeAndNil(_item);
+  Clear;
+end;
+
+destructor TStorableDictionary.Destroy;
+begin
+  for var _item in Self.Values do  if Assigned(_item) then FreeAndNil(_item);
+  inherited;
+end;
+
+function TStorableDictionary.First: TStorable;
+begin
+  if Count=0 then Exit;
+  for Result in Values do Break;
+  //Result := Values.ToArray[0];
+end;
+
+{ TStorable_PType }
+
+constructor TStorable_PType.Create;
+begin
+  inherited;
+  AttributeFieldCaption['UserCode'] := '商品编号';
+  AttributeFieldCaption['FullName'] := '商品名称';
+end;
+
+{ TStorable_MType }
+
+constructor TStorable_MType.Create;
+begin
+  inherited;
+  AttributeFieldCaption['UserCode'] := '门店编号';
+  AttributeFieldCaption['FullName'] := '门店名称';
+  //AttributeFieldName['Rec']         := 'posid';
+  //AttributeFieldName['UserCode']    := 'poscode';
+  //AttributeFieldName['FullName']    := 'posname';
+end;
+
+{ TStorable_EType }
+
+constructor TStorable_EType.Create;
+begin
+  inherited;
+  AttributeFieldCaption['UserCode'] := '职员编号';
+  AttributeFieldCaption['FullName'] := '职员名称';
 end;
 
 end.

@@ -14,11 +14,12 @@ inherited LoginServer: TLoginServer
     Width = 409
     Height = 59
     Caption = #25968#25454#24211#36830#25509#26041#24335
-    Columns = 2
+    Columns = 3
     ItemIndex = 0
     Items.Strings = (
-      #20013#38388#38190
-      #25968#25454#24211)
+      #20013#38388#38190#65288'DServer'#65289
+      #25968#25454#24211#65288'DBX'#65289
+      #25968#25454#24211#65288'ADO'#65289)
     TabOrder = 0
     OnClick = rg_ServerTypeClick
   end
@@ -143,9 +144,10 @@ inherited LoginServer: TLoginServer
       Top = 3
       Width = 75
       Height = 30
+      Action = Action_Close
       Anchors = [akTop, akRight]
       Cancel = True
-      Caption = #21462#28040
+      Caption = #20851#38381
       ModalResult = 2
       NumGlyphs = 2
       TabOrder = 1

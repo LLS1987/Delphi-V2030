@@ -28,6 +28,7 @@ type
     function GetActiveGridView: TcxCustomGridView;
     function GetQueryDictionary: TDictionary<string, TDictionary<Integer,string>>;
   protected
+    procedure DoReparePrintData; override;
     procedure SetGrid;override;
     procedure CustomGrid(AView :TcxCustomGridView);virtual;
     procedure LoadData;override;    //本函数用于装载数据
@@ -159,6 +160,12 @@ begin
 
 end;
 
+procedure TBaseQuery.DoReparePrintData;
+begin
+  inherited;
+  PrintDetailData := GetPrintData(ActiveGridView);
+end;
+
 function TBaseQuery.GetActiveDataSet: TClientDataSet;
 begin
   Result := TcxGridDBTableView(MainGrid.ActiveView).DataController.DataSet as TClientDataSet
@@ -222,7 +229,7 @@ end;
 
 procedure TBaseQuery.OnGridViewDblClick(Sender: Tobject);
 begin
-  if Assigned(ButtonList.Button[GridDblClickID]) then ButtonList.Button[GridDblClickID].OnClick(Sender);
+  if (GridDblClickID>0) and Assigned(ButtonList.Button[GridDblClickID]) then ButtonList.Button[GridDblClickID].OnClick(Sender);
 end;
 
 procedure TBaseQuery.SetGrid;

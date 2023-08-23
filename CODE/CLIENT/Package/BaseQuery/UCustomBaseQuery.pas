@@ -21,6 +21,7 @@ type
     FButton: TButtonManager;
     { Private declarations }
   protected
+    FCloseButtonRec:Integer;
     procedure DoShow; override;
     procedure SetGrid;virtual;   //表格的数据读取及设置
     procedure iniForm;virtual;
@@ -30,6 +31,7 @@ type
   public
     { Public declarations }
     destructor Destroy; override;
+    procedure DoPrintHeader; override;
     procedure RefreshData;override;
     property Condition:TConditionManager read FCondition;
     property ButtonList:TButtonManager read FButton;
@@ -56,6 +58,15 @@ begin
   if Assigned(FCondition) then FreeAndNil(FCondition);
   if Assigned(FButton) then FreeAndNil(FButton);
   inherited;
+end;
+
+procedure TCustomBaseQuery.DoPrintHeader;
+begin
+  inherited;
+  for var item in Condition do
+  begin
+    PrintItems.Add(item.Value.Caption,item.Value.ValueText);
+  end;
 end;
 
 procedure TCustomBaseQuery.DoShow;
@@ -122,8 +133,9 @@ end;
 
 procedure TCustomBaseQuery.OnIniButton(Sender: TObject);
 begin
-  ButtonList.Add(Action_Close,True);//关闭
+  FCloseButtonRec := ButtonList.Add(Action_Close,True);//关闭
   ButtonList.Add(Action_Print,True);//打印
+  if FormStyle in [fsNormal,fsStayOnTop] then ButtonList.Button[FCloseButtonRec].Cancel := True;
 end;
 
 procedure TCustomBaseQuery.RefreshData;

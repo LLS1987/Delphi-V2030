@@ -129,6 +129,9 @@ inherited Config_GanSu: TConfig_GanSu
     Left = 352
     Top = 112
   end
+  inherited cxStyleRepository: TcxStyleRepository
+    PixelsPerInch = 96
+  end
   object DataSource1: TDataSource
     DataSet = GridDataSet
     Left = 80

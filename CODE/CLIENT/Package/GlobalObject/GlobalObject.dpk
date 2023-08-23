@@ -51,7 +51,8 @@ requires
   vclwinx,
   vcldb,
   DBXMSSQLDriver,
-  soaprtl;
+  soaprtl,
+  adortl;
 
 contains
   UComvar in 'UComvar.pas',
@@ -70,6 +71,9 @@ contains
   crReportIntf in 'Print\crReportIntf.pas',
   UPrintItem in 'Print\UPrintItem.pas',
   UPrintFunc in 'Print\UPrintFunc.pas',
-  ULogger in 'ULogger.pas';
+  ULogger in 'ULogger.pas',
+  UJsonObjectHelper in 'Helper\UJsonObjectHelper.pas',
+  UBaseParams in 'UBaseParams.pas',
+  UClientModule_LocalADO in 'UClientModule_LocalADO.pas' {ClientModule_LocalADO: TDataModule};
 
 end.

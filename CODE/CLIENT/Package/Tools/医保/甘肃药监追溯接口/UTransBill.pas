@@ -122,7 +122,7 @@ const aryIntBool:array[boolean]of integer=(0,1);
 begin
   inherited;
   MainDataSet.Active := False;
-  Goo.DB.OpenProc('GP_SPDA_QueryBill',['@PosID','@BgnDate','@EndDate','@OnlyRX'],[edt_PosID.Tag,dtp_bgndate.Date,dtp_enddate.Date,aryIntBool[chk_OnlyRX.Checked]],MainDataSet);
+  Goo.DB.OpenProc('GP_SPDA_QueryBill',['@PosID','@BgnDate','@EndDate','@OnlyRX','@OnlyBuyer'],[edt_PosID.Tag,dtp_bgndate.Date,dtp_enddate.Date,aryIntBool[chk_OnlyRX.Checked],aryIntBool[chk_OnlyBuyer.Checked]],MainDataSet);
   PageControl1.ActivePageIndex := 0;
 //  Goo.Logger.Memo[Memo_Log].Debug('开始查询','');
 //  Goo.Logger.Memo[Memo_Log].Info('开始查询','');

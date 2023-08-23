@@ -50,6 +50,7 @@ type
     FGridPopupMenu: TcxGridPopupMenu;
     FGridOptions: TGridOptions;
     FLayoutFileName: string;
+    FLayoutCustom: Boolean;
     { Private declarations }
     function GetObject: TObject; virtual;
     function GetForm: TForm;
@@ -71,6 +72,7 @@ type
     function Find(const Msg: string; Reverse, Whole, Match: Boolean) : Boolean; virtual;
     procedure DoCloseBtnEvent; virtual;
     procedure DoHelpBtnEvent; virtual;
+    procedure DoReparePrintData; virtual;
     procedure DoPrintBtnEvent; virtual;
     procedure DoPrintHeader; virtual;
     // 刷新事件
@@ -92,6 +94,7 @@ type
     procedure IniComponent(AForm: TForm); overload;
     procedure IniComponent(AComponent: TComponent); overload;
     procedure IniComponent(APanel: TPanel); overload;
+    procedure IniComponent(AComponent: TRadioGroup); overload;
     /// 初始化cxGrid
     procedure IniComponent(AGrid: TcxGrid); overload;
     property ParamList: TParamList read GetParamList write FParamList;
@@ -106,8 +109,10 @@ type
     procedure SendRefreshData(ARefreshID: Integer); overload;
     procedure SendRefreshData(ARefreshClass: string); overload;
     // 页面配置信息
+    property LayoutCustom :Boolean  read FLayoutCustom write FLayoutCustom;
     property LayoutFileName :string read GetLayoutFileName write SetLayoutFileName;
     property LayoutFilePath :string read GetLayoutFilePath;
+    class function GetPrintData(AGridView:TcxCustomGridView):OleVariant;
   end;
 
 var
@@ -119,7 +124,7 @@ const
 implementation
 
 uses
-  UComvar, System.TypInfo, UBaseGridLayout;
+  UComvar, System.TypInfo, UBaseGridLayout, MidasLib, System.Math;
 
 {$R *.dfm}
 
@@ -222,8 +227,7 @@ begin
 end;
 
 procedure TBaseForm.DoCustomDrawCell(Sender: TcxCustomGridTableView;
-  ACanvas: TcxCanvas; AViewInfo: TcxGridTableDataCellViewInfo;
-  var ADone: Boolean);
+  ACanvas: TcxCanvas; AViewInfo: TcxGridTableDataCellViewInfo; var ADone: Boolean);
 begin
   if AViewInfo.Focused then
   begin
@@ -304,15 +308,12 @@ end;
 procedure TBaseForm.DoPrintBtnEvent;
 begin
   try
-    // DoReparePrintData;
+     DoReparePrintData;
     // if PrintName='' then PrintName:=Title;
-    if PrintName = '' then
-      PrintName := Caption;
-    if PrintDetailData = Null then
-      PrintDetailData := GridDataSet.Data;
+    if PrintName = '' then PrintName := Caption;
+    if PrintDetailData = Null then PrintDetailData := GridDataSet.Data;
     DoPrintHeader;
-    FPrintTimes := Goo.Print.RunPrintManage(PrintName, PrintItems,
-      PrintDetailData);
+    FPrintTimes := Goo.Print.RunPrintManage(PrintName, PrintItems, PrintDetailData);
   except
     on E: EAbort do
     else
@@ -330,9 +331,13 @@ begin
   RefreshData;
 end;
 
+procedure TBaseForm.DoReparePrintData;
+begin
+
+end;
+
 procedure TBaseForm.DoShow;
 begin
-  FLayoutFileName := EmptyStr;
   inherited;
   BeforeFormShow;
 end;
@@ -367,8 +372,7 @@ begin
           var GridView := TcxGrid(Self.Components[i]).Levels[j].GridView;
           if not Assigned(GridView) then Continue;
           // 保存表格配置
-          var layoutpath := Goo.SystemDataPath + Format('\Layout\%s_%s.ini', [Self.ClassName,GridView.Name]);
-          GridView.StoreToIniFile(layoutpath, True, [gsoUseFilter, gsoUseSummary])
+          GridView.StoreToIniFile(Goo.SystemDataPath + Format('\Layout\%s_%s.ini', [LayoutFileName,GridView.Name]), True, [gsoUseFilter, gsoUseSummary])
         end;
       end;
     end;
@@ -382,6 +386,8 @@ begin
   FRefreshDataMessageID := 0;
   FPrintItems := TPrintItems.Create;
   PrintDetailData := Null;
+  FLayoutFileName := EmptyStr;
+  LayoutCustom := True;
   GridOptions := [dgIndicator,dgColumnResize];
 end;
 
@@ -420,6 +426,47 @@ begin
   Result := FParamList;
 end;
 
+class function TBaseForm.GetPrintData(AGridView: TcxCustomGridView): OleVariant;
+var ds:TClientDataSet;
+  AColnum:TcxGridDBColumn;
+  AField:TField;
+  i:Integer;
+  AValue:Variant;
+begin
+  ds := TClientDataSet.Create(nil);
+  try
+    //复制表格
+    for i := 0 to TcxGridDBTableView(AGridView).VisibleColumnCount-1 do
+    begin
+      AColnum := TcxGridDBTableView(AGridView).VisibleColumns[i] as TcxGridDBColumn;
+      AField := TcxGridDBTableView(AGridView).DataController.DataSource.DataSet.FindField(AColnum.DataBinding.FieldName);
+      if Assigned(AField) then
+      begin
+        ds.FieldDefs.Add(AColnum.Caption,ftString,Max(AField.Size,50));
+      end else begin
+        ds.FieldDefs.Add(AColnum.Caption,ftString,50);
+      end;
+    end;
+    ds.CreateDataSet;
+    //复制数据
+    for i := 0 to TcxGridDBTableView(AGridView).DataController.DataRowCount-1 do
+    begin
+      ds.Append;
+      for var j := 0 to TcxGridDBTableView(AGridView).VisibleColumnCount-1 do
+      begin
+        AColnum := TcxGridDBTableView(AGridView).VisibleColumns[j] as TcxGridDBColumn;
+        AValue  := TcxGridDBTableView(AGridView).DataController.Values[i,AColnum.Index];
+        if VarIsNull(AValue) then Continue;        
+        ds.FieldValues[AColnum.Caption] := AValue;
+      end;
+    end;
+    if ds.Modified then ds.Post;
+    Result := ds.Data;
+  finally
+    ds.Free;
+  end;
+end;
+
 procedure TBaseForm.IniComponent(AForm: TForm);
 var
   APropInfo: PPropInfo;
@@ -446,10 +493,9 @@ end;
 
 procedure TBaseForm.IniComponent(AComponent: TComponent);
 begin
-  if AComponent is TPanel then
-    IniComponent(TPanel(AComponent))
-  else if AComponent is TcxGrid then
-    IniComponent(TcxGrid(AComponent))
+  if AComponent is TPanel then           IniComponent(AComponent as TPanel)
+  else if AComponent is TcxGrid then     IniComponent(AComponent as TcxGrid)
+  else if AComponent is TRadioGroup then IniComponent(AComponent as TRadioGroup)
 end;
 
 procedure TBaseForm.InitParamList;
@@ -544,10 +590,15 @@ begin
         TcxGridTableView(GridView).Columns[j].OnGetStoredProperties := DoCustomColumnGetStoredProperties;
       end;
       // 读取配置信息
-      var layoutpath := Goo.SystemDataPath + Format('\Layout\%s_%s.ini', [Self.ClassName,GridView.Name]);
-      if FileExists(layoutpath) then GridView.RestoreFromIniFile(layoutpath, True, False,[gsoUseFilter, gsoUseSummary]);
+      var layoutpath := Goo.SystemDataPath + Format('\Layout\%s_%s.ini', [LayoutFileName,GridView.Name]);
+      if LayoutCustom and FileExists(layoutpath) then GridView.RestoreFromIniFile(layoutpath, True, False,[gsoUseFilter, gsoUseSummary]);
     end;
   end;
+end;
+
+procedure TBaseForm.IniComponent(AComponent: TRadioGroup);
+begin
+  AComponent.Color := Default_Color;
 end;
 
 end.

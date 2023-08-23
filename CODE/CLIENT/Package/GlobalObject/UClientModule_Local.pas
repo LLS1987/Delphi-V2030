@@ -21,6 +21,7 @@ type
   private
   public
     function ChangeDataBase(const ADataBaseName: string): Boolean; override;
+    function ExecuteFile(const AFileName:string):Boolean; override;
     function OpenSQL(const ASQL: string; ADataSet:TClientDataSet):Integer; override;
     function ExecSQL(const ASQL: string): Integer;override;
     function OpenProc(szProcedureName: string; AParamName: array of string;AParamValue: array of OleVariant; ADataSet:TClientDataSet; AParams: TParams): Integer;overload;override;
@@ -30,7 +31,7 @@ type
 implementation
 
 uses
-  UClientDataSnap_LIB,MidasLib, System.Variants;
+  UClientDataSnap_LIB,MidasLib, System.Variants, UComvar;
 
 ///客户端必须加入此单元：MidasLib  不然获取 TDSProviderConnection 数据集报错
 
@@ -54,10 +55,10 @@ begin
   proc_exec.StoredProcName := szProcedureName;
   for var p in proc_exec.Params do
   begin
-    case TParam(p).DataType of
-      ftInteger : TParam(p).Value := 0;
-      ftString  : TParam(p).Value := EmptyStr;
-    end;
+//    case TParam(p).DataType of
+//      ftInteger : TParam(p).Value := 0;
+//      ftString  : TParam(p).Value := EmptyStr;
+//    end;
     for var i := Low(AParamName) to High(AParamName) do
     begin
       if SameText(p.DisplayName,AParamName[i]) then
@@ -79,6 +80,14 @@ begin
   Result := query_exec.ExecSQL();
 end;
 
+function TClientModule_Local.ExecuteFile(const AFileName: string): Boolean;
+begin
+  Result := False;
+  var _FilePath := Goo.SystemPath + '\' + AFileName;
+  if not FileExists(_FilePath) then Exit;
+  Goo.Msg.ShowMsg(_FilePath)
+end;
+
 function TClientModule_Local.OpenProc(szProcedureName: string; AParamName: array of string; AParamValue: array of OleVariant; ADataSet: TClientDataSet; AParams: TParams): Integer;
 begin
   Result := -1;
@@ -91,10 +100,10 @@ begin
     proc_open.StoredProcName := szProcedureName;
     for var p in proc_open.Params do
     begin
-      case TParam(p).DataType of
-        ftInteger : TParam(p).Value := 0;
-        ftString  : TParam(p).Value := EmptyStr;
-      end;
+//      case TParam(p).DataType of
+//        ftInteger : TParam(p).Value := 0;
+//        ftString  : TParam(p).Value := '';
+//      end;
       for var i := Low(AParamName) to High(AParamName) do
       begin
         if SameText(p.DisplayName,AParamName[i]) then
@@ -105,7 +114,6 @@ begin
       end;
       //if VarIsEmpty(_temp) or VarIsNull(_temp) or (TVarData(_temp).VType = varDispatch) and (TVarData(_temp).VDispatch = nil) then
     end;
-    proc_open.Open;
     ADataSet.Data := DataSetProvider_proc_open.Data;
     AParams.Assign(proc_open.Params);
     if Assigned(AParams.FindParam('@RETURN_VALUE')) then Result := AParams.ParamValues['@RETURN_VALUE'];
@@ -119,7 +127,7 @@ begin
   Result := -1;
   query_open.Active := False;
   query_open.SQL.Text := ASQL;
-  query_open.Open;
+  //query_open.Open;
   ADataSet.Data := DataSetProvider_query_open.Data;
   Result := 0;
 end;

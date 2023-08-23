@@ -8,7 +8,7 @@ uses
 
 type
   //数据库访问类
-  TDBConnectType = (dbctRemote,dbctLocal);
+  TDBConnectType = (dbctRemote,dbctLocal,dbctLocalADO);
   TDataBaseCommObject = class(TBaseCommObject)
   private
     FHostName: string;
@@ -58,7 +58,7 @@ type
 implementation
 
 uses
-  System.Variants, UClientModule_Local, UComVar;
+  System.Variants, UClientModule_Local, UComVar, UClientModule_LocalADO;
 
 { TDataBaseCommObject }
 
@@ -78,8 +78,12 @@ end;
 function TDataBaseCommObject.ClientDM: TClientModule;
 begin
   Result := DM;
-  if Assigned(Result) then Exit;  
-  if ConnectType=dbctLocal then DM := TClientModule_Local.Create(nil) else DM := TClientModule.Create(nil);
+  if Assigned(Result) then Exit;
+  case ConnectType of
+    dbctLocal    : DM := TClientModule_Local.Create(nil);
+    dbctLocalADO : DM := TClientModule_LocalADO.Create(nil);
+  else DM := TClientModule.Create(nil);
+  end;
   Result := DM;
 end;
 
@@ -179,7 +183,10 @@ end;
 
 function TDataBaseCommObject.GetConnected: Boolean;
 begin
-  Result := ClientDM.conn.Connected;
+  case ConnectType of
+    dbctLocalADO : Result := TClientModule_LocalADO(ClientDM).Conn_ADO.Connected;
+  else Result := ClientDM.conn.Connected;
+  end;
 end;
 
 function TDataBaseCommObject.OpenProc(szProcedureName: string; AParamName: array of string; AParamValue: array of OleVariant; ADataSet: TClientDataSet; AParams: TParams): Integer;
@@ -188,7 +195,9 @@ begin
   if szProcedureName=EmptyStr then Exit;  
   if not CheckConnected then Exit;
   try
+    Goo.Logger.Debug('开始数据库查询[%s]:%s',[ClientDM.ClassName,szProcedureName]);
     Result := ClientDM.OpenProc(szProcedureName,AParamName,AParamValue,ADataSet,AParams);
+    Goo.Logger.Debug('数据库完成，返回行:%d',[ADataSet.RecordCount]);
   except on E: Exception do
   end;
 end;
@@ -244,7 +253,9 @@ function TDataBaseCommObject.OpenSQL(const ASQL: string; ADataSet: TClientDataSe
 begin
   Result := -1;
   if not CheckConnected then Exit;
+  Goo.Logger.Debug('开始数据库查询[%s]:%s',[ClientDM.ClassName,ASQL]);
   Result := ClientDM.OpenSQL(ASQL,ADataSet);
+  Goo.Logger.Debug('数据库完成，返回行:%d',[ADataSet.RecordCount]);
 end;
 
 function TDataBaseCommObject.QueryOneFiled(const ASQL: string): Variant;
@@ -268,42 +279,52 @@ end;
 
 procedure TDataBaseCommObject.SetConnected(const Value: Boolean);
 begin
-  if ClientDM.conn.Connected = Value then Exit;
+  if Connected = Value then Exit;
   try
     ClientDM.Conn.Connected := False;
-    if ConnectType=dbctRemote then
-    begin
-      ClientDM.Conn.ConnectionName := 'DataSnapCONNECTION';
-      ClientDM.Conn.DriverName := 'DataSnap';
-      ClientDM.Conn.Params.Values['HostName'] := HostName;
-      ClientDM.Conn.Params.Values['Port']     := Port.ToString;
-      ClientDM.Conn.Params.Add('User_Name='+'***');
-      ClientDM.Conn.Params.Add('Password='+'***');
-      ClientDM.Conn.Connected := Value;
-    end else begin
-      ClientDM.Conn.ConnectionName := 'MSSQLConnection';
-      ClientDM.Conn.DriverName := 'MSSQL';
-      ClientDM.Conn.LibraryName := 'dbxmss.dll';
-      ClientDM.Conn.VendorLib := 'sqlncli10.dll';
-      ClientDM.Conn.Params.Values['HostName']  := HostName;
-      ClientDM.Conn.Params.Values['User_Name'] := UserName;
-      ClientDM.Conn.Params.Values['Password']  := Password;
-      ClientDM.Conn.Params.Values['DataBase']  := 'master';
-      //net copy code
-      ClientDM.Conn.Params.Add('LibraryName=dbxmss.dll');
-      ClientDM.Conn.Params.Add('VendorLibWin64=sqlncli10.dll');
-      ClientDM.Conn.Params.Add('MaxBlobSize=-1');
-      ClientDM.Conn.Params.Add('OSAuthentication=False');
-      ClientDM.Conn.Params.Add('PrepareSQL=True');
-      ClientDM.Conn.Params.Add('SchemaOverride=sa.dbo');
-      ClientDM.Conn.Params.Add('DriverName=MSSQL');
-      ClientDM.Conn.Params.Add('BlobSize=-1');
-      ClientDM.Conn.Params.Add('IsolationLevel=ReadCommitted');
-      ClientDM.Conn.Params.Add('OS Authentication=False');
-      ClientDM.Conn.Params.Add('Prepare SQL=False');
-      ClientDM.Conn.Params.Add('ConnectTimeout=60');
-      ClientDM.Conn.Params.Add('Mars_Connection=False');
-      ClientDM.Conn.Connected := Value;
+    case ConnectType of
+      dbctRemote  :
+          begin
+            ClientDM.Conn.ConnectionName := 'DataSnapCONNECTION';
+            ClientDM.Conn.DriverName := 'DataSnap';
+            ClientDM.Conn.Params.Values['HostName'] := HostName;
+            ClientDM.Conn.Params.Values['Port']     := Port.ToString;
+            ClientDM.Conn.Params.Add('User_Name='+'***');
+            ClientDM.Conn.Params.Add('Password='+'***');
+            ClientDM.Conn.Connected := Value;
+          end;
+      dbctLocal  :
+          begin
+            ClientDM.Conn.ConnectionName := 'MSSQLConnection';
+            ClientDM.Conn.DriverName := 'MSSQL';
+            ClientDM.Conn.LibraryName := 'dbxmss.dll';
+            ClientDM.Conn.VendorLib := 'sqlncli10.dll';
+            ClientDM.Conn.Params.Values['HostName']  := HostName;
+            ClientDM.Conn.Params.Values['User_Name'] := UserName;
+            ClientDM.Conn.Params.Values['Password']  := Password;
+            ClientDM.Conn.Params.Values['DataBase']  := 'master';
+            //net copy code
+            ClientDM.Conn.Params.Add('LibraryName=dbxmss.dll');
+            ClientDM.Conn.Params.Add('VendorLibWin64=sqlncli10.dll');
+            ClientDM.Conn.Params.Add('MaxBlobSize=-1');
+            ClientDM.Conn.Params.Add('OSAuthentication=False');
+            ClientDM.Conn.Params.Add('PrepareSQL=True');
+            ClientDM.Conn.Params.Add('SchemaOverride=sa.dbo');
+            ClientDM.Conn.Params.Add('DriverName=MSSQL');
+            ClientDM.Conn.Params.Add('BlobSize=-1');
+            ClientDM.Conn.Params.Add('IsolationLevel=ReadCommitted');
+            ClientDM.Conn.Params.Add('OS Authentication=False');
+            ClientDM.Conn.Params.Add('Prepare SQL=False');
+            ClientDM.Conn.Params.Add('ConnectTimeout=60');
+            ClientDM.Conn.Params.Add('Mars_Connection=False');
+            ClientDM.Conn.Connected := Value;
+          end;
+      dbctLocalADO :
+          begin
+            TClientModule_LocalADO(ClientDM).Conn_ADO.Connected := False;
+            TClientModule_LocalADO(ClientDM).Conn_ADO.ConnectionString := 'Provider=SQLOLEDB.1;Password='+Password+';Persist Security Info=True;User ID='+UserName+';Initial Catalog='+DatabaseName+';Data Source='+HostName;
+            TClientModule_LocalADO(ClientDM).Conn_ADO.Connected := True;
+          end;
     end;
   except on E: Exception do
     Goo.Logger.Error('数据库连接错误:%s',[e.Message]);

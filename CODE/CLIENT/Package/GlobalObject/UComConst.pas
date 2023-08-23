@@ -10,6 +10,8 @@ type
   TLimitVer  =(lvAll,lvWholeSale,lvCenter,lvPos,lvQuery,lvSingle,lvInCome,lvPJB,lvPosRealTime,lvPosSelf,lvPosJoined,lvPosRealJoined);
   TLimitVers = set of TLimitVer;
   TRegisterType = (rmtForm,rmtBill,rmtRepot,rmtMethod,rmtFile,rmtURL);
+  //基本信息类型
+  TBasicType = (btNo,btAtype,btPtype,btBtype,btEtype,btKtype,btGtype, btDtype,btRtype,btVchType,btMtype,btNType,btCSType, btLBType,btOtype,btFType);
 
   //自定义消息
 const  REFRESH_FIND_MESSAGE = WM_USER + 100;

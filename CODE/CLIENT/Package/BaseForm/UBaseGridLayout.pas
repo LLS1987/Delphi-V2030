@@ -11,9 +11,9 @@ uses
   dxScrollbarAnnotations, Data.DB, cxDBData, cxGridLevel, cxGridCustomView,
   cxGridCustomTableView, cxGridTableView, cxGridDBTableView, cxGrid,
   dxLayoutContainer, cxGridCustomLayoutView, cxGridLayoutView, Vcl.StdCtrls,
-  cxCheckBox, dxSkinsCore, dxSkinBasic, dxSkinBlack, dxSkinBlue,
-  dxSkinBlueprint, dxSkinCaramel, dxSkinCoffee, dxSkinDarkroom, dxSkinDarkSide,
-  dxSkinDevExpressDarkStyle, dxSkinDevExpressStyle, dxSkinFoggy,
+  cxCheckBox, Vcl.Mask, UBaseForm, dxSkinsCore, dxSkinBasic, dxSkinBlack,
+  dxSkinBlue, dxSkinBlueprint, dxSkinCaramel, dxSkinCoffee, dxSkinDarkroom,
+  dxSkinDarkSide, dxSkinDevExpressDarkStyle, dxSkinDevExpressStyle, dxSkinFoggy,
   dxSkinGlassOceans, dxSkinHighContrast, dxSkiniMaginary, dxSkinLilian,
   dxSkinLiquidSky, dxSkinLondonLiquidSky, dxSkinMcSkin, dxSkinMetropolis,
   dxSkinMetropolisDark, dxSkinMoneyTwins, dxSkinOffice2007Black,
@@ -27,7 +27,7 @@ uses
   dxSkinSummer2008, dxSkinTheAsphaltWorld, dxSkinTheBezier,
   dxSkinsDefaultPainters, dxSkinValentine, dxSkinVisualStudio2013Blue,
   dxSkinVisualStudio2013Dark, dxSkinVisualStudio2013Light, dxSkinVS2010,
-  dxSkinWhiteprint, dxSkinXmas2008Blue, Vcl.Mask, UBaseForm;
+  dxSkinWhiteprint, dxSkinXmas2008Blue, Vcl.Menus, cxButtons, cxButtonEdit;
 
 type
   TBaseGridLayout = class(TBaseDialogForm)
@@ -48,6 +48,7 @@ type
     Button_Up: TButton;
     Button_Down: TButton;
     edt_ProceName: TLabeledEdit;
+    MainGridTableView_Operate: TcxGridColumn;
     procedure Button_DownClick(Sender: TObject);
     procedure Button_SaveClick(Sender: TObject);
     procedure Button_LoadClick(Sender: TObject);

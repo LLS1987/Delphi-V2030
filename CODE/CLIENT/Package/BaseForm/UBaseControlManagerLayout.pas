@@ -5,7 +5,7 @@ interface
 uses
   Vcl.ActnList, Vcl.Controls, Vcl.StdCtrls, System.Classes, System.SysUtils,
   Vcl.ExtCtrls, vcl.Forms, Vcl.Graphics, System.Generics.Collections,
-  UParamList;
+  UParamList, UComDBStorable, UBaseParams;
 
 type
   TBaseConditionManager = class;
@@ -37,10 +37,12 @@ type
     function GetWidth: Integer;virtual;
     procedure SetWidth(const Value: Integer);virtual;
     function GetCaptionWidth:Integer;
+    function GetValueText: string;virtual;
   public
     constructor Create;
     destructor Destroy; override;
     property Value:Variant read GetValue write SetValue;
+    property ValueText: string read GetValueText;
     property Width: Integer read GetWidth write SetWidth;
     property FirstPanel:TPanel read FFirstPanel;
     property CenterPanel:TPanel read FCenterPanel;
@@ -93,15 +95,24 @@ type
   end;
   //ButtonEdit
   TControlItem_ButtonEdit = class(TControlItem)
+  private
+    FBaseInfo:TBaseParam;
+    procedure OnRightButtonClick(Sender:TObject);
+    procedure OnEditKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
+    function GetBaseInfo: TBaseParam;
   protected
+    function GetValueText: string;override;
     function GetValue: Variant; override;
     procedure SetValue(const Value: Variant);override;
   public
+    destructor Destroy; override;
     function CreateControl: TWinControl; override;
+    property BaseInfo:TBaseParam read GetBaseInfo;
   end;
   //选择框
   TControlItem_CheckBox = class(TControlItem)
   protected
+    function GetValueText: string;override;
     function GetValue: Variant; override;
     procedure SetValue(const Value: Variant);override;
   public
@@ -114,6 +125,7 @@ type
     function GetItemList: string;
     procedure SetItemList(const Value: string);
   protected
+    function GetValueText: string;override;
     function GetValue: Variant; override;
     procedure SetValue(const Value: Variant);override;
   public
@@ -121,7 +133,19 @@ type
     procedure AfterCreateControl; override;
     property ItemList:string read GetItemList write SetItemList;
   end;
-
+  //单选框
+  TControlItem_RadioGroup = class(TControlItem)
+  private
+    function GetItemList: string;
+    procedure SetItemList(const Value: string);
+  protected
+    function GetValueText: string;override;
+    function GetValue: Variant; override;
+    procedure SetValue(const Value: Variant);override;
+  public
+    function CreateControl: TWinControl; override;
+    property ItemList:string read GetItemList write SetItemList;
+  end;
   TControlItem_Date = class(TControlItem)
   protected
     function GetValue: Variant; override;
@@ -174,22 +198,27 @@ type
   TControlManagerLayout = class(TBaseConditionManager)
   private
     FWidth: Integer;
+    FMemory: Boolean;
     function GetParamList: TParamList;
     function CreateControl(ADataType:Integer): TControlItem;
     function SplitString(AStr:string;AIndex:Integer):string;
   protected
-    //设置父类的宽度默认就是窗体的宽度
-    property Width: Integer read FWidth write FWidth;
+
   public
     constructor Create;
     destructor Destroy; override;
     function Add(ADataType:Integer;AName,ACaption:string;AMustEnter,AVisible:Boolean;ATextHint:string=''): Integer; overload;
+    function Add(ADataType:Integer;AName,ACaption,AItem:string;AVisible:Boolean): Integer; overload;
     function AddFat(ADataType:Integer;AName,ACaption:string;AMustEnter,AVisible:Boolean): Integer; overload;
     function AddThin(ADataType:Integer;AName,ACaption:string;AMustEnter,AVisible:Boolean): Integer; overload;
     function AddDateBetween(AName,ACaption:string;AMustEnter,AVisible:Boolean):Integer; overload;
     procedure RefreshCondition;virtual;
     procedure RefreshParamList;virtual;
     property ParamList:TParamList read GetParamList;
+    ///是否记忆参数，默认不记忆
+    property Memory:Boolean       read FMemory write FMemory;
+    //设置父类的宽度默认就是窗体的宽度
+    property Width: Integer read FWidth write FWidth;
   end;
 
   const Control_Border_Width = 10;
@@ -197,7 +226,8 @@ type
 implementation
 
 uses
-  UComvar, Vcl.ComCtrls, UBaseForm, System.Variants, cxCurrencyEdit;
+  UComvar, Vcl.ComCtrls, UBaseForm, System.Variants, cxCurrencyEdit,
+  System.IniFiles;
 
 { TControlItem }
 
@@ -214,6 +244,11 @@ end;
 function TControlItem.GetValue: Variant;
 begin
 
+end;
+
+function TControlItem.GetValueText: string;
+begin
+  Result := Value;
 end;
 
 function TControlItem.GetWidth: Integer;
@@ -464,6 +499,11 @@ begin
   Result := Goo.Format.iif(TCheckBox(Control).Checked,1,0);
 end;
 
+function TControlItem_CheckBox.GetValueText: string;
+begin
+  Result := Goo.Format.iif(TCheckBox(Control).Checked,'是','否');
+end;
+
 procedure TControlItem_CheckBox.SetValue(const Value: Variant);
 begin
   inherited;
@@ -630,6 +670,14 @@ begin
   Result := self.Add(_Pair);
 end;
 
+function TControlManagerLayout.Add(ADataType: Integer; AName, ACaption, AItem: string; AVisible: Boolean): Integer;
+begin
+  Result := Add(ADataType, AName, ACaption, False, AVisible);
+  if Result<0 then Exit;
+  if Items[Result].Value is TControlItem_ComboBox then TControlItem_ComboBox(Items[Result].Value).ItemList := AItem
+  else if Items[Result].Value is TControlItem_RadioGroup then TControlItem_RadioGroup(Items[Result].Value).ItemList := AItem;
+end;
+
 function TControlManagerLayout.AddDateBetween(AName,ACaption:string;AMustEnter, AVisible:Boolean): Integer;
 begin
   Result := Add(3,SplitString(AName,0),SplitString(ACaption,0),AMustEnter,AVisible);
@@ -662,7 +710,8 @@ end;
 constructor TControlManagerLayout.Create;
 begin
   inherited;
-  Width := Screen.Width;
+  Width := Application.MainForm.Width;
+  FMemory := False;
 end;
 
 function TControlManagerLayout.CreateControl(ADataType:Integer): TControlItem;
@@ -675,6 +724,7 @@ begin
     4: Result := TControlItem_DateTime.Create;
     5: Result := TControlItem_ComboBox.Create;
     6: Result := TControlItem_ButtonEdit.Create;
+    7: Result := TControlItem_RadioGroup.Create;
   else Result := TControlItem_Edit.Create;
   end;
 end;
@@ -707,6 +757,20 @@ begin
       ALeft := Control_Border_Width;
       ATop  := Control_Border_Width + item.Value.GroupParent.Top + item.Value.GroupParent.Height;
     end;
+    //读取记忆
+    if Memory then
+    begin
+      var inifile := TIniFile.Create(Goo.SystemDataPath+'\Daterecord.ini');
+      try
+        try
+          if inifile.ValueExists(OWnerObject.ClassName,item.Value.Name.TrimLeft(['@'])) then
+            item.Value.Value := inifile.ReadString(OWnerObject.ClassName,item.Value.Name.TrimLeft(['@']),'');
+        except on E: Exception do
+        end;
+      finally
+        inifile.Free;
+      end;
+    end;
     //给控件添加默认值
     if ParamList.ContainsKey('@'+item.Value.Name.TrimLeft(['@'])) then item.Value.Value := ParamList.AsVariant('@'+item.Value.Name.TrimLeft(['@']));
   end;
@@ -719,13 +783,24 @@ end;
 
 procedure TControlManagerLayout.RefreshParamList;
 begin
-  for var item in Self do
-  begin
-    if not Assigned(item.Value.Control) then Continue;
-    if not item.Value.Visible then Continue;
-    var _name := item.Value.Name;
-    if not _name.StartsWith('@') then _name := '@'+_name;
-    ParamList.Add(_name,item.Value.Value);
+  var inifile := TIniFile.Create(Goo.SystemDataPath+'\Daterecord.ini');
+  try
+    for var item in Self do
+    begin
+      if not Assigned(item.Value.Control) then Continue;
+      if not item.Value.Visible then Continue;
+      if VarIsNull(item.Value.Name) then Continue;
+      var _name := item.Value.Name;
+      if not _name.StartsWith('@') then _name := '@'+_name;
+      ParamList.Add(_name,item.Value.Value);
+      if Memory then
+      begin
+        if VarIsStr(item.Value.Value) and (item.Value.Value=EmptyStr) then Continue;
+        inifile.WriteString(OWnerObject.ClassName,_name.TrimLeft(['@']),item.Value.Value);
+      end;
+    end;
+  finally
+    inifile.Free;
   end;
 end;
 
@@ -771,6 +846,11 @@ begin
     Result := TComboBox(Control).ItemIndex;
     if (Result>=0) and Assigned(TComboBox(Control).Items.Objects[Result]) then Result := Integer(TComboBox(Control).Items.Objects[Result]);
   end else Result := TComboBox(Control).Text;
+end;
+
+function TControlItem_ComboBox.GetValueText: string;
+begin
+  Result := TComboBox(Control).Text;
 end;
 
 procedure TControlItem_ComboBox.SetItemList(const Value: string);
@@ -880,20 +960,133 @@ begin
   TButtonedEdit(Result).RightButton.Visible := True;
   if Assigned(OWnerObject) and Assigned(OWnerObject.OWnerObject) and (OWnerObject.OWnerObject is TBaseForm) then
   begin
+    TButtonedEdit(Result).OnRightButtonClick := OnRightButtonClick;
+    TButtonedEdit(Result).OnKeyDown  := OnEditKeyDown;
     TButtonedEdit(Result).Images := (OWnerObject.OWnerObject as TBaseForm).ImageList;
     TButtonedEdit(Result).RightButton.ImageIndex := 0;
   end;
 end;
 
+destructor TControlItem_ButtonEdit.Destroy;
+begin
+  if Assigned(FBaseInfo) then FreeAndNil(FBaseInfo);
+  inherited;
+end;
+
+function TControlItem_ButtonEdit.GetBaseInfo: TBaseParam;
+begin
+  if not Assigned(FBaseInfo) then FBaseInfo := TMTypeParam.Create(GroupParent);
+  Result := FBaseInfo;
+end;
+
 function TControlItem_ButtonEdit.GetValue: Variant;
 begin
+  if BaseInfo.Count>0 then
+  begin
+    if BaseInfo.MultSel then
+    begin
+      Result := EmptyStr;
+      for var _item in BaseInfo.Return.Values do
+        Result := Result + _item.Rec.ToString + ',';
+      Result := string(Result).TrimRight([',']);
+    end else Result := TMTypeParam(BaseInfo).First.Rec
+  end
+  else
+    Result := 0;
+end;
+
+function TControlItem_ButtonEdit.GetValueText: string;
+begin
   Result := TButtonedEdit(Control).Text;
+end;
+
+procedure TControlItem_ButtonEdit.OnEditKeyDown(Sender: TObject; var Key: Word;  Shift: TShiftState);
+begin
+  case Key of
+    13   : 
+      begin
+        BaseInfo.SearchString := TButtonedEdit(Control).Text;
+        if BaseInfo.GetBaseInfoSelect>0 then
+          Value := BaseInfo.First.FullName;
+      end;
+    8,46 :  
+      begin
+        if Length(TButtonedEdit(Control).Text)<=1 then
+        begin
+          BaseInfo.Return.ClearAndFree;
+        end;   
+      end;
+  end;
+end;
+
+procedure TControlItem_ButtonEdit.OnRightButtonClick(Sender: TObject);
+begin
+  if BaseInfo.GetBaseInfoSelect>0 then Value := BaseInfo.First.FullName;
 end;
 
 procedure TControlItem_ButtonEdit.SetValue(const Value: Variant);
 begin
   inherited;
   TButtonedEdit(Control).Text := Value;
+end;
+
+function TControlItem_RadioGroup.CreateControl: TWinControl;
+begin
+  Result := TRadioGroup.Create(CenterPanel);
+  Result.Parent := CenterPanel;
+  TRadioGroup(Result).ShowFrame := False;
+  TRadioGroup(Result).StyleElements := [];
+  TRadioGroup(Result).Caption := EmptyStr;
+end;
+
+function TControlItem_RadioGroup.GetItemList: string;
+begin
+  Result := TRadioGroup(Control).Items.ToString;
+end;
+
+function TControlItem_RadioGroup.GetValue: Variant;
+begin
+  Result := TRadioGroup(Control).ItemIndex;
+  if (Result>=0) and Assigned(TRadioGroup(Control).Items.Objects[Result]) then Result := Integer(TRadioGroup(Control).Items.Objects[Result]);
+end;
+
+function TControlItem_RadioGroup.GetValueText: string;
+begin
+  Result := TRadioGroup(Control).Items[TRadioGroup(Control).ItemIndex];
+end;
+
+procedure TControlItem_RadioGroup.SetItemList(const Value: string);
+var AList:TStringList;
+begin
+  if not Assigned(Control) then Exit;
+  if Value=EmptyStr then Exit;
+  if Pos('=',Value) >0 then
+  begin
+    AList := TStringList.Create;
+    try
+      AList.Delimiter := ',';
+      AList.DelimitedText := Value;
+      TRadioGroup(Control).Items.Clear;
+      for var i:= 0 to AList.Count -1 do
+      begin
+        TRadioGroup(Control).Items.AddObject(AList.Names[i],TObject(StrToIntdef(AList.Values[AList.Names[i]],0)));
+      end;
+    finally
+      AList.Free;
+    end;
+  end
+  else TRadioGroup(Control).Items.DelimitedText := Value;
+  if TRadioGroup(Control).Items.Count>0 then
+  begin
+    TRadioGroup(Control).ItemIndex := 0;
+    TRadioGroup(Control).Columns   := TRadioGroup(Control).Items.Count;
+  end;
+end;
+
+procedure TControlItem_RadioGroup.SetValue(const Value: Variant);
+begin
+  inherited;
+  TRadioGroup(Control).ItemIndex := Value;
 end;
 
 end.

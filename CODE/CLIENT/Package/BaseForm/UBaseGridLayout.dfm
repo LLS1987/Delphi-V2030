@@ -97,7 +97,7 @@ inherited BaseGridLayout: TBaseGridLayout
       object MainGridTableView_Caption: TcxGridColumn
         Caption = #26174#31034#21517#31216
         HeaderAlignmentHorz = taCenter
-        Width = 300
+        Width = 253
       end
       object MainGridTableView_FiledName: TcxGridColumn
         Caption = #23383#27573#21517#31216
@@ -127,6 +127,27 @@ inherited BaseGridLayout: TBaseGridLayout
         DataBinding.ValueType = 'Integer'
         HeaderAlignmentHorz = taCenter
         Width = 76
+      end
+      object MainGridTableView_Operate: TcxGridColumn
+        Caption = #25805#20316
+        PropertiesClassName = 'TcxButtonEditProperties'
+        Properties.Buttons = <
+          item
+            Caption = #21024#38500
+            Default = True
+            Kind = bkText
+          end
+          item
+            Caption = #19978#31227
+            Kind = bkText
+          end
+          item
+            Caption = #19979#31227
+            Kind = bkText
+          end>
+        Properties.ViewStyle = vsButtonsOnly
+        HeaderAlignmentHorz = taCenter
+        Width = 160
       end
     end
     object MainGridLevel: TcxGridLevel

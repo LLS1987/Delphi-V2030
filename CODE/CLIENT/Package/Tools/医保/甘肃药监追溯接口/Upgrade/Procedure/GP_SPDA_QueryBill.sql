@@ -8,10 +8,12 @@ CREATE PROC GP_SPDA_QueryBill
 	@BgnDate	ctDate,
 	@EndDate	ctDate,
 	@Day INT=0,
-	@OnlyRX		ctInt=0
+	@OnlyRX		ctInt=0,
+	@OnlyBuyer	ctInt=0
 )
 AS
 SET @Day=ISNULL(@Day,0)
+SET @OnlyBuyer=ISNULL(@OnlyBuyer,0)
 SELECT drugType= CASE WHEN p.RX=1 THEN 'YB' WHEN dbo.GetBitValue(p.Flags,23)=1 THEN 'YC' ELSE 'YD' END,	--药品类型(YB处方药,YC含麻黄碱,YD含麻精)
 	drugName=p.FullName,
 	quantity	= CEILING(b.AssQty),
@@ -34,6 +36,7 @@ AND (@Day=0 OR BillDate>DATEADD(DAY,-@Day,CONVERT(VARCHAR(10),GETDATE(),120)))
 AND (@Day=0 OR p.PermitNo<>'')	--自动传输的时候过滤批准文号为空的数据
 AND (@PosID=0 OR i.Posid=@PosID)
 AND (@OnlyRX=0 OR p.RX=1)
+AND (@OnlyBuyer=0 OR buyer.BillID IS NOT NULL)
 AND NOT EXISTS(SELECT * FROM SPDA_TransBillRecord r WITH(NOLOCK) WHERE r.BillID=i.BillID AND r.Ord=b.ord)
 ORDER BY i.BillDate,b.BillID
 GO

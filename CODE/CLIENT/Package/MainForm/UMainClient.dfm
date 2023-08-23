@@ -208,6 +208,16 @@ object MainClient: TMainClient
       Caption = #25968#25454#24211#21319#32423
       OnExecute = Action_UpgradeExecute
     end
+    object Action_Update: TAction
+      Category = #31995#32479
+      Caption = #26816#26597#26356#26032
+      OnExecute = Action_UpdateExecute
+    end
+    object Action_About: TAction
+      Category = #31995#32479
+      Caption = #20851#20110
+      OnExecute = Action_AboutExecute
+    end
   end
   object dxTabbedMDIManager1: TdxTabbedMDIManager
     Active = True

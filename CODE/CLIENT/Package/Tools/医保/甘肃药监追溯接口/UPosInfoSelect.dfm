@@ -1,4 +1,5 @@
 inherited PosInfoSelect: TPosInfoSelect
+  BorderStyle = bsSizeable
   Caption = #38376#24215#20449#24687#36873#25321
   ClientHeight = 472
   ClientWidth = 847

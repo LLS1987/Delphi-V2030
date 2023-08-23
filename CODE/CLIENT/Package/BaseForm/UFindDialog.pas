@@ -6,7 +6,7 @@ uses
   Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants,
   System.Classes, Vcl.Graphics, UBaseDialogForm, Vcl.Controls, Vcl.ExtCtrls,
   System.ImageList, Vcl.ImgList, System.Actions, Vcl.ActnList, Vcl.StdCtrls,
-  Vcl.Mask;
+  Vcl.Mask, cxStyles, cxClasses;
 
 type
   TFindDialog = class(TBaseDialogForm)

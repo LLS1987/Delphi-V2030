@@ -45,9 +45,13 @@ type
     dxTabbedMDIManager1: TdxTabbedMDIManager;
     Image1: TImage;
     cxLocalizer1: TcxLocalizer;
+    Action_Update: TAction;
+    Action_About: TAction;
+    procedure Action_AboutExecute(Sender: TObject);
     procedure Action_ChangeDBExecute(Sender: TObject);
     procedure Action_ChangeUserExecute(Sender: TObject);
     procedure Action_CloseExecute(Sender: TObject);
+    procedure Action_UpdateExecute(Sender: TObject);
     procedure Action_UpgradeExecute(Sender: TObject);
     procedure Timer_PassWorkTimer(Sender: TObject);
   private
@@ -66,9 +70,14 @@ implementation
 
 uses UComvar, UGlobalInterface, UParamList,
   System.IOUtils, System.Generics.Collections, System.Generics.Defaults,
-  UComConst, Winapi.ShellAPI;
+  UComConst, Winapi.ShellAPI, UJsonObjectHelper, UAbout;
 
 {$R *.dfm}
+
+procedure TMainClient.Action_AboutExecute(Sender: TObject);
+begin
+  ShowAbout;//关于
+end;
 
 procedure TMainClient.Action_ChangeDBExecute(Sender: TObject);
 begin
@@ -101,6 +110,11 @@ end;
 procedure TMainClient.Action_CloseExecute(Sender: TObject);
 begin
   Close;
+end;
+
+procedure TMainClient.Action_UpdateExecute(Sender: TObject);
+begin
+  //程序更新
 end;
 
 procedure TMainClient.Action_UpgradeExecute(Sender: TObject);
@@ -168,9 +182,9 @@ begin
       if Assigned(JSON.Values['classname']) and Assigned(JSON.Values['classtype']) then
       begin
         Action := nil;
-        if Assigned(JSON.Values['action']) and (Trim(JSON.GetValue<string>('action'))<>EmptyStr) then
+        if JSON.S['action']<>EmptyStr then
         begin
-          Action := FindComponent(JSON.GetValue<string>('action')) as TAction;
+          Action := FindComponent(JSON.S['action']) as TAction;
         end;
         if not Assigned(Action) then
         begin
@@ -179,7 +193,7 @@ begin
           if Assigned(JSON.Values['action']) and (Trim(JSON.GetValue<string>('action'))<>EmptyStr) then
             Action.Name     := Trim(JSON.GetValue<string>('action'));
           Action.OnExecute:= MenuClick;
-          Action.Caption  := JSON.GetValue<string>('caption');
+          Action.Caption  := JSON.S['caption'];
           Action.Tag      := JSON.GetValue<Integer>('classtype');
           Action.Hint     := JSON.GetValue<string>('classname');
           if Assigned(JSON.Values['shortcut']) then
@@ -211,14 +225,16 @@ end;
 procedure TMainClient.CreateMenu;
 var JSON:TJSONObject;
   Pair: TJSONPair;
+  menupath:string;
 begin
   //data目录为用户自定义的菜单
-  if FileExists(goo.SystemPath+'\Layout\menuinfo.json') then
-    CopyFile(PWideChar(goo.SystemPath+'\Layout\menuinfo.json'),PWideChar(goo.SystemDataPath+'\menuinfo.json'),True);
-  if not FileExists(goo.SystemDataPath+'\menuinfo.json') then Exit;
+  //if FileExists(goo.SystemPath+'\Layout\menuinfo.json') then
+    //CopyFile(PWideChar(goo.SystemPath+'\Layout\menuinfo.json'),PWideChar(goo.SystemDataPath+'\menuinfo.json'),True);
+  menupath := goo.SystemPath+'\Layout\menuinfo.json';
+  if FileExists(goo.SystemDataPath+'\Layout\menuinfo.json') then menupath := goo.SystemDataPath+'\Layout\menuinfo.json';
   //先清除一次菜单
   MainMenu.Items.Clear;
-  JSON := TJSONObject.ParseJSONValue(TFile.ReadAllText(goo.SystemDataPath+'\menuinfo.json')) as TJSONObject;
+  JSON := TJSONObject.ParseJSONValue(TFile.ReadAllText(menupath)) as TJSONObject;
   try
     CreateMenu(JSON);
   finally

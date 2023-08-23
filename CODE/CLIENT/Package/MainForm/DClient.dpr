@@ -4,7 +4,8 @@ uses
   Vcl.Forms,
   UMainClient in 'UMainClient.pas' {MainClient},
   UPackageManage in 'UPackageManage.pas',
-  System.SysUtils;
+  System.SysUtils,
+  UAbout in 'UAbout.pas' {About};
 
 {$R *.res}
 
@@ -19,13 +20,3 @@ begin
      FreeAndNil(QFPackage);
   end;
 end.
-
-
-
-
-
-
-
-
-
-
