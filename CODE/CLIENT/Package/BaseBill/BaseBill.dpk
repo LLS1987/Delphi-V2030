@@ -1,4 +1,4 @@
-package Login;
+package BaseBill;
 
 {$R *.res}
 {$IFDEF IMPLICITBUILDING This IFDEF should not be used by users}
@@ -29,16 +29,10 @@ package Login;
 
 requires
   rtl,
-  GlobalObject,
-  vcl,
-  vclwinx,
-  dbrtl,
-  vcldb,
   BaseForm,
-  vclx;
+  GlobalObject;
 
 contains
-  ULoginUser in 'ULoginUser.pas' {LoginUser},
-  ULoginServer in 'ULoginServer.pas' {LoginServer};
+  UCustomBillFormUnit in 'UCustomBillFormUnit.pas' {CustomBillFormUnit};
 
 end.

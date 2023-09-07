@@ -5,7 +5,7 @@ interface
 uses
   UGlobalInterface, System.Classes, System.SysUtils,
   System.Generics.Collections, System.Rtti, UComConst, Vcl.Forms, Vcl.Controls,
-  UParamList;
+  UParamList, UParamForm;
 
 type
   //基类
@@ -23,7 +23,7 @@ type
   TClassDictionary = TDictionary<string, TValue>;
   TRegisterClassItem = record
     ClassName: string;              //注册名称
-    ClassObject:TFormClass;             //类
+    ClassObject:TParamFormClass;             //类
     ClassMethod:TMethod;            //类方法
     ClassVisible:TMethod;           //是否可用（类方法）
     RegisterType:TRegisterType;     //注册类型
@@ -48,14 +48,15 @@ type
     destructor Destroy; override;
     property FirstRunClass:string read FFirstRunClass write FFirstRunClass;
     //注册 类
-    procedure RegisterClass(AClass:TFormClass; AVers: TLimitVers=[]; ALimit:Integer=-1;ASubLimit:Integer=-1);overload;
-    procedure RegisterClass(AClass:TFormClass; AVisible:TRegisterClassVisibleEvent; AVers: TLimitVers=[]; ALimit:Integer=-1;ASubLimit:Integer=-1);overload;
+    procedure RegisterClass(AClass:TParamFormClass; AVers: TLimitVers=[]; ALimit:Integer=-1;ASubLimit:Integer=-1);overload;
+    procedure RegisterClass(AClass:TParamFormClass; AVisible:TRegisterClassVisibleEvent; AVers: TLimitVers=[]; ALimit:Integer=-1;ASubLimit:Integer=-1);overload;
     //注册方法，注意这里的方法是 published
     procedure RegisterClass(AName:string; AClass:TRegisterClassEvent; AVers: TLimitVers=[]; ALimit:Integer=-1;ASubLimit:Integer=-1);overload;
     procedure RegisterClass(AName:string; AClass:TRegisterClassEvent; AVisible:TRegisterClassVisibleEvent; AVers: TLimitVers=[]; ALimit:Integer=-1;ASubLimit:Integer=-1);overload;
     //调用
     function CreateFormClass(AClass:string; AParam:TParamList=nil):TForm;
     function CallFormClass(AClass:string; AParam:TParamList=nil):TForm;
+    function ShowWebUrl(AUrl:string; AParam:TParamList=nil):TForm;
     function ShowModal(AClass:string; AParam:TParamList=nil):TModalResult;
     function Run(AName:string; AParam:TParamList=nil):Boolean;
   end;
@@ -80,26 +81,21 @@ end;
 
 function TRegisterClassFactory.CallFormClass(AClass: string; AParam: TParamList): TForm;
 begin
-  var rf := GetItem(AClass,rmtForm);
-  if Assigned(rf.ClassObject) then
-  begin
-    Result := rf.ClassObject.Create(nil);
-    try
-      if Assigned(AParam) then (Result as IForm).SetParamList(AParam);
-      //Supports
-      case Result.FormStyle of
-        fsMDIChild :
-        begin
-          Result.WindowState := TWindowState.wsMaximized;
-          Result.Show;
-        end
-      else
-        Result.ShowModal;
-      end;
-      if Assigned(AParam) then AParam.Assign((Result as IForm).GetParamList);
-    finally
-      if Assigned(Result) and (Result.FormStyle <> fsMDIChild) then FreeAndNil(Result);
+  Result := CreateFormClass(AClass,AParam);
+  if not Assigned(Result) then Exit;  
+  try
+    case Result.FormStyle of
+      fsMDIChild :
+      begin
+        Result.WindowState := TWindowState.wsMaximized;
+        Result.Show;
+      end
+    else
+      Result.ShowModal;
     end;
+    if Assigned(AParam) then AParam.Assign((Result as IForm).GetParamList);
+  finally
+    if Assigned(Result) and (Result.FormStyle <> fsMDIChild) then FreeAndNil(Result);
   end;
 end;
 
@@ -120,12 +116,12 @@ begin
   var rf := GetItem(AClass,rmtForm);
   if Assigned(rf.ClassObject) then
   begin
-    Result := rf.ClassObject.Create(nil);
-    if Assigned(AParam) then (Result as IForm).SetParamList(AParam);
+    Result := rf.ClassObject.Create(Application,AParam);
+    //if Assigned(AParam) then (Result as IForm).SetParamList(AParam);
   end;
 end;
 
-procedure TRegisterClassFactory.RegisterClass(AClass: TFormClass; AVisible: TRegisterClassVisibleEvent; AVers: TLimitVers; ALimit, ASubLimit: Integer);
+procedure TRegisterClassFactory.RegisterClass(AClass: TParamFormClass; AVisible: TRegisterClassVisibleEvent; AVers: TLimitVers; ALimit, ASubLimit: Integer);
 var p:PRegisterClassItem;
 begin
   New(p);
@@ -172,7 +168,7 @@ begin
   end;
 end;
 
-procedure TRegisterClassFactory.RegisterClass(AClass: TFormClass; AVers: TLimitVers; ALimit, ASubLimit: Integer);
+procedure TRegisterClassFactory.RegisterClass(AClass: TParamFormClass; AVers: TLimitVers; ALimit, ASubLimit: Integer);
 var p:PRegisterClassItem;
 begin
   New(p);
@@ -184,8 +180,7 @@ begin
   p^.LimitID       := ALimit;
   p^.SubLimit      := ASubLimit;
   FGroupClasses.Add(p);
-
-  end;
+end;
 
 procedure TRegisterClassFactory.RegisterClass(AName:string; AClass:TRegisterClassEvent; AVisible:TRegisterClassVisibleEvent; AVers: TLimitVers; ALimit, ASubLimit: Integer);
 var p:PRegisterClassItem;
@@ -219,18 +214,42 @@ end;
 
 function TRegisterClassFactory.ShowModal(AClass:string; AParam: TParamList): TModalResult;
 begin
-  var p := GetItem(AClass,rmtForm);
-  if Assigned(p.ClassObject) then
-  begin
-    var ff := p.ClassObject.Create(nil);
-    try
-      if Assigned(AParam) then (ff as IForm).SetParamList(AParam);
-      //Supports
-      Result := ff.ShowModal;
-      if Assigned(AParam) then AParam.Assign((ff as IForm).GetParamList);
-    finally
-      ff.Free;
+  var ff := CreateFormClass(AClass,AParam);
+  try
+    if not Assigned(ff) then Exit;    
+    Result := ff.ShowModal;
+    if Assigned(AParam) then AParam.Assign((ff as IForm).GetParamList);
+  finally
+    if Assigned(ff) then ff.Free;
+  end;
+end;
+
+function TRegisterClassFactory.ShowWebUrl(AUrl: string; AParam:TParamList=nil): TForm;
+begin
+  if AUrl.IsEmpty or AUrl.StartsWith('about:blank',True) then Exit;             
+  if not AUrl.StartsWith('http',True) then AUrl := 'http://'+AUrl;   
+  var AParamList := TParamList.Create;
+  try
+    if Assigned(AParam) then AParamList.Assign(AParam);
+    AParamList.Add('@URL',AUrl)  ;
+    Result := CreateFormClass('TShowWebURL',AParamList);
+  finally
+    AParamList.Free;
+  end;  
+  if not Assigned(Result) then Exit;
+  try
+    case Result.FormStyle of
+      fsMDIChild :
+      begin
+        Result.WindowState := TWindowState.wsMaximized;
+        Result.Show;
+      end
+    else
+      Result.ShowModal;
     end;
+    if Assigned(AParam) then AParam.Assign((Result as IForm).GetParamList);
+  finally
+    if Assigned(Result) and (Result.FormStyle <> fsMDIChild) then FreeAndNil(Result);
   end;
 end;
 

@@ -19,6 +19,8 @@ inherited BaseNormalForm: TBaseNormalForm
     Height = 359
     Align = alClient
     BevelOuter = bvNone
+    Color = clInfoBk
+    ParentBackground = False
     TabOrder = 1
   end
   object Panel_Button: TPanel [2]

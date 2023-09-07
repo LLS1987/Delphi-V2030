@@ -12,7 +12,7 @@ uses
   cxData, cxDataStorage, cxEdit, cxNavigator, dxDateRanges,
   dxScrollbarAnnotations, Data.DB, cxDBData, cxGridLevel, cxGridCustomView,
   cxGridCustomTableView, cxGridTableView, cxGridDBTableView, cxGrid,
-  cxGridPopupMenu, cxGridCustomPopupMenu, Vcl.Menus;
+  cxGridPopupMenu, cxGridCustomPopupMenu, Vcl.Menus, UParamForm;
 
 type
   TGridOption = (dgAppending, dgEditing, dgAlwaysShowEditor, dgTitles, dgIndicator,
@@ -22,7 +22,7 @@ type
   // 表格属性
   TGridOptions = set of TGridOption;
 
-  TBaseForm = class(TForm, IForm)
+  TBaseForm = class(TParamForm, IForm)
     ActionList: TActionList;
     ImageList: TImageList;
     Action_Close: TAction;
@@ -40,7 +40,6 @@ type
     procedure Action_HelpExecute(Sender: TObject);
     procedure Action_PrintExecute(Sender: TObject);
   private
-    FParamList: TParamList;
     FGridDataSet: TClientDataSet;
     FPrintTimes: Integer;
     FRefreshDataMessageID: Integer;
@@ -51,11 +50,8 @@ type
     FGridOptions: TGridOptions;
     FLayoutFileName: string;
     FLayoutCustom: Boolean;
-    { Private declarations }
-    function GetObject: TObject; virtual;
     function GetForm: TForm;
     function GetActionList: TActionList;
-    function GetParamList: TParamList;
     procedure SetParamList(AParamList: TParamList);
     procedure ShowFindDialog(var Message: TMessage); message REFRESH_FIND_MESSAGE;
     procedure DealRefreshRefreshDataMessage(var Msg: TMessage); message WM_RefreshData;
@@ -68,7 +64,6 @@ type
     procedure BeforeFormShow; virtual;
     property GridDataSet: TClientDataSet read FGridDataSet;
     property GridOptions: TGridOptions read FGridOptions write FGridOptions;
-    procedure InitParamList; virtual; // 产品可以在窗口创建之前先对参数进行处理
     function Find(const Msg: string; Reverse, Whole, Match: Boolean) : Boolean; virtual;
     procedure DoCloseBtnEvent; virtual;
     procedure DoHelpBtnEvent; virtual;
@@ -89,7 +84,6 @@ type
     procedure DoAddGridPopupmenus(APopupmenu: TcxPopupMenuInfo); virtual;
     procedure AddGridPopupmenu(AAction: TAction);
   public
-    constructor Create(AOwner: TComponent; AParam: TParamList); overload;
     destructor Destroy; override;
     procedure IniComponent(AForm: TForm); overload;
     procedure IniComponent(AComponent: TComponent); overload;
@@ -97,7 +91,6 @@ type
     procedure IniComponent(AComponent: TRadioGroup); overload;
     /// 初始化cxGrid
     procedure IniComponent(AGrid: TcxGrid); overload;
-    property ParamList: TParamList read GetParamList write FParamList;
     // 当天按钮的打印次数
     property PrintTimes: Integer read FPrintTimes;
     property PrintItems: TPrintItems read FPrintItems;
@@ -112,6 +105,10 @@ type
     property LayoutCustom :Boolean  read FLayoutCustom write FLayoutCustom;
     property LayoutFileName :string read GetLayoutFileName write SetLayoutFileName;
     property LayoutFilePath :string read GetLayoutFilePath;
+    ///创建控件方法列表
+    function CreatecxGrid(const AName:string; AParent:TWinControl=nil):TcxGrid;
+    function CreatecxGridView(AGrid:TcxGrid):TcxCustomGridView;
+    function CreatecxGridColumn(AView:TcxCustomGridView):Integer;
     class function GetPrintData(AGridView:TcxCustomGridView):OleVariant;
   end;
 
@@ -124,7 +121,8 @@ const
 implementation
 
 uses
-  UComvar, System.TypInfo, UBaseGridLayout, MidasLib, System.Math;
+  UComvar, System.TypInfo, UBaseGridLayout, MidasLib, System.Math, System.JSON,
+  System.IOUtils;
 
 {$R *.dfm}
 
@@ -133,12 +131,69 @@ begin
   IniComponent(Self);
 end;
 
-constructor TBaseForm.Create(AOwner: TComponent; AParam: TParamList);
+function TBaseForm.CreatecxGrid(const AName:string;AParent: TWinControl): TcxGrid;
 begin
-  FParamList := TParamList.Create;
-  InitParamList;
-  if Assigned(AParam) then FParamList.Assign(AParam);
-  inherited Create(AOwner); // 创建窗口实例 MDI一创建就显示，
+  Result := TcxGrid.Create(Self);
+  Result.Name := AName;
+  if Assigned(AParent) then
+  begin
+    Result.Parent := AParent;
+    Result.Align  := alClient;
+  end;
+  IniComponent(Result);
+end;
+
+function TBaseForm.CreatecxGridColumn(AView: TcxCustomGridView): Integer;
+var Json:TJSONObject;
+begin
+  Result := 0;
+  if not FileExists(LayoutFilePath) then Exit;
+  Json := Json.ParseJSONValue(TFile.ReadAllText(LayoutFilePath)) as TJSONObject;
+  try
+    if not Assigned(Json) then Exit;
+    if not Assigned(Json.Values['GridList']) then Exit;
+    if not Assigned(TJSONObject(Json.Values['GridList']).Values[AView.Name]) then Exit;
+    var _ProceName : string := EmptyStr;
+    var _SQLText   : string := EmptyStr;
+    TJSONObject(Json.Values['GridList']).Values[AView.Name].TryGetValue<string>('ProceName',_ProceName);
+    TJSONObject(Json.Values['GridList']).Values[AView.Name].TryGetValue<string>('SQLText',_SQLText);
+    if not Assigned(TJSONObject(TJSONObject(Json.Values['GridList']).Values[AView.Name]).Values['FieldList']) then Exit;
+    if not (TJSONObject(TJSONObject(Json.Values['GridList']).Values[AView.Name]).Values['FieldList'] is TJSONArray) then Exit;
+    for var item in TJSONObject(TJSONObject(Json.Values['GridList']).Values[AView.Name]).Values['FieldList'] as TJSONArray do
+    begin
+      var _Column := (AView as TcxGridDBTableView).CreateColumn;
+      _Column.Name    := AView.Name + item.GetValue<string>('FieldName');
+      _Column.Caption := item.GetValue<string>('Caption');
+      _Column.DataBinding.FieldName := item.GetValue<string>('FieldName');
+      _Column.Width   := item.GetValue<Integer>('Width',80);
+      _Column.HeaderAlignmentHorz   := taCenter;
+      _Column.Visible := item.GetValue<Boolean>('Visible',False);
+      _Column.VisibleForCustomization := item.GetValue<Boolean>('VisibleForCustomization',Visible);
+      Inc(Result);
+    end;
+  finally
+    Json.Free;
+  end;
+end;
+
+function TBaseForm.CreatecxGridView(AGrid:TcxGrid): TcxCustomGridView;
+begin
+  var Level := AGrid.Levels.Add;
+  Result := TcxGridDBTableView.Create(Level);
+  Level.GridView := Result;
+  Result.Name := 'MainGridView' + AGrid.Levels.Count.ToString;
+  {自动给数据表格创建一个数据集}
+  TcxGridDBTableView(Result).DataController.DataSource := TDataSource.Create(Self);
+  TcxGridDBTableView(Result).DataController.DataSource.DataSet := TClientDataSet.Create(Self);
+  //TcxGridDBTableView(Result).DataController.DataModeController.GridMode := True;  //大数据加载速度提升，但是丢失表格的合计
+  //TcxGridDBTableView(Result).OnDblClick := OnGridViewDblClick;
+  //创建自定义字段
+//  Result.BeginUpdate();
+//  try
+//    CustomGrid(Result);
+//  finally
+//    Result.EndUpdate;
+//  end;
 end;
 
 procedure TBaseForm.DealRefreshRefreshDataMessage(var Msg: TMessage);
@@ -154,11 +209,9 @@ end;
 
 destructor TBaseForm.Destroy;
 begin
-  if Assigned(FParamList) then FParamList.Free;
   if Assigned(FGridDataSet) then FreeAndNil(FGridDataSet);
   if Assigned(FPrintItems) then FreeAndNil(FPrintItems);
   if Assigned(FGridPopupMenu) then FreeAndNil(FGridPopupMenu);
-
   inherited;
 end;
 
@@ -238,12 +291,12 @@ begin
 end;
 
 procedure TBaseForm.DoCustomDrawIndicatorCell(Sender: TcxGridTableView;
-  ACanvas: TcxCanvas; AViewInfo: TcxCustomGridIndicatorItemViewInfo;
-  var ADone: Boolean);
+  ACanvas: TcxCanvas; AViewInfo: TcxCustomGridIndicatorItemViewInfo;var ADone: Boolean);
 var
   AIndicatorViewInfo: TcxGridIndicatorRowItemViewInfo;
   ATextRect: TRect;
   aCV: TcxCanvas;
+  ARowStr:string;
 begin
   aCV := ACanvas;
   ATextRect := AViewInfo.ContentBounds;
@@ -282,15 +335,23 @@ begin
       aCV.Font.Style := Canvas.Font.Style - [fsBold];
       aCV.Font.Color := Canvas.Font.Color;
     end;
-    Sender.LookAndFeelPainter.DrawHeader(ACanvas, AViewInfo.ContentBounds,
-      ATextRect, [], cxBordersAll, cxbsNormal, taCenter, vaCenter, False, False,
-      IntToStr(AIndicatorViewInfo.GridRecord.Index + 1), aCV.Font,
-      aCV.Font.Color, aCV.Brush.Color);
+    ARowStr := IntToStr(AIndicatorViewInfo.GridRecord.Index + 1);
+    //处理基本信息的父类增加 *
+    if (Sender is TcxGridDBTableView) then
+    begin
+      var _Sonnum := (Sender as TcxGridDBTableView).GetColumnByFieldName('Sonnum');
+      if Assigned(_Sonnum) then
+      begin
+        var _value  := AIndicatorViewInfo.GridRecord.Values[_Sonnum.Index];
+        if VarIsNumeric(_value) and _value>0 then ARowStr := ARowStr + '*';
+      end;
+    end;
+    Sender.LookAndFeelPainter.DrawHeader(ACanvas, AViewInfo.ContentBounds, ATextRect, [], cxBordersAll, cxbsNormal, taCenter, vaCenter, False, False,
+      ARowStr, aCV.Font,aCV.Font.Color, aCV.Brush.Color);
     ADone := True;
     // 画当前行的右三角
     ATextRect.Left := ATextRect.Width - 3;
-    Sender.LookAndFeelPainter.DrawIndicatorImage(ACanvas, ATextRect,
-      AIndicatorViewInfo.IndicatorKind);
+    Sender.LookAndFeelPainter.DrawIndicatorImage(ACanvas, ATextRect,AIndicatorViewInfo.IndicatorKind);
   end;
 end;
 
@@ -411,21 +472,6 @@ begin
   Result := Goo.SystemPath+Format('\Layout\%s.Json', [GetLayoutFileName]);
 end;
 
-function TBaseForm.GetObject: TObject;
-begin
-  Result := Self;
-end;
-
-function TBaseForm.GetParamList: TParamList;
-begin
-  if not Assigned(FParamList) then
-  begin
-    FParamList := TParamList.Create;
-    InitParamList;
-  end;
-  Result := FParamList;
-end;
-
 class function TBaseForm.GetPrintData(AGridView: TcxCustomGridView): OleVariant;
 var ds:TClientDataSet;
   AColnum:TcxGridDBColumn;
@@ -496,11 +542,6 @@ begin
   if AComponent is TPanel then           IniComponent(AComponent as TPanel)
   else if AComponent is TcxGrid then     IniComponent(AComponent as TcxGrid)
   else if AComponent is TRadioGroup then IniComponent(AComponent as TRadioGroup)
-end;
-
-procedure TBaseForm.InitParamList;
-begin
-
 end;
 
 procedure TBaseForm.RefreshData;

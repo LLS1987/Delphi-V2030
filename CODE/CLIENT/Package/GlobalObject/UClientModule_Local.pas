@@ -31,7 +31,8 @@ type
 implementation
 
 uses
-  UClientDataSnap_LIB,MidasLib, System.Variants, UComvar;
+  UClientDataSnap_LIB,MidasLib, System.Variants, UComvar, System.IOUtils,
+  UComDBSQLDMO;
 
 ///客户端必须加入此单元：MidasLib  不然获取 TDSProviderConnection 数据集报错
 
@@ -85,7 +86,12 @@ begin
   Result := False;
   var _FilePath := Goo.SystemPath + '\' + AFileName;
   if not FileExists(_FilePath) then Exit;
-  Goo.Msg.ShowMsg(_FilePath)
+  var _dmo := TSQLDMO.Create(conn);
+  try
+    Result := _dmo.ExecSQLScriptPath(_FilePath);
+  finally
+    _dmo.Free;
+  end;
 end;
 
 function TClientModule_Local.OpenProc(szProcedureName: string; AParamName: array of string; AParamValue: array of OleVariant; ADataSet: TClientDataSet; AParams: TParams): Integer;
@@ -100,10 +106,7 @@ begin
     proc_open.StoredProcName := szProcedureName;
     for var p in proc_open.Params do
     begin
-//      case TParam(p).DataType of
-//        ftInteger : TParam(p).Value := 0;
-//        ftString  : TParam(p).Value := '';
-//      end;
+      if SameText(p.DisplayName,'@RETURN_VALUE') then Continue;
       for var i := Low(AParamName) to High(AParamName) do
       begin
         if SameText(p.DisplayName,AParamName[i]) then
@@ -112,7 +115,7 @@ begin
           Break;
         end;
       end;
-      //if VarIsEmpty(_temp) or VarIsNull(_temp) or (TVarData(_temp).VType = varDispatch) and (TVarData(_temp).VDispatch = nil) then
+      //if not bexistsparam then proc_open.Params.RemoveParam(TParam(p));
     end;
     ADataSet.Data := DataSetProvider_proc_open.Data;
     AParams.Assign(proc_open.Params);

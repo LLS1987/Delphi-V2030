@@ -20,9 +20,13 @@ type
     procedure edt_FindKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure edt_FindRightButtonClick(Sender: TObject);
   private
+    FParentButtonRec,FChildButtonRec:Integer;
     FBaseParam: TBaseParam;
     procedure OnColnumGetDisplayText(Sender: TcxCustomGridTableItem; ARecord: TcxCustomGridRecord; var AText: string);
+    procedure OnFocusedRecordChanged(Sender: TcxCustomGridTableView;APrevFocusedRecord, AFocusedRecord: TcxCustomGridRecord;ANewItemRecordFocusingChanged: Boolean);
     procedure OnSelectClick(Sender: TObject);
+    procedure OnParentClick(Sender: TObject);
+    procedure OnChildClick(Sender: TObject);
     function CopyRowToStorable(ARow:Integer):TStorable;
     procedure InitViewTable(AStorable:TStorable);
   protected
@@ -78,6 +82,8 @@ begin
   inherited;
   //LayoutCustom := False;
   TcxGridDBTableView(AView).OptionsView.GroupByBox := False;
+  TcxGridDBTableView(AView).OnFocusedRecordChanged := OnFocusedRecordChanged;
+//  TcxGridDBTableView(AView).OnSelectionChanged
   MainGrid.SetFocus;
   Condition.FindButton.Top := edt_Find.Top - 1;
   BaseParam := ParamList.AsObject('@BaseParam_BaseInfoSelect') as TBaseParam;
@@ -177,7 +183,17 @@ begin
   if Assigned(BaseParam) then
   begin
     BaseParam.SearchString := Trim(edt_Find.Text);
+    if ParamList.AsString('@ParID')<>EmptyStr then BaseParam.ParID := ParamList.AsString('@ParID');
     BaseParam.GetBaseInfoDataSet(ActiveDataSet);
+  end;
+end;
+
+procedure TBaseInfoSel.OnChildClick(Sender: TObject);
+begin
+  if Assigned(ItemColumn['TypeID']) and not VarIsNull(RowData['Sonnum',ActiveRowIndex]) and (RowData['Sonnum',ActiveRowIndex]>0) then
+  begin
+    Self.ParamList.Add('@ParID',RowData['TypeID',ActiveRowIndex]);
+    RefreshData;
   end;
 end;
 
@@ -187,10 +203,48 @@ begin
     AText := Goo.Format.iif(AText='0','男','女');
 end;
 
+procedure TBaseInfoSel.OnFocusedRecordChanged(Sender: TcxCustomGridTableView;APrevFocusedRecord, AFocusedRecord: TcxCustomGridRecord;ANewItemRecordFocusingChanged: Boolean);
+begin
+  if Assigned(ItemColumn['Sonnum']) then
+  begin
+    var _sonnum := RowData['Sonnum',ActiveRowIndex];
+    if not VarIsNull(_sonnum) then
+    begin
+      ButtonList.ConditionIndex[FChildButtonRec].Control.Enabled  := _sonnum>0;
+    end else ButtonList.ConditionIndex[FChildButtonRec].Control.Visible := False;
+  end;
+  if Assigned(ItemColumn['ParID']) then
+  begin
+    var _parid := RowData['ParID',ActiveRowIndex];
+    if not VarIsNull(_parid) then
+    begin
+      ButtonList.ConditionIndex[FParentButtonRec].Control.Enabled := _parid<>'00000';
+    end else ButtonList.ConditionIndex[FParentButtonRec].Control.Visible := False;
+  end;
+end;
+
 procedure TBaseInfoSel.OnIniButton(Sender: TObject);
 begin
   inherited;
-  GridDblClickID :=  ButtonList.Add('选择',OnSelectClick);
+  if FPrintButtonRec>0 then ButtonList.ConditionIndex[FPrintButtonRec].Control.Visible := False;
+  GridDblClickID  := ButtonList.Add('选择',OnSelectClick);
+  FChildButtonRec := ButtonList.Add('子类',OnChildClick,True);
+  FParentButtonRec:= ButtonList.Add('父类',OnParentClick,True);
+end;
+
+procedure TBaseInfoSel.OnParentClick(Sender: TObject);
+begin
+  if Assigned(ItemColumn['ParID']) then
+  begin
+    var _parid := RowData['ParID',ActiveRowIndex];
+    if VarIsNull(_parid) then Exit;
+    if _parid=EmptyStr then Exit;
+    if _parid='00000' then Exit;
+    _parid := Copy(_parid,1,string(_parid).Length-5);
+    if _parid=EmptyStr then _parid := '00000';
+    Self.ParamList.Add('@ParID',_parid);
+    RefreshData;
+  end
 end;
 
 procedure TBaseInfoSel.OnSelectClick(Sender: TObject);

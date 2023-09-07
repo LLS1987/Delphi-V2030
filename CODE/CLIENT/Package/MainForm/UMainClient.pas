@@ -195,7 +195,7 @@ begin
           Action.OnExecute:= MenuClick;
           Action.Caption  := JSON.S['caption'];
           Action.Tag      := JSON.GetValue<Integer>('classtype');
-          Action.Hint     := JSON.GetValue<string>('classname');
+          Action.Hint     := JSON.ToString;
           if Assigned(JSON.Values['shortcut']) then
             Action.ShortCut := TextToShortCut(JSON.GetValue<string>('shortcut'));
         end;
@@ -208,17 +208,35 @@ end;
 
 procedure TMainClient.MenuClick(Sender: TObject);
 var Action:TAction;
+  AClassName:string;
+  AParamList:TParamList;
 begin
   if not(Sender is TAction) then Exit;
   Action := Sender as TAction;
   if Action.Hint=EmptyStr then Exit;
-  case TRegisterType(Action.Tag) of
-    rmtForm   : Goo.Reg.CallFormClass(Action.Hint.Trim);
-    rmtBill   : Goo.Reg.CallFormClass(Action.Hint.Trim);
-    rmtRepot  : Goo.Reg.CallFormClass(Action.Hint.Trim);
-    rmtMethod : Goo.Reg.Run(Action.Hint.Trim);
-    rmtFile   : ShellExecute(Handle, 'OPEN', PChar(Trim(Action.Hint)), nil, nil, 1);
-    rmtURL    : Goo.MSG.ShowMsg(Action.Hint);
+  var _json  := TJSONObject.SO(Action.Hint);
+  AParamList := TParamList.Create;
+  try
+    AClassName := _json.S['classname'].Trim;
+    if AClassName=EmptyStr then Exit;
+    if Assigned(_json.O['ParamList']) then
+    begin
+      for var item in _json.O['ParamList'] do
+      begin
+        AParamList.Add(item.JsonString.Value,_json.O['ParamList'].S[item.JsonString.Value]);
+      end;
+    end;
+    case TRegisterType(_json.I['classtype']) of
+      rmtForm   : Goo.Reg.CallFormClass(AClassName,AParamList);
+      rmtBill   : Goo.Reg.CallFormClass(AClassName,AParamList);
+      rmtRepot  : Goo.Reg.CallFormClass(AClassName,AParamList);
+      rmtMethod : Goo.Reg.Run(AClassName,AParamList);
+      rmtFile   : ShellExecute(Handle, 'OPEN', PChar(AClassName), nil, nil, 1);
+      rmtURL    : Goo.Reg.ShowWebUrl(AClassName);
+    end;
+  finally
+    AParamList.Free;
+    _json.Free;
   end;
 end;
 

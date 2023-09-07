@@ -31,7 +31,7 @@ implementation
 uses
   UComvar, UBaseParams, UComDBStorable;
 
-{$R *.dfm}
+//{$R *.dfm}
 
 { TRxIndexQuery }
 
@@ -51,14 +51,14 @@ begin
   Condition.Add(2,'Draft','草稿',False,True);
   Condition.AddThin(1,'PREC2','商品信息的测试',False,True);
   Condition.AddFat(1,'PREC3','商品信息4',False,True);
-  Condition.Add(3,'PREC4','商品信息5',True,True);
+  Condition.Add(3,'PREC4','商品信息5','{"TextHint":"TextHint","ItemList":"11,22,33"}');
   Condition.Add(6,'PREC5','商品信息6',True,True);
   Condition.Add(1,'PREC6','商品信息7',False,True);
   Condition.Add(1,'PREC7','商品信息8',True,True);
   Condition.ConditionItem['PREC7'].LastCaption := '尾部文字';
-  Condition.Add(1,'PREC8','商品信息9',False,True);
+  Condition.Add(1,'PREC8','商品信息9','{"TextHint":"输入文字","ItemList":"11,22,33"}');
   Condition.AddDateBetween('@BeginDate,@EndDate','开始日期,至',False,True);
-  Condition.Add(5,'PREC11','商品信息商品信息11',False,True);
+  Condition.Add(5,'PREC11','下拉列表','{"TextHint":"输入文字","ItemList":"选项1=1,选项2=2,选项3=3"}');
   Condition.Add(3,'PREC12','商品信息12',False,True);
   ButtonList.Add('门店选择',OnParamClick);
   ButtonList.Add('商品选择',OnSelectPtypeClick);

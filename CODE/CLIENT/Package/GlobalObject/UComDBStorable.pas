@@ -169,6 +169,12 @@ type
     [TFieldInfo('Posid','门店')]
     property Posid: Integer read FPosid write FPosid;
   end;
+  //仓库
+  [TTable('stock','仓库信息')]
+  TStorable_KType = class(TStorable)
+  public
+    constructor Create;override;
+  end;
 
   TStorableDictionary = class(TObjectDictionary<Integer,TStorable>)
   public
@@ -685,6 +691,15 @@ begin
   inherited;
   AttributeFieldCaption['UserCode'] := '职员编号';
   AttributeFieldCaption['FullName'] := '职员名称';
+end;
+
+{ TStorable_KType }
+
+constructor TStorable_KType.Create;
+begin
+  inherited;
+  AttributeFieldCaption['UserCode'] := '仓库编号';
+  AttributeFieldCaption['FullName'] := '仓库名称';
 end;
 
 end.

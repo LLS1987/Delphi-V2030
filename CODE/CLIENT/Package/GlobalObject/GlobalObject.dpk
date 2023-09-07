@@ -9,21 +9,21 @@ package GlobalObject;
 {$EXTENDEDSYNTAX ON}
 {$IMPORTEDDATA ON}
 {$IOCHECKS ON}
-{$LOCALSYMBOLS OFF}
+{$LOCALSYMBOLS ON}
 {$LONGSTRINGS ON}
 {$OPENSTRINGS ON}
-{$OPTIMIZATION ON}
-{$OVERFLOWCHECKS OFF}
-{$RANGECHECKS OFF}
-{$REFERENCEINFO OFF}
+{$OPTIMIZATION OFF}
+{$OVERFLOWCHECKS ON}
+{$RANGECHECKS ON}
+{$REFERENCEINFO ON}
 {$SAFEDIVIDE OFF}
-{$STACKFRAMES OFF}
+{$STACKFRAMES ON}
 {$TYPEDADDRESS OFF}
 {$VARSTRINGCHECKS ON}
 {$WRITEABLECONST OFF}
 {$MINENUMSIZE 1}
 {$IMAGEBASE $400000}
-{$DEFINE RELEASE}
+{$DEFINE DEBUG}
 {$ENDIF IMPLICITBUILDING}
 {$IMPLICITBUILD ON}
 
@@ -74,6 +74,8 @@ contains
   ULogger in 'ULogger.pas',
   UJsonObjectHelper in 'Helper\UJsonObjectHelper.pas',
   UBaseParams in 'UBaseParams.pas',
-  UClientModule_LocalADO in 'UClientModule_LocalADO.pas' {ClientModule_LocalADO: TDataModule};
+  UClientModule_LocalADO in 'UClientModule_LocalADO.pas' {ClientModule_LocalADO: TDataModule},
+  UComDBSQLDMO in 'UComDBSQLDMO.pas',
+  UParamForm in 'UParamForm.pas' {ParamForm};
 
 end.

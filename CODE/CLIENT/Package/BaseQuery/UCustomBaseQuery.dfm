@@ -9,8 +9,6 @@ inherited CustomBaseQuery: TCustomBaseQuery
   inherited Panel_Client: TPanel
     Top = 45
     Height = 351
-    Color = clInfoBk
-    ParentBackground = False
     ExplicitTop = 45
     ExplicitHeight = 351
   end

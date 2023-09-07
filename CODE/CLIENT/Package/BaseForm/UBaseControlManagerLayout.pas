@@ -5,7 +5,7 @@ interface
 uses
   Vcl.ActnList, Vcl.Controls, Vcl.StdCtrls, System.Classes, System.SysUtils,
   Vcl.ExtCtrls, vcl.Forms, Vcl.Graphics, System.Generics.Collections,
-  UParamList, UComDBStorable, UBaseParams;
+  UParamList, UComDBStorable, UBaseParams, Vcl.Buttons, Vcl.Menus, System.Rtti, System.JSON;
 
 type
   TBaseConditionManager = class;
@@ -47,10 +47,11 @@ type
     property FirstPanel:TPanel read FFirstPanel;
     property CenterPanel:TPanel read FCenterPanel;
     property LastPanel:TPanel read FLastPanel;
-    property LastCaption:string read GetLastCaption write SetLastCaption;
     function CreateControl:TWinControl; virtual;
     //控件创建之后就能设置宽度了
     procedure AfterCreateControl; virtual;
+  published
+    property LastCaption:string read GetLastCaption write SetLastCaption;
   end;
 
   TButtonItem = class(TControlItem)
@@ -63,6 +64,13 @@ type
   TControlItem_Null = class(TControlItem)
   public
     function CreateControl: TWinControl; override;
+  end;
+  //Label
+  TControlItem_Label = class(TControlItem)
+  protected
+    procedure SetValue(const Value: Variant);override;
+  public
+    procedure AfterCreateControl; override;
   end;
   //EDIT
   TControlItem_Edit = class(TControlItem)
@@ -131,6 +139,7 @@ type
   public
     function CreateControl: TWinControl; override;
     procedure AfterCreateControl; override;
+  published
     property ItemList:string read GetItemList write SetItemList;
   end;
   //单选框
@@ -144,15 +153,26 @@ type
     procedure SetValue(const Value: Variant);override;
   public
     function CreateControl: TWinControl; override;
+  published
     property ItemList:string read GetItemList write SetItemList;
   end;
+  // 时间
   TControlItem_Date = class(TControlItem)
+  private
+    FBetweenButton:TImage;
+    FBetweenPopMenu:TPopupMenu;
+    procedure OnBetweenButtonClick(Sender:Tobject);
+    procedure OnBetweenPopmenuClick(Sender:Tobject);
+    procedure ClearDatePopMenu;
+    procedure CreateDatePopmenu;
   protected
     function GetValue: Variant; override;
     procedure SetValue(const Value: Variant);override;
   public
     constructor Create;
+    destructor Destroy; override;
     function CreateControl: TWinControl; override;
+    function CreateBetweenButton:TImage;
   end;
 
   TControlItem_DateTime = class(TControlItem)
@@ -203,13 +223,42 @@ type
     function CreateControl(ADataType:Integer): TControlItem;
     function SplitString(AStr:string;AIndex:Integer):string;
   protected
-
+    procedure AssignPropertyValues(AObject: TObject;const AName: string; const AValues:TValue);
   public
     constructor Create;
     destructor Destroy; override;
     function Add(ADataType:Integer;AName,ACaption:string;AMustEnter,AVisible:Boolean;ATextHint:string=''): Integer; overload;
     function Add(ADataType:Integer;AName,ACaption,AItem:string;AVisible:Boolean): Integer; overload;
+    /// <summary>
+    /// 增加查询条件
+    /// </summary>
+    /// <param name="AJson">JSONSTRING</param>
+    /// <returns></returns>
+    function Add(AJson:string): Integer; overload;
+    /// <summary>
+    /// 增加查询条件
+    /// </summary>
+    /// <param name="AJson">JSON</param>
+    /// <returns></returns>
+    function Add(AJson:TJSONObject): Integer; overload;
+    /// <summary>
+    /// 增加查询条件
+    /// </summary>
+    /// <param name="ADataType">类型</param>
+    /// <param name="AName">变量名称</param>
+    /// <param name="ACaption">显示名称</param>
+    /// <param name="AProperty">JSON属性</param>
+    /// <returns>index</returns>
+    function Add(ADataType:Integer;AName,ACaption:string;APropertyJson:string=''): Integer; overload;
+    /// <summary>
+    /// 增加胖查询条件;宽度 * 2
+    /// </summary>
+    /// <returns></returns>
     function AddFat(ADataType:Integer;AName,ACaption:string;AMustEnter,AVisible:Boolean): Integer; overload;
+    /// <summary>
+    /// 增加瘦查询条件;宽度 / 2
+    /// </summary>
+    /// <returns></returns>
     function AddThin(ADataType:Integer;AName,ACaption:string;AMustEnter,AVisible:Boolean): Integer; overload;
     function AddDateBetween(AName,ACaption:string;AMustEnter,AVisible:Boolean):Integer; overload;
     procedure RefreshCondition;virtual;
@@ -222,12 +271,13 @@ type
   end;
 
   const Control_Border_Width = 10;
+  const DADEPOPMENUCAPTION: array[0..9] of string =('本日','本周','本月', '本季度','本年','-','上周','上月','上季度','上年');
 
 implementation
 
 uses
   UComvar, Vcl.ComCtrls, UBaseForm, System.Variants, cxCurrencyEdit,
-  System.IniFiles;
+  System.IniFiles, System.DateUtils, UJsonObjectHelper;
 
 { TControlItem }
 
@@ -452,11 +502,39 @@ begin
   Control.Width    := CenterPanel.Width;
 end;
 
+procedure TControlItem_Date.ClearDatePopMenu;
+begin
+  if not Assigned(FBetweenPopMenu) then Exit;
+  for var i := FBetweenPopMenu.Items.Count - 1 downto 0 do
+    FBetweenPopMenu.Items.Delete(i);
+  FBetweenPopMenu.Items.Clear;
+end;
+
 constructor TControlItem_Date.Create;
 begin
   inherited;
   FGroupWidth  := 150;
   FControlLeft := 60;
+end;
+
+function TControlItem_Date.CreateBetweenButton: TImage;
+var bmp:TBitmap;
+begin
+  FBetweenButton := TImage.Create(LastPanel);
+  FBetweenButton.Parent := LastPanel;
+  LastPanel.Width       := 15;
+  FBetweenButton.Width  := 15;
+  FBetweenButton.Top    := 4;
+  bmp := TBitmap.Create;
+  try
+    (OWnerObject.OWnerObject as TBaseForm).ImageList.GetBitmap(5,bmp);
+    FBetweenButton.Picture.Assign(bmp);
+  finally
+    bmp.Free;
+  end;
+  FBetweenPopMenu := TPopupMenu.Create(LastPanel);
+  CreateDatePopmenu;
+  FBetweenButton.OnClick:= OnBetweenButtonClick;
 end;
 
 function TControlItem_Date.CreateControl: TWinControl;
@@ -466,9 +544,109 @@ begin
   TDateTimePicker(Result).Time := StrToTime('00:00:00');
 end;
 
+procedure TControlItem_Date.CreateDatePopmenu;
+var vitem :TMenuItem;
+begin
+  ClearDatePopMenu;
+  FBetweenPopMenu.AutoHotkeys := maManual;
+  for var i := Low(DADEPOPMENUCAPTION) to High(DADEPOPMENUCAPTION) do
+  begin
+    vitem := TMenuItem.Create(FBetweenPopMenu);
+    vitem.Caption := DADEPOPMENUCAPTION[i];
+    vitem.Tag := i;
+    vitem.OnClick := OnBetweenPopmenuClick;
+    vitem.AutoHotkeys := maParent;
+    FBetweenPopMenu.Items.Add(vitem);
+  end;
+end;
+
+destructor TControlItem_Date.Destroy;
+begin
+  ClearDatePopMenu;
+  if Assigned(FBetweenPopMenu) then FreeAndNil(FBetweenPopMenu);
+  if Assigned(FBetweenButton) then FreeAndNil(FBetweenButton);
+  inherited;
+end;
+
 function TControlItem_Date.GetValue: Variant;
 begin
   Result := DateToStr(TDateTimePicker(Control).Date);
+end;
+
+procedure TControlItem_Date.OnBetweenButtonClick(Sender: Tobject);
+begin
+  FBetweenPopMenu.PopupComponent := TComponent(Sender);
+  FBetweenPopMenu.Popup(LastPanel.ClientOrigin.x, LastPanel.ClientOrigin.Y+LastPanel.Width);
+end;
+
+procedure TControlItem_Date.OnBetweenPopmenuClick(Sender: Tobject);
+var
+  tsdate, tedate:  TDateTimePicker;
+  vitem: string;
+  vmonth,vyear, vday: word;
+  vdate: TDateTime;
+begin
+  tsdate := OWnerObject.ConditionIndex[Control.Tag].Control as TDateTimePicker;
+  tedate := Control as TDateTimePicker;
+  if Assigned(tsdate) and Assigned(tedate) then
+  begin
+    vitem := (Sender as TMenuItem).Caption;
+    DecodeDate(Date, vyear, vmonth, vday);
+    if vitem='本日' then
+    begin
+      tsdate.Date := Date;
+      tedate.Date := Date;
+    end
+    else if vitem = '本周' then
+    begin
+      tsdate.Date := StartOfTheWeek(Date);
+      tedate.Date := EndOfTheWeek(Date);
+    end
+    else if vitem = '本月' then
+    begin
+      tsdate.Date := StartOfTheMonth(Date);
+      tedate.Date := EndOfTheMonth(Date);
+    end
+    else if vitem = '本季度' then
+    begin
+      Dec(vmonth, (vmonth - 1) mod 3);
+      tsdate.Date := DateOf(StartOfAMonth(vyear, vmonth));
+      tedate.Date := DateOf(EndOfAMonth(vyear, vmonth + 2));
+    end
+    else if vitem = '本年' then
+    begin
+      tsdate.Date := StartOfTheYear(Date);
+      tedate.Date := EndOfTheYear(Date);
+    end
+    else if vitem = '上周' then
+    begin
+      tsdate.Date := StartOfTheWeek(StartOfTheWeek(Date)-1);
+      tedate.Date := StartOfTheWeek(Date)-1;
+    end
+    else if vitem = '上月' then
+    begin
+      tsdate.Date := StartOfTheMonth(StartOfTheMonth(Date)-1);
+      tedate.Date := StartOfTheMonth(Date)-1;
+    end
+    else if vitem = '上季度' then
+    begin
+      vdate := IncMonth(Date,-3);
+      DecodeDate(vdate, vyear, vmonth, vday);
+      if vmonth mod 3=0 then
+      vmonth:=vmonth-2
+      else
+        vmonth:=vmonth-(vmonth mod 3)+1;
+      tsdate.Date := DateOf(StartOfAMonth(vyear, vmonth));
+      tedate.Date := DateOf(EndOfAMonth(vyear, vmonth + 2));
+
+    end
+    else if vitem = '上年' then
+    begin
+      Dec(vyear,1);
+      tsdate.Date := DateOf(StartOfAYear(vyear));
+      tedate.Date := DateOf(EndOfAYear(vyear));
+    end
+  end;
 end;
 
 procedure TControlItem_Date.SetValue(const Value: Variant);
@@ -623,6 +801,7 @@ begin
   begin
     if not Assigned(item.Value.Control) then Continue;
     if not item.Value.Visible then Continue;
+    if not item.Value.Control.Visible then Continue;
     item.Value.Control.Top  := 10;
     if akLeft in item.Value.Control.Anchors then
     begin
@@ -678,6 +857,23 @@ begin
   else if Items[Result].Value is TControlItem_RadioGroup then TControlItem_RadioGroup(Items[Result].Value).ItemList := AItem;
 end;
 
+function TControlManagerLayout.Add(ADataType: Integer; AName, ACaption, APropertyJson: string): Integer;
+var json:TJSONObject;
+begin
+  json := TJSONObject.SO(APropertyJson);
+  try
+    if not Assigned(json) then Exit;    
+    Result := Add(ADataType,AName,ACaption,json.B['MustEnter'],json.GetValue<Boolean>('Visible',True),json.S['TextHint']);
+    if Result<0 then Exit;
+    for var item in json do
+    begin
+      AssignPropertyValues(ConditionIndex[Result],item.JsonString.Value,item.JsonValue.ToString.TrimLeft(['"']).TrimRight(['"']));
+    end;
+  finally
+    json.Free;
+  end;
+end;
+
 function TControlManagerLayout.AddDateBetween(AName,ACaption:string;AMustEnter, AVisible:Boolean): Integer;
 begin
   Result := Add(3,SplitString(AName,0),SplitString(ACaption,0),AMustEnter,AVisible);
@@ -686,10 +882,12 @@ begin
   if _endindex<0 then Exit;  
   Items[Result].Value.Width := Items[Result].Value.Width + 20;
   Items[Result].Value.Value := FormatDateTime('YYYY-MM-01',Now);
-  Items[_endindex].Value.Control.Tag  := 1;
+  Items[Result].Value.Control.Tag     := _endindex;                             //开始时间上面标记结束时间的控件
+  Items[_endindex].Value.Control.Tag  := Result;                                //结束时间上面标记开始时间的控件
   Items[_endindex].Value.FControlLeft := 20;
   Items[_endindex].Value.FirstPanel.Alignment := taLeftJustify;
   Items[_endindex].Value.Width := Items[_endindex].Value.Width - 20;
+  TControlItem_Date(Items[_endindex].Value).CreateBetweenButton;
 end;
 
 function TControlManagerLayout.AddFat(ADataType: Integer; AName, ACaption: string; AMustEnter, AVisible: Boolean): Integer;
@@ -705,6 +903,23 @@ begin
   if Result<0 then Exit;
   Items[Result].Value.FControlLeft := 60;
   Items[Result].Value.Width := Trunc(Self.Items[Result].Value.Width/2);
+end;
+
+procedure TControlManagerLayout.AssignPropertyValues(AObject: TObject; const AName: string; const AValues:TValue);
+var
+  I: Integer;
+  Context: TRttiContext;
+  RttiType: TRttiType;
+  RttiProperty: TRttiProperty;
+begin
+  Context := TRttiContext.Create;
+  try
+    RttiType := Context.GetType(AObject.ClassType);
+    RttiProperty := RttiType.GetProperty(AName);
+    if Assigned(RttiProperty) and RttiProperty.IsWritable then RttiProperty.SetValue(AObject, AValues);
+  finally
+    Context.Free;
+  end;
 end;
 
 constructor TControlManagerLayout.Create;
@@ -854,23 +1069,17 @@ begin
 end;
 
 procedure TControlItem_ComboBox.SetItemList(const Value: string);
-var AList:TStringList;
+var ArrList:TArray<string>;
 begin
   if not Assigned(Control) then Exit;
   if Value=EmptyStr then Exit;
   if Pos('=',Value) >0 then
   begin
-    AList := TStringList.Create;
-    try
-      AList.Delimiter := ',';
-      AList.DelimitedText := Value;
-      TComboBox(Control).Items.Clear;
-      for var i:= 0 to AList.Count -1 do
-      begin
-        TComboBox(Control).Items.AddObject(AList.Names[i],TObject(StrToIntdef(AList.Values[AList.Names[i]],0)));
-      end;
-    finally
-      AList.Free;
+    ArrList := Value.Split([',']);
+    TComboBox(Control).Items.Clear;
+    for var i := Low(ArrList) to High(ArrList) do
+    begin
+      TComboBox(Control).Items.AddObject(ArrList[i].Split(['='])[0],TObject(StrToIntDef(ArrList[i].Split(['='])[1],0)));
     end;
   end
   else TComboBox(Control).Items.DelimitedText := Value;
@@ -886,6 +1095,37 @@ begin
     if (_index<0) or (_index>=TComboBox(Control).GetCount) then _index := 0;
     TComboBox(Control).ItemIndex := _index;
   end else TComboBox(Control).Text := Value;
+end;
+
+function TControlManagerLayout.Add(AJson: string): Integer;
+begin
+  var json := TJSONObject.SO(AJson);
+  try
+    if not Assigned(json) then Exit;
+    Result := Add(json);
+  finally
+    json.Free;
+  end;
+end;
+
+function TControlManagerLayout.Add(AJson: TJSONObject): Integer;
+begin
+  if not Assigned(AJson) then Exit;
+  if not AJson.Exists('ControlType') then Exit;
+  if not AJson.Exists('Name') then Exit;
+  if not AJson.Exists('Caption') then Exit;
+  Result := Add(AJson.I['ControlType'],AJson.S['Name'],AJson.S['Caption'],AJson.B['MustEnter'],AJson.GetValue<Boolean>('Visible',True),AJson.S['TextHint']);
+  if Result<0 then Exit;
+  for var item in AJson do
+  begin
+    if SameText(item.JsonString.Value,'ControlType') then Continue;
+    if SameText(item.JsonString.Value,'Name') then Continue;
+    if SameText(item.JsonString.Value,'Caption') then Continue;
+    if SameText(item.JsonString.Value,'MustEnter') then Continue;
+    if SameText(item.JsonString.Value,'Visible') then Continue;
+    if SameText(item.JsonString.Value,'TextHint') then Continue;
+    AssignPropertyValues(ConditionIndex[Result],item.JsonString.Value,item.JsonValue.ToString);
+  end;
 end;
 
 { TControlItem_Null }
@@ -961,6 +1201,7 @@ begin
   if Assigned(OWnerObject) and Assigned(OWnerObject.OWnerObject) and (OWnerObject.OWnerObject is TBaseForm) then
   begin
     TButtonedEdit(Result).OnRightButtonClick := OnRightButtonClick;
+    TButtonedEdit(Result).OnDblClick         := OnRightButtonClick;
     TButtonedEdit(Result).OnKeyDown  := OnEditKeyDown;
     TButtonedEdit(Result).Images := (OWnerObject.OWnerObject as TBaseForm).ImageList;
     TButtonedEdit(Result).RightButton.ImageIndex := 0;
@@ -1087,6 +1328,23 @@ procedure TControlItem_RadioGroup.SetValue(const Value: Variant);
 begin
   inherited;
   TRadioGroup(Control).ItemIndex := Value;
+end;
+
+{ TControlItem_Label }
+
+procedure TControlItem_Label.AfterCreateControl;
+begin
+  inherited;
+  FirstPanel.Alignment := taRightJustify;
+  CenterPanel.Alignment:= taLeftJustify;
+  if not string(FirstPanel.Caption).EndsWith(':') then FirstPanel.Caption := FirstPanel.Caption + ':';
+  CenterPanel.Caption  := TextHint;
+end;
+
+procedure TControlItem_Label.SetValue(const Value: Variant);
+begin
+  inherited;
+  CenterPanel.Caption := VarToStrDef(Value,TextHint);
 end;
 
 end.
