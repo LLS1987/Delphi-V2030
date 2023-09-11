@@ -50,7 +50,7 @@ type
     ///本地连接的时候的sa和密码
     property UserName:string read FUserName write FUserName;
     property Password:string read FPassword write FPassword;
-    property DatabaseName:string read FDatabaseName write SetDatabaseName;
+    property DatabaseName:string read FDatabaseName;// write SetDatabaseName;
     property Connected:Boolean read GetConnected write SetConnected;
     property ConnectType:TDBConnectType  read FConnectType write FConnectType;
   end;
@@ -67,6 +67,7 @@ begin
   Result := False;
   if not CheckConnected then Exit;
   Result := ClientDM.ChangeDataBase(ADataBaseName);
+  if Result then FDatabaseName := ADataBaseName;  
 end;
 
 function TDataBaseCommObject.CheckConnected: Boolean;
@@ -334,7 +335,7 @@ end;
 procedure TDataBaseCommObject.SetDatabaseName(const Value: string);
 begin
   if FDatabaseName=Value then Exit;
-  if not ChangeDataBase(Value) then Exit;
+  //if not ChangeDataBase(Value) then Exit;
   FDatabaseName := Value;
 end;
 
