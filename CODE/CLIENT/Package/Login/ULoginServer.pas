@@ -64,11 +64,6 @@ begin
     Goo.DB.HostName := Trim(edt_DBAddr.Text);
     Goo.DB.UserName := Trim(edt_DBSa.Text);
     Goo.DB.Password := Trim(edt_DBPass.Text);
-    try
-      Goo.DB.DatabaseName := 'qfmaster';
-    except
-      Goo.DB.DatabaseName := 'master';
-    end;
   end;
   Goo.DB.Connected:= True;
   GetZTDB;
@@ -81,7 +76,7 @@ begin
   Self.ParamList.Add('@DataSanap_Port',edt_DSPort.Text);
   Self.ParamList.Add('@AccountName',GridAccount.Cells[1,GridAccount.Row]);
   Self.ParamList.Add('@DatabaseName',GridAccount.Cells[2,GridAccount.Row]);
-  Goo.DB.DatabaseName := GridAccount.Cells[2,GridAccount.Row];
+  Goo.DB.ChangeDataBase(GridAccount.Cells[2,GridAccount.Row]);
   var ini := TIniFile.Create(ExtractFilePath(Application.ExeName)+'Config.ini');
   try
     ini.WriteString('LOGIN','LastServerAddress',Goo.DB.HostName);
@@ -166,7 +161,7 @@ end;
 function TLoginServer.GetZTDB: Boolean;
 var ds: TClientDataSet;
 begin
-  Goo.Logger.Debug('开始账套选择');
+  Goo.Logger.Debug('开始账套选择，当前%s:%s',[Goo.DB.DatabaseName,Goo.DB.Connected.ToString()]);
   if not Goo.DB.Connected then Exit;
   btn_SelectDB.Visible := Goo.DB.Connected;
   btn_SelectDB.SetFocus;
@@ -174,10 +169,8 @@ begin
   ds := TClientDataSet.Create(nil);
   try
     try
-      Goo.DB.DatabaseName := 'qfmaster';
       Goo.DB.OpenSQL('select * from qfmaster.dbo.ztdb',ds);                     //新版本是qfmaster
     except
-      Goo.DB.DatabaseName := 'master';
       Goo.DB.OpenSQL('select * from master.dbo.ztdb',ds);                       //否则查询老版本
     end;
     if ds.Active and (ds.RecordCount>0) then
