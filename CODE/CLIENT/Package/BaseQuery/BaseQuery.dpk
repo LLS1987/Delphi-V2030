@@ -36,6 +36,7 @@ contains
   UBaseInfoSel in 'UBaseInfoSel.pas' {BaseInfoSel},
   UCustomBaseQuery in 'UCustomBaseQuery.pas' {CustomBaseQuery},
   UBaseQuery in 'UBaseQuery.pas' {BaseQuery},
-  UDynamicQuery in 'UDynamicQuery.pas';
+  UDynamicQuery in 'UDynamicQuery.pas',
+  UBaseInfoEdit in 'UBaseInfoEdit.pas' {BaseInfoEdit};
 
 end.

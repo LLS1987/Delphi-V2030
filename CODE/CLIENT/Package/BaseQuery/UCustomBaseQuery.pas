@@ -31,6 +31,8 @@ type
     function GetQueryDictionary: TDictionary<string, TDictionary<Integer, string>>;
     function GetActiveDataSet: TClientDataSet;
     function GetActiveGridView: TcxCustomGridView;
+    function GetMultSel: Boolean;
+    procedure SetMultSel(const Value: Boolean);
     { Private declarations }
   protected
     FCloseButtonRec:Integer;
@@ -62,6 +64,7 @@ type
     property ItemColumn[AFieldName:string]: TcxGridDBColumn read GetItemColumn;
     property RowData[AFieldName:string;ARow:Integer]: Variant read GetRowData write SetRowData;
     property GridDblClickID:Integer read FGridDblClickID write FGridDblClickID;
+    property MultSel: Boolean read GetMultSel write SetMultSel;
   end;
   TConditionManager = class(TControlManagerLayout)
   private
@@ -79,7 +82,7 @@ const C_QueryMode_OPENPROC = 1;    //查询过程
 implementation
 
 uses
-  UComvar, System.JSON, System.IOUtils;
+  UComvar, System.JSON, System.IOUtils, UJsonObjectHelper;
 
 {$R *.dfm}
 
@@ -199,7 +202,8 @@ end;
 
 function TCustomBaseQuery.GetActiveRowIndex: Integer;
 begin
-  Result := MainGrid.ActiveView.DataController.FocusedRowIndex;
+  Result := MainGrid.ActiveView.DataController.FocusedRecordIndex;      //表格行
+//  Result := MainGrid.ActiveView.DataController.FocusedRecordIndex;     //数据行
 end;
 
 function TCustomBaseQuery.GetItemColumn(AFieldName: string): TcxGridDBColumn;
@@ -219,6 +223,11 @@ begin
     Result := view as TcxGridDBTableView;
 end;
 
+function TCustomBaseQuery.GetMultSel: Boolean;
+begin
+  Result := TcxGridDBTableView(ActiveGridView).OptionsSelection.MultiSelect;
+end;
+
 function TCustomBaseQuery.GetQueryDictionary: TDictionary<string, TDictionary<Integer, string>>;
 begin
   if not Assigned(FQueryDictionary) then FQueryDictionary := TDictionary<string,TDictionary<Integer,string>>.Create;
@@ -233,7 +242,8 @@ begin
   if (MainGrid.ActiveView.DataController.RowCount=0) or (ARow>=MainGrid.ActiveView.DataController.RowCount) or (ARow<0) then Exit;
   var _column := ItemColumn[AFieldName];
   if not Assigned(_column) then Exit;
-  Result := MainGrid.ActiveView.DataController.Values[ARow,_column.Index];
+//  Result := MainGrid.ActiveView.DataController.Values[ARow,_column.Index];      //排序过滤后取值异常
+  Result := MainView.DataController.GetRowValue(MainView.DataController.GetRowInfo(ARow),_column.Index);  //排序过滤后取值正常
 end;
 
 procedure TCustomBaseQuery.iniForm;
@@ -262,6 +272,9 @@ begin
     try
       if not Assigned(JSON) then Exit;
       self.Caption := JSON.GetValue<string>('Caption',Caption);
+      if JSON.Exists('ParamList') then
+        for var item in JSON.O['ParamList'] do
+          ParamList.Add(item.JsonString.Value,JSON.O['ParamList'].T[item.JsonString.Value]);
       if not(JSON.Values['Condition'] is TJSONArray) then Exit;
       for var item in JSON.Values['Condition'] as TJSONArray do
       begin
@@ -281,7 +294,8 @@ begin
         case _ControlType of
           17:Condition.AddDateBetween(_Name.TrimLeft(['@']),_Caption.Trim,_MustField,_Visible);   //时间段
         else
-          Condition.Add(_ControlType,_Name.TrimLeft(['@']),_Caption.Trim,_MustField,_Visible,_TextHint);
+          Condition.Add(item as TJSONObject);
+          //Condition.Add(_ControlType,_Name.TrimLeft(['@']),_Caption.Trim,_MustField,_Visible,_TextHint);
         end;
       end;
     finally
@@ -324,6 +338,20 @@ begin
   AddGridView;
 end;
 
+procedure TCustomBaseQuery.SetMultSel(const Value: Boolean);
+begin
+  if Value then
+  begin
+    TcxGridDBTableView(ActiveGridView).OptionsSelection.MultiSelect := True;
+    TcxGridDBTableView(ActiveGridView).OptionsSelection.CellMultiSelect := True;
+    TcxGridDBTableView(ActiveGridView).OptionsSelection.CheckBoxVisibility := [cbvDataRow, cbvGroupRow, cbvColumnHeader];
+  end else begin
+    TcxGridDBTableView(ActiveGridView).OptionsSelection.MultiSelect := False;
+    TcxGridDBTableView(ActiveGridView).OptionsSelection.CellMultiSelect := False;
+    TcxGridDBTableView(ActiveGridView).OptionsSelection.CheckBoxVisibility := TcxGridDBTableView(ActiveGridView).OptionsSelection.CheckBoxVisibility-[cbvDataRow, cbvGroupRow, cbvColumnHeader];
+  end;
+end;
+
 procedure TCustomBaseQuery.SetRowData(AFieldName: string; ARow: Integer; const Value: Variant);
 begin
   if not Assigned(MainGrid) then Exit;
@@ -331,7 +359,7 @@ begin
   if (MainGrid.ActiveView.DataController.RowCount=0) or (ARow>=MainGrid.ActiveView.DataController.RowCount) then Exit;
   var _column := ItemColumn[AFieldName];
   if not Assigned(_column) then Exit;
-  MainGrid.ActiveView.DataController.Values[ARow,_column.Index] := Value;
+  MainView.DataController.Values[MainView.DataController.GetRowInfo(ARow).RecordIndex,_column.Index] := Value;
 end;
 
 destructor TConditionManager.Destroy;
@@ -348,7 +376,7 @@ end;
 
 procedure TConditionManager.RefreshCondition;
 begin
-  Self.Width := Self.Width-400;
+  Self.Width := Self.Width-200;
   inherited;
   //单独刷新查询按钮
   FindButton.Parent  := self.Parent;

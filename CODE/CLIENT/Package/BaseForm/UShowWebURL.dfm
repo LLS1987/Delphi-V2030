@@ -15,12 +15,9 @@ inherited ShowWebURL: TShowWebURL
       TabOrder = 0
       OnDocumentTitleChanged = EdgeBrowserDocumentTitleChanged
       OnNewWindowRequested = EdgeBrowserNewWindowRequested
+      OnWebMessageReceived = EdgeBrowserWebMessageReceived
       OnWebResourceRequested = EdgeBrowserWebResourceRequested
       OnWindowCloseRequested = EdgeBrowserWindowCloseRequested
-      ExplicitLeft = 88
-      ExplicitTop = 64
-      ExplicitWidth = 100
-      ExplicitHeight = 41
     end
   end
   inherited Panel_Button: TPanel

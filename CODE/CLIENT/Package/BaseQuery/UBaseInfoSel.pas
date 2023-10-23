@@ -123,7 +123,7 @@ var
   Context:TRttiContext;
   Prop:TRttiProperty;
   typ:TRttiType;
-  A1,A2:TCustomAttribute;
+  A1,A2,AT:TCustomAttribute;
 begin
   if not Assigned(AStorable) then Exit;
   Context := TRttiContext.Create;
@@ -141,7 +141,7 @@ begin
             Name := MainView.Name + '_' + Prop.Name;
             HeaderAlignmentHorz       := taCenter;
             DataBinding.FieldName     := TFieldInfo(A2).FieldName;
-            Caption   := TFieldInfo(A2).Title;
+            Caption   := AStorable.Title+TFieldInfo(A2).Title;                  //如：商品编号
             Width     := TFieldInfo(A2).Width;
             Visible   := TFieldInfo(A2).Visible;
           end;
@@ -200,7 +200,7 @@ end;
 procedure TBaseInfoSel.OnColnumGetDisplayText(Sender: TcxCustomGridTableItem; ARecord: TcxCustomGridRecord; var AText: string);
 begin
   if SameText(Sender.Name,MainView.Name + '_Sex') then
-    AText := Goo.Format.iif(AText='0','男','女');
+    AText := Goo.Format.iif(AText.Trim='0','男','女');
 end;
 
 procedure TBaseInfoSel.OnFocusedRecordChanged(Sender: TcxCustomGridTableView;APrevFocusedRecord, AFocusedRecord: TcxCustomGridRecord;ANewItemRecordFocusingChanged: Boolean);

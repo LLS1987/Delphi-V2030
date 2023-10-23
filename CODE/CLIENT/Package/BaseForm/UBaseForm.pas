@@ -18,7 +18,7 @@ type
   TGridOption = (dgAppending, dgEditing, dgAlwaysShowEditor, dgTitles, dgIndicator,
     dgColumnResize, dgColLines, dgRowLines, dgTabs, dgRowSelect,
     dgAlwaysShowSelection, dgConfirmDelete, dgCancelOnExit, dgMultiSelect,
-    dgTitleClick, dgTitleHotTrack);
+    dgTitleClick, dgTitleHotTrack,dgExportToExcel);
   // 表格属性
   TGridOptions = set of TGridOption;
 
@@ -72,6 +72,7 @@ type
     procedure DoPrintHeader; virtual;
     // 刷新事件
     procedure DoRefreshDataByMessage(Sender: TObject); virtual;
+    procedure DoExportGridToExcel(Sender: TObject); virtual;
     procedure RefreshData; virtual;
     // 表格
     procedure DoGridViewLayout(Sender: TObject); virtual;
@@ -122,7 +123,7 @@ implementation
 
 uses
   UComvar, System.TypInfo, UBaseGridLayout, MidasLib, System.Math, System.JSON,
-  System.IOUtils;
+  System.IOUtils, cxGridExportLink;
 
 {$R *.dfm}
 
@@ -251,6 +252,16 @@ begin
   _MenuItem.Caption := '刷新数据';
   _MenuItem.OnClick := DoRefreshDataByMessage;
   TPopupMenu(APopupmenu.PopupMenu).Items.Add(_MenuItem);
+  var _MenuItem_ := TMenuItem.Create(APopupmenu.PopupMenu);
+  _MenuItem_.Caption := '-';
+  TPopupMenu(APopupmenu.PopupMenu).Items.Add(_MenuItem_);
+  if dgExportToExcel in GridOptions then
+  begin
+    var _MenuItem_ExportExcel := TMenuItem.Create(APopupmenu.PopupMenu);
+    _MenuItem_ExportExcel.Caption := '导出EXCEL';
+    _MenuItem_ExportExcel.OnClick := DoExportGridToExcel;
+    TPopupMenu(APopupmenu.PopupMenu).Items.Add(_MenuItem_ExportExcel);
+  end;
 end;
 
 procedure TBaseForm.DoClose(var Action: TCloseAction);
@@ -355,6 +366,23 @@ begin
   end;
 end;
 
+procedure TBaseForm.DoExportGridToExcel(Sender: TObject);
+var SaveFileDialog: TSaveDialog;
+begin
+  SaveFileDialog := TSaveDialog.Create(nil);
+  try
+    SaveFileDialog.FileName := self.Caption;
+    SaveFileDialog.Filter := '*.xls';
+    if SaveFileDialog.Execute then
+    begin
+      if pos('.XLS', UpperCase(SaveFileDialog.FileName)) <= 0 then SaveFileDialog.FileName := SaveFileDialog.FileName + '.XLS';
+      //ExportGridToExcel(SaveFileDialog.FileName, cxGrid);
+    end;
+  finally
+    SaveFileDialog.Free;
+  end;
+end;
+
 procedure TBaseForm.DoGridViewLayout(Sender: TObject);
 begin
   if FGridPopupMenu.Count = 0 then Exit;
@@ -422,6 +450,7 @@ end;
 
 procedure TBaseForm.StoreToIniFile;
 begin
+  if not TDirectory.Exists(Goo.SystemDataPath+'\Layout') then TDirectory.CreateDirectory(Goo.SystemDataPath+'\Layout');
   for var i := 0 to Self.ComponentCount - 1 do
   begin
     if Self.Components[i] is TWinControl then
@@ -602,6 +631,7 @@ begin
       // 表尾样式
       // 读写
       TcxGridTableView(GridView).NewItemRow.Visible    := dgAppending in GridOptions;
+      TcxGridTableView(GridView).OptionsBehavior.CopyCaptionsToClipboard := False;  //Ctrl+C 复制表头
       TcxGridTableView(GridView).OptionsBehavior.FocusCellOnCycle := dgAppending in GridOptions;
       TcxGridTableView(GridView).OptionsBehavior.FocusFirstCellOnNewRecord := dgAppending in GridOptions;
       TcxGridTableView(GridView).OptionsBehavior.GoToNextCellOnEnter := dgAppending in GridOptions;

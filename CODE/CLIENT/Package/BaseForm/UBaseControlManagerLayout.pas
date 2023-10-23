@@ -5,18 +5,21 @@ interface
 uses
   Vcl.ActnList, Vcl.Controls, Vcl.StdCtrls, System.Classes, System.SysUtils,
   Vcl.ExtCtrls, vcl.Forms, Vcl.Graphics, System.Generics.Collections,
-  UParamList, UComDBStorable, UBaseParams, Vcl.Buttons, Vcl.Menus, System.Rtti, System.JSON;
+  UParamList, UComDBStorable, UBaseParams, Vcl.Buttons, Vcl.Menus, System.Rtti,
+  System.JSON, UComconst;
 
 type
   TBaseConditionManager = class;
+  TControlItem = class;
 
+  TCheckControlItemDataEvent = function (AData:TControlItem;var AError:string):Boolean of object;
   TControlItem = class
     DataType:Integer;
     Name:string;
     Caption:string;
     TextHint:string;
     MustEnter:Boolean;
-    Visible:Boolean;
+    //Visible:Boolean;
     GroupParent:TWinControl;
     Parent:TWinControl;
     Control:TWinControl;
@@ -27,10 +30,18 @@ type
     FControlLeft,FControlTop,FGroupWidth,FGroupTop:Integer;
     FFirstPanel: TPanel;
     FCenterPanel: TPanel;
+    FOnCheckValueEvent: TCheckControlItemDataEvent;
+    FGroupCaption: string;
+    FVisible: Boolean;
     function GetStringWidth(const AStr: string; AFont: TFont): Integer;
     function GetLastCaption: string;
     procedure SetLastCaption(const Value: string);
     procedure OnControlWidthChange(Sender:TObject);
+    function GetReadOnly: Boolean;
+    procedure SetReadOnly(const Value: Boolean);
+    function GetEnabled: Boolean;
+    procedure SetEnabled(const Value: Boolean);
+    procedure SetVisible(const Value: Boolean);
   protected
     function GetValue: Variant; virtual;
     procedure SetValue(const Value: Variant);virtual;
@@ -50,8 +61,17 @@ type
     function CreateControl:TWinControl; virtual;
     //控件创建之后就能设置宽度了
     procedure AfterCreateControl; virtual;
+    procedure TrySetFocus;
+    function CheckValue(var OutMessage:String):Boolean;virtual;
   published
+    property Enabled: Boolean read GetEnabled write SetEnabled default True;
+    property ReadOnly: Boolean read GetReadOnly write SetReadOnly default False;
+    property Visible: Boolean read FVisible write SetVisible default True;
     property LastCaption:string read GetLastCaption write SetLastCaption;
+    ///分组标签名称
+    property GroupLabelCaption:string read FGroupCaption write FGroupCaption;
+    ///数据检查属性
+    property OnCheckValueEvent:TCheckControlItemDataEvent read FOnCheckValueEvent write FOnCheckValueEvent;
   end;
 
   TButtonItem = class(TControlItem)
@@ -105,6 +125,7 @@ type
   TControlItem_ButtonEdit = class(TControlItem)
   private
     FBaseInfo:TBaseParam;
+    FBaseType: Integer;
     procedure OnRightButtonClick(Sender:TObject);
     procedure OnEditKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
     function GetBaseInfo: TBaseParam;
@@ -116,6 +137,7 @@ type
     destructor Destroy; override;
     function CreateControl: TWinControl; override;
     property BaseInfo:TBaseParam read GetBaseInfo;
+    property BaseType:Integer read FBaseType write FBaseType;  //基本信息类型
   end;
   //选择框
   TControlItem_CheckBox = class(TControlItem)
@@ -215,18 +237,33 @@ type
   end;
 
 type
+  TControlItemClass = class of TControlItem;
+  //控件类型
+  TConditionContorlType = (cctNull,           //0: Result := TControlItem_Null.Create;
+                            cctEdit,          //1: Result := TControlItem_Edit.Create;
+                            cctCheckBox,      //2: Result := TControlItem_CheckBox.Create;
+                            cctDate,          //3: Result := TControlItem_Date.Create;
+                            cctDateTime,      //4: Result := TControlItem_DateTime.Create;
+                            cctComboBox,      //5: Result := TControlItem_ComboBox.Create;
+                            cctButtonEdit,    //6: Result := TControlItem_ButtonEdit.Create;
+                            cctRadioGroup     //7: Result := TControlItem_RadioGroup.Create;
+                            );
   TControlManagerLayout = class(TBaseConditionManager)
   private
     FWidth: Integer;
     FMemory: Boolean;
+    FEnumerateControl:TList<TControlItemClass>;
     function GetParamList: TParamList;
-    function CreateControl(ADataType:Integer): TControlItem;
+    function CreateControl(ADataType:Integer): TControlItem;overload;
+    function CreateControl(ADataType:TConditionContorlType): TControlItem;overload;
     function SplitString(AStr:string;AIndex:Integer):string;
   protected
     procedure AssignPropertyValues(AObject: TObject;const AName: string; const AValues:TValue);
   public
-    constructor Create;
+    constructor Create;overload;
+    constructor Create(AOwner:TObject;AParent:TWinControl);overload;
     destructor Destroy; override;
+    function EnumerateControl:TArray<TControlItemClass>;
     function Add(ADataType:Integer;AName,ACaption:string;AMustEnter,AVisible:Boolean;ATextHint:string=''): Integer; overload;
     function Add(ADataType:Integer;AName,ACaption,AItem:string;AVisible:Boolean): Integer; overload;
     /// <summary>
@@ -261,8 +298,10 @@ type
     /// <returns></returns>
     function AddThin(ADataType:Integer;AName,ACaption:string;AMustEnter,AVisible:Boolean): Integer; overload;
     function AddDateBetween(AName,ACaption:string;AMustEnter,AVisible:Boolean):Integer; overload;
+    procedure AddFromFile(const APath:string);
+    function CheckData(const ShowMsg:Boolean=True):Boolean;
     procedure RefreshCondition;virtual;
-    procedure RefreshParamList;virtual;
+    function RefreshParamList: boolean; virtual;
     property ParamList:TParamList read GetParamList;
     ///是否记忆参数，默认不记忆
     property Memory:Boolean       read FMemory write FMemory;
@@ -270,14 +309,15 @@ type
     property Width: Integer read FWidth write FWidth;
   end;
 
-  const Control_Border_Width = 10;
+  const Control_Border_Width = 15;
   const DADEPOPMENUCAPTION: array[0..9] of string =('本日','本周','本月', '本季度','本年','-','上周','上月','上季度','上年');
 
 implementation
 
 uses
   UComvar, Vcl.ComCtrls, UBaseForm, System.Variants, cxCurrencyEdit,
-  System.IniFiles, System.DateUtils, UJsonObjectHelper;
+  System.IniFiles, System.DateUtils, UJsonObjectHelper, System.IOUtils,
+  System.Math;
 
 { TControlItem }
 
@@ -326,13 +366,18 @@ begin
   end;
 end;
 
+function TControlItem.CheckValue(var OutMessage: String): Boolean;
+begin
+  Result := True;
+end;
+
 constructor TControlItem.Create;
 begin
   TextHint     := EmptyStr;
   FControlLeft := 80;
   FControlTop  := 0;
   FGroupTop    := 25;
-  FGroupWidth  := 300;
+  FGroupWidth  := 320;
 end;
 
 function TControlItem.CreateControl:TWinControl;
@@ -357,6 +402,7 @@ begin
   FFirstPanel.Align := alLeft;
   FFirstPanel.Height:= GroupParent.Height;
   FFirstPanel.Width  := FControlLeft;
+  //FFirstPanel.Alignment := taRightJustify;
   FFirstPanel.Caption:= Self.Caption;
   //中间数据展示区域
   FCenterPanel := TPanel.Create(GroupParent);
@@ -380,6 +426,9 @@ begin
   FLastPanel.Height:= GroupParent.Height;
   FLastPanel.Width := Control_Border_Width;
   FLastPanel.Caption:= GOO.Format.iif(MustEnter,'*','');
+  {$IFDEF DEBUG}
+  FLastPanel.Color := clBlue;
+  {$ENDIF DEBUG}
 end;
 
 function TControlItem.GetCaptionWidth: Integer;
@@ -387,9 +436,51 @@ begin
   Result := GetStringWidth(Caption,TPanel(GroupParent).Font);
 end;
 
+function TControlItem.GetEnabled: Boolean;
+var
+  Context: TRttiContext;
+  RttiType: TRttiType;
+  RttiProperty: TRttiProperty;
+begin
+  Result := False;
+  if not Assigned(Control) then  Exit;
+  Context := TRttiContext.Create;
+  try
+    RttiType := Context.GetType(Control.ClassType);
+    RttiProperty := RttiType.GetProperty('Enabled');
+    try
+      if Assigned(RttiProperty) then RttiProperty.GetValue(Control).AsBoolean;
+    except on E: Exception do Goo.Logger.Error('加载属性：%s，%s',['Enabled',e.Message])
+    end;
+  finally
+    Context.Free;
+  end;
+end;
+
 function TControlItem.GetLastCaption: string;
 begin
   Result := LastPanel.Caption;
+end;
+
+function TControlItem.GetReadOnly: Boolean;
+var
+  Context: TRttiContext;
+  RttiType: TRttiType;
+  RttiProperty: TRttiProperty;
+begin
+  Result := False;
+  if not Assigned(Control) then  Exit;
+  Context := TRttiContext.Create;
+  try
+    RttiType := Context.GetType(Control.ClassType);
+    RttiProperty := RttiType.GetProperty('ReadOnly');
+    try
+      if Assigned(RttiProperty) then RttiProperty.GetValue(Control).AsBoolean;
+    except on E: Exception do Goo.Logger.Error('加载属性：%s，%s',['ReadOnly',e.Message])
+    end;
+  finally
+    Context.Free;
+  end;
 end;
 
 function TControlItem.GetStringWidth(const AStr: string; AFont: TFont): Integer;
@@ -405,15 +496,76 @@ begin
   end;
 end;
 
+procedure TControlItem.SetEnabled(const Value: Boolean);
+var
+  Context: TRttiContext;
+  RttiType: TRttiType;
+  RttiProperty: TRttiProperty;
+begin
+  if not Assigned(Control) then Exit;
+  Context := TRttiContext.Create;
+  try
+    RttiType := Context.GetType(Control.ClassType);
+    RttiProperty := RttiType.GetProperty('Enabled');
+    try
+      if Assigned(RttiProperty) and RttiProperty.IsWritable then RttiProperty.SetValue(Control, Value);
+    except on E: Exception do Goo.Logger.Error('加载属性：%s，%s',['Enabled',e.Message])
+    end;
+  finally
+    Context.Free;
+  end;
+end;
+
 procedure TControlItem.SetLastCaption(const Value: string);
 begin
   LastPanel.Caption := Value;
-  LastPanel.Width   := Goo.Format.iif(GetStringWidth(Value,LastPanel.Font)>Control_Border_Width,GetStringWidth(Value,LastPanel.Font),Control_Border_Width);
+  LastPanel.Width   := Max(GetStringWidth(Value,LastPanel.Font), Control_Border_Width);
+end;
+
+procedure TControlItem.SetReadOnly(const Value: Boolean);
+var
+  Context: TRttiContext;
+  RttiType: TRttiType;
+  RttiProperty: TRttiProperty;
+begin
+  if not Assigned(Control) then Exit;  
+  Context := TRttiContext.Create;
+  try
+    RttiType := Context.GetType(Control.ClassType);
+    RttiProperty := RttiType.GetProperty('ReadOnly');
+    try
+      if Assigned(RttiProperty) and RttiProperty.IsWritable then RttiProperty.SetValue(Control, Value);
+    except on E: Exception do Goo.Logger.Error('加载属性：%s，%s',['ReadOnly',e.Message])
+    end;
+  finally
+    Context.Free;
+  end;
 end;
 
 procedure TControlItem.SetValue(const Value: Variant);
 begin
 
+end;
+
+procedure TControlItem.SetVisible(const Value: Boolean);
+var
+  Context: TRttiContext;
+  RttiType: TRttiType;
+  RttiProperty: TRttiProperty;
+begin
+  FVisible := Value;
+  if not Assigned(Control) then Exit;
+  Context := TRttiContext.Create;
+  try
+    RttiType := Context.GetType(Control.ClassType);
+    RttiProperty := RttiType.GetProperty('Visible');
+    try
+      if Assigned(RttiProperty) and RttiProperty.IsWritable then RttiProperty.SetValue(Control, Value);
+    except on E: Exception do Goo.Logger.Error('加载属性：%s，%s',['Visible',e.Message])
+    end;
+  finally
+    Context.Free;
+  end;
 end;
 
 procedure TControlItem.SetWidth(const Value: Integer);
@@ -426,6 +578,14 @@ begin
     //Control.Left := FControlLeft;
     Control.Top  := FControlTop;
     Control.Width:= CenterPanel.Width;
+  end;
+end;
+
+procedure TControlItem.TrySetFocus;
+begin
+  try
+    if Assigned(Control) then Control.SetFocus;
+  except on E: Exception do
   end;
 end;
 
@@ -513,7 +673,7 @@ end;
 constructor TControlItem_Date.Create;
 begin
   inherited;
-  FGroupWidth  := 150;
+  FGroupWidth  := Trunc(FGroupWidth/2);
   FControlLeft := 60;
 end;
 
@@ -522,8 +682,8 @@ var bmp:TBitmap;
 begin
   FBetweenButton := TImage.Create(LastPanel);
   FBetweenButton.Parent := LastPanel;
-  LastPanel.Width       := 15;
-  FBetweenButton.Width  := 15;
+  LastPanel.Width       := Control_Border_Width;
+  FBetweenButton.Width  := Control_Border_Width;
   FBetweenButton.Top    := 4;
   bmp := TBitmap.Create;
   try
@@ -658,7 +818,7 @@ end;
 constructor TControlItem_CheckBox.Create;
 begin
   inherited;
-  FGroupWidth  := 150;
+  FGroupWidth  := Trunc(FGroupWidth/2);
   FControlTop  := 4;
   FControlLeft := 10;
 end;
@@ -880,13 +1040,15 @@ begin
   if Result<0 then Exit;
   var _endindex := Add(3,SplitString(AName,1),SplitString(ACaption,1),AMustEnter,AVisible);
   if _endindex<0 then Exit;  
-  Items[Result].Value.Width := Items[Result].Value.Width + 20;
+  Items[Result].Value.LastPanel.Width := 5;
+  Items[_endindex].Value.FControlLeft := 65;
+  Items[Result].Value.Width := Items[Result].Value.Width + 10;
   Items[Result].Value.Value := FormatDateTime('YYYY-MM-01',Now);
   Items[Result].Value.Control.Tag     := _endindex;                             //开始时间上面标记结束时间的控件
   Items[_endindex].Value.Control.Tag  := Result;                                //结束时间上面标记开始时间的控件
-  Items[_endindex].Value.FControlLeft := 20;
-  Items[_endindex].Value.FirstPanel.Alignment := taLeftJustify;
-  Items[_endindex].Value.Width := Items[_endindex].Value.Width - 20;
+  Items[_endindex].Value.FControlLeft := 30;
+  //Items[_endindex].Value.FirstPanel.Alignment := taLeftJustify;
+  Items[_endindex].Value.Width := Items[_endindex].Value.Width - 10;
   TControlItem_Date(Items[_endindex].Value).CreateBetweenButton;
 end;
 
@@ -895,6 +1057,44 @@ begin
   Result := Add(ADataType, AName, ACaption, AMustEnter, AVisible);
   if Result<0 then Exit;  
   Self.Items[Result].Value.Width := Self.Items[Result].Value.Width*2;
+end;
+
+procedure TControlManagerLayout.AddFromFile(const APath: string);
+var Json:TJSONObject;
+begin
+  if FileExists(APath) then
+  begin
+    JSON := TJSONObject.ParseJSONValue(TFile.ReadAllText(APath)) as TJSONObject;
+    try
+      if not Assigned(JSON) then Exit;
+      if not(JSON.Values['Condition'] is TJSONArray) then Exit;
+      for var item in JSON.Values['Condition'] as TJSONArray do
+      begin
+        var _ControlType:Integer := 0;
+        var _Name:string := EmptyStr;
+        var _Caption:string := EmptyStr;
+        var _TextHint:string := EmptyStr;
+        var _MustField:Boolean := False;
+        var _Visible:Boolean := True;
+
+        if not item.TryGetValue<Integer>('ControlType',_ControlType) then Continue;
+        item.TryGetValue<string>('Name',_Name);
+        item.TryGetValue<string>('Caption',_Caption);
+        item.TryGetValue<string>('TextHint',_TextHint);
+        item.TryGetValue<Boolean>('MustField',_MustField);
+        item.TryGetValue<Boolean>('Visible',_Visible);
+        case _ControlType of
+          17:AddDateBetween(_Name.TrimLeft(['@']),_Caption.Trim,_MustField,_Visible);   //时间段
+        else
+          Add(item as TJSONObject);
+          //Add(_ControlType,_Name.TrimLeft(['@']),_Caption.Trim,_MustField,_Visible,_TextHint);
+        end;
+      end;
+    finally
+      JSON.Free;
+    end;
+  end;
+
 end;
 
 function TControlManagerLayout.AddThin(ADataType: Integer; AName, ACaption: string; AMustEnter, AVisible: Boolean): Integer;
@@ -912,11 +1112,14 @@ var
   RttiType: TRttiType;
   RttiProperty: TRttiProperty;
 begin
-  Context := TRttiContext.Create;
+    Context := TRttiContext.Create;
   try
     RttiType := Context.GetType(AObject.ClassType);
     RttiProperty := RttiType.GetProperty(AName);
-    if Assigned(RttiProperty) and RttiProperty.IsWritable then RttiProperty.SetValue(AObject, AValues);
+    try
+      if Assigned(RttiProperty) and RttiProperty.IsWritable then RttiProperty.SetValue(AObject, AValues);
+    except on E: Exception do Goo.Logger.Error('加载属性：%s，%s',[AName,e.Message])
+    end;
   finally
     Context.Free;
   end;
@@ -927,6 +1130,49 @@ begin
   inherited;
   Width := Application.MainForm.Width;
   FMemory := False;
+end;
+
+function TControlManagerLayout.CheckData(const ShowMsg:Boolean): Boolean;
+var AErrMsg:string;
+begin
+  Result := True;
+  for var item in Self do
+  begin
+    if not Assigned(item.Value.Control) then Continue;
+    if not item.Value.Visible then Continue;
+    Result := item.Value.CheckValue(AErrMsg);
+    if Result and Assigned(item.Value.OnCheckValueEvent) then Result := item.Value.OnCheckValueEvent(item.Value,AErrMsg);
+    if not Result then
+    begin
+      if ShowMsg then Goo.Msg.ShowMsg(AErrMsg);
+      item.Value.TrySetFocus;
+      Break;
+    end;
+    if VarIsNull(item.Value.Name) then Continue;
+    if item.Value.MustEnter and (VarIsStr(item.Value.Value) and (item.Value.Value=EmptyStr)) then
+    begin
+      if ShowMsg then
+      begin
+        Goo.Msg.ShowMsg('%s 不能为空',[item.Value.Caption]);
+        item.Value.TrySetFocus;
+      end;
+      Result := False;
+      Break;
+    end;
+  end;
+end;
+
+constructor TControlManagerLayout.Create(AOwner: TObject; AParent: TWinControl);
+begin
+  Create;
+  self.OWnerObject := AOwner;
+  self.Parent      := AParent;
+  Width            := AParent.Width;
+end;
+
+function TControlManagerLayout.CreateControl(ADataType: TConditionContorlType): TControlItem;
+begin
+  Result := EnumerateControl[Ord(ADataType)].Create;
 end;
 
 function TControlManagerLayout.CreateControl(ADataType:Integer): TControlItem;
@@ -940,13 +1186,32 @@ begin
     5: Result := TControlItem_ComboBox.Create;
     6: Result := TControlItem_ButtonEdit.Create;
     7: Result := TControlItem_RadioGroup.Create;
+    8: Result := TControlItem_Label.Create;
   else Result := TControlItem_Edit.Create;
   end;
 end;
 
 destructor TControlManagerLayout.Destroy;
 begin
+  if Assigned(FEnumerateControl) then FreeAndNil(FEnumerateControl);
   inherited;
+end;
+
+function TControlManagerLayout.EnumerateControl: TArray<TControlItemClass>;
+begin
+  if not Assigned(FEnumerateControl) then
+  begin
+    FEnumerateControl := TList<TControlItemClass>.Create;
+    FEnumerateControl.Add(TControlItem_Null);
+    FEnumerateControl.Add(TControlItem_Edit);
+    FEnumerateControl.Add(TControlItem_CheckBox);
+    FEnumerateControl.Add(TControlItem_Date);
+    FEnumerateControl.Add(TControlItem_DateTime);
+    FEnumerateControl.Add(TControlItem_ComboBox);
+    FEnumerateControl.Add(TControlItem_ButtonEdit);
+    FEnumerateControl.Add(TControlItem_RadioGroup);
+  end;
+  Result := FEnumerateControl.ToArray;
 end;
 
 function TControlManagerLayout.GetParamList: TParamList;
@@ -962,16 +1227,16 @@ begin
   begin
     if not Assigned(item.Value.GroupParent) then Continue;
     if not item.Value.Visible then Continue;
-    item.Value.GroupParent.Left := ALeft ;//+ item.Value.CaptionWidth;
-    item.Value.GroupParent.Top  := ATop;
-    ALeft := item.Value.GroupParent.Left + item.Value.GroupParent.Width;
     //判断是否需要换行，如果需要就重新计算一次
-    if ALeft>(Self.Width) then
+    if ALeft+item.Value.GroupParent.Width>(Self.Width) then
     begin
       self.Parent.Height := self.Parent.Height + Control_Border_Width + item.Value.GroupParent.Height;
       ALeft := Control_Border_Width;
-      ATop  := Control_Border_Width + item.Value.GroupParent.Top + item.Value.GroupParent.Height;
+      ATop  := ATop + Control_Border_Width + item.Value.GroupParent.Height - 5;
     end;
+    item.Value.GroupParent.Left := ALeft ;//+ item.Value.CaptionWidth;
+    item.Value.GroupParent.Top  := ATop;
+    ALeft := item.Value.GroupParent.Left + item.Value.GroupParent.Width;
     //读取记忆
     if Memory then
     begin
@@ -996,8 +1261,10 @@ begin
   end;
 end;
 
-procedure TControlManagerLayout.RefreshParamList;
+function TControlManagerLayout.RefreshParamList: boolean;
 begin
+  Result := CheckData;
+  if not Result then Abort;
   var inifile := TIniFile.Create(Goo.SystemDataPath+'\Daterecord.ini');
   try
     for var item in Self do
@@ -1124,7 +1391,8 @@ begin
     if SameText(item.JsonString.Value,'MustEnter') then Continue;
     if SameText(item.JsonString.Value,'Visible') then Continue;
     if SameText(item.JsonString.Value,'TextHint') then Continue;
-    AssignPropertyValues(ConditionIndex[Result],item.JsonString.Value,item.JsonValue.ToString);
+    //AssignPropertyValues(ConditionIndex[Result],item.JsonString.Value,item.JsonValue.ToString);
+    AssignPropertyValues(ConditionIndex[Result],item.JsonString.Value,AJson.T[item.JsonString.Value]);
   end;
 end;
 
@@ -1216,13 +1484,23 @@ end;
 
 function TControlItem_ButtonEdit.GetBaseInfo: TBaseParam;
 begin
-  if not Assigned(FBaseInfo) then FBaseInfo := TMTypeParam.Create(GroupParent);
+  if not Assigned(FBaseInfo) then
+  begin
+    case TBasicType(BaseType) of
+      btPtype : FBaseInfo := TPTypeParam.Create(GroupParent);
+      btEtype : FBaseInfo := TETypeParam.Create(GroupParent);
+      btKtype : FBaseInfo := TKTypeParam.Create(GroupParent);
+      btBtype : FBaseInfo := TBTypeParam.Create(GroupParent);
+      btMtype : FBaseInfo := TMTypeParam.Create(GroupParent);
+    else FBaseInfo := TMTypeParam.Create(GroupParent);
+    end;
+  end;
   Result := FBaseInfo;
 end;
 
 function TControlItem_ButtonEdit.GetValue: Variant;
 begin
-  if BaseInfo.Count>0 then
+  if (BaseInfo.Count>0) and (GetValueText<>EmptyStr) then
   begin
     if BaseInfo.MultSel then
     begin
