@@ -68,6 +68,14 @@ type
     constructor Create(AOwner: TComponent); override;
     procedure GetBaseInfoDataSet(ADataSet:TClientDataSet);override;
   end;
+  //厂商信息
+  TCSTypeParam = class(TBaseParam)
+  protected
+    function GetStorable: TStorable;override;
+  public
+    constructor Create(AOwner: TComponent); override;
+    procedure GetBaseInfoDataSet(ADataSet:TClientDataSet);override;
+  end;
   //门店信息
   TMTypeParam = class(TBaseParam)
   protected
@@ -78,6 +86,20 @@ type
   end;
   //职员信息
   TETypeParam = class(TBaseParam)
+  protected
+    function GetStorable: TStorable;override;
+  public
+    constructor Create(AOwner: TComponent); override;
+    procedure GetBaseInfoDataSet(ADataSet:TClientDataSet);override;
+  end;
+  TKTypeParam = class(TBaseParam)
+  protected
+    function GetStorable: TStorable;override;
+  public
+    constructor Create(AOwner: TComponent); override;
+    procedure GetBaseInfoDataSet(ADataSet:TClientDataSet);override;
+  end;
+  TBTypeParam = class(TBaseParam)
   protected
     function GetStorable: TStorable;override;
   public
@@ -116,7 +138,6 @@ destructor TBaseParam.Destroy;
 begin
   if Assigned(FStorable) then FreeAndNil(FStorable);
   if Assigned(FStorableDictionary) then FreeAndNil(FStorableDictionary);
-
   inherited;
 end;
 
@@ -213,7 +234,54 @@ end;
 procedure TETypeParam.GetBaseInfoDataSet(ADataSet: TClientDataSet);
 var ASQL:string;
 begin
-  ASQL:= 'select * from employee where deleted=0 AND sonnum=0';
+  ASQL := 'SELECT e.REC,e.typeId,e.Parid,e.leveal,e.soncount,e.sonnum,e.UserCode,e.FullName,d.Fullname AS Department,e.Tel,e.Sex,e.Posid,p.PosName '
+        + 'FROM dbo.employee e LEFT JOIN dbo.Department d ON e.Department=d.Rec	LEFT JOIN dbo.PosInfo p ON e.Posid=p.PosId '
+        + 'where e.deleted=0 AND e.sonnum=0 ';
+  if SearchString.Trim<>EmptyStr then
+  begin
+    ASQL := ASQL + ' and (e.usercode like ''%' + SearchString + '%''';
+    ASQL := ASQL + ' or   e.fullname like ''%' + SearchString + '%''';
+    ASQL := ASQL + ' or   e.pyzjm    like ''%' + SearchString + '%'')';
+  end;
+  Goo.DB.OpenSQL(ASQL,ADataSet);
+end;
+
+function TETypeParam.GetStorable: TStorable;
+begin
+  if not Assigned(FStorable) then FStorable:= TStorable_EType.Create;
+  Result := FStorable as TStorable_EType;
+end;
+
+{ TKTypeParam }
+
+constructor TKTypeParam.Create(AOwner: TComponent);
+begin
+  inherited;
+
+end;
+
+procedure TKTypeParam.GetBaseInfoDataSet(ADataSet: TClientDataSet);
+begin
+
+end;
+
+function TKTypeParam.GetStorable: TStorable;
+begin
+
+end;
+
+{ TBTypeParam }
+
+constructor TBTypeParam.Create(AOwner: TComponent);
+begin
+  inherited;
+  Title := '往来单位选择';
+end;
+
+procedure TBTypeParam.GetBaseInfoDataSet(ADataSet: TClientDataSet);
+var ASQL:string;
+begin
+  ASQL:= 'select * from btype where deleted=0 AND sonnum=0 AND typeId NOT LIKE ''9%''';
   if SearchString.Trim<>EmptyStr then
   begin
     ASQL := ASQL + ' and (usercode like ''%' + SearchString + '%''';
@@ -223,10 +291,39 @@ begin
   Goo.DB.OpenSQL(ASQL,ADataSet);
 end;
 
-function TETypeParam.GetStorable: TStorable;
+function TBTypeParam.GetStorable: TStorable;
 begin
-  if not Assigned(FStorable) then FStorable:= TStorable_EType.Create;
-  Result := FStorable as TStorable_EType;
+  if not Assigned(FStorable) then FStorable:= TStorable_BType.Create;
+  Result := FStorable as TStorable_BType;
+end;
+
+{ TCSTypeParam }
+
+constructor TCSTypeParam.Create(AOwner: TComponent);
+begin
+  inherited;
+  Title := '厂商信息选择';
+end;
+
+procedure TCSTypeParam.GetBaseInfoDataSet(ADataSet: TClientDataSet);
+var ASQL:string;
+begin
+  ASQL:= 'select * from cstype where deleted=0';
+  if SearchString.Trim<>EmptyStr then
+  begin
+    ASQL := ASQL + ' and sonnum=0 and (usercode like ''%' + SearchString + '%''';
+    ASQL := ASQL + ' or    fullname like ''%' + SearchString + '%''';
+    ASQL := ASQL + ' or    pyzjm   like ''%' + SearchString + '%'')';
+  end
+  else if ParID<>EmptyStr then ASQL := ASQL + Format(' and ParId = ''%s''',[ParID])
+  else ASQL := ASQL + ' and sonnum=0';
+  Goo.DB.OpenSQL(ASQL,ADataSet);
+end;
+
+function TCSTypeParam.GetStorable: TStorable;
+begin
+  if not Assigned(FStorable) then FStorable:= TStorable_CSType.Create;
+  Result := FStorable as TStorable_CSType;
 end;
 
 end.

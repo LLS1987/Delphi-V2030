@@ -157,7 +157,7 @@ end;
 
 function TGlobalObject.GetSystemDataPath: string;
 begin
-  Result := SystemPath+'\data';
+  Result := SystemPath+'\Data';
 end;
 
 function TGlobalObject.GetSystemPath: string;

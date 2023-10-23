@@ -3,7 +3,7 @@ unit UCrypto;
 interface
 
 uses
-  System.Classes, Windows, System.SysUtils, System.RTLConsts;
+  System.Classes, Windows, System.SysUtils, System.RTLConsts, System.Hash;
 
 type
 
@@ -11,10 +11,21 @@ type
   private
     class function crypto_sm4(encdectype: Integer; inputstr, key, outsing: PAnsiChar): Integer;
   public
-    ///加密
+    ///  sm4 加解密
     class function Encrypt_SM4(AInput: string; AKey: string): string;overload; virtual;  //加密
-    ///解密
     class function Decrypt_SM4(AInput: string; AKey: string): string;overload; virtual;  //解密
+    ///  SHA 加解密
+    class function HMAC_SHA1(const data, Key: string): string;
+    class function HMAC_SHA256(const data, Key: string): string;
+    class function SHA1(const data: string): string;
+    class function SHA256(const data: string): string;
+    ///  RSA 加解密
+    class function RSA_Encrypt(const data, Key: string): string;
+    class function RSA_Decrypt(const data, Key: string): string;
+    ///  AES 加解密
+    ///  sm4 加解密
+    class function SM4_Encrypt(const data, Key: string): string;
+    class function SM4_Decrypt(const data, Key: string): string;
   end;
 
   Tcrypto_sm4 = function(encdectype: Integer; inputstr: PAnsiChar; key: PAnsiChar; outsing: PAnsiChar): Integer; stdcall;
@@ -22,7 +33,7 @@ type
 implementation
 
 uses
-  UComvar;
+  UComvar, IdHashSHA, IdGlobal;
 
 { TCrypto }
 
@@ -74,6 +85,56 @@ begin
   finally
     FreeMem(rstpchar);
   end;
+end;
+
+class function TCrypto.HMAC_SHA1(const data, Key: string): string;
+begin
+  Result := THashSHA1.Create.GetHMAC(data, key);
+end;
+
+class function TCrypto.HMAC_SHA256(const data, Key: string): string;
+begin
+  Result := THashSHA2.Create.GetHMAC(data, key);
+end;
+
+class function TCrypto.RSA_Decrypt(const data, Key: string): string;
+begin
+
+end;
+
+class function TCrypto.RSA_Encrypt(const data, Key: string): string;
+begin
+
+end;
+
+class function TCrypto.SHA1(const data: string): string;
+begin
+  with TIdHashSHA1.Create do
+  try
+    Result := HashBytesAsHex(TidBytes(Bytesof(data)));
+  finally
+    Free;
+  end;
+end;
+
+class function TCrypto.SHA256(const data: string): string;
+begin
+  with TIdHashSHA256.Create do
+  try
+    Result := HashBytesAsHex(TidBytes(Bytesof(data)));
+  finally
+    Free;
+  end;
+end;
+
+class function TCrypto.SM4_Decrypt(const data, Key: string): string;
+begin
+
+end;
+
+class function TCrypto.SM4_Encrypt(const data, Key: string): string;
+begin
+
 end;
 
 end.

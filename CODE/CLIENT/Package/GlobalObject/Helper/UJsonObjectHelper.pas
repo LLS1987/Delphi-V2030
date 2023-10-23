@@ -5,7 +5,7 @@ unit UJsonObjectHelper;
 interface
 
 uses
-  System.JSON;
+  System.JSON, System.Rtti;
 
 type
 
@@ -29,6 +29,8 @@ type
     procedure SetC(PairName: string; const Value: Currency);
     function GetV(PairName: string): Variant;
     procedure SetV(PairName: string; const Value: Variant);
+    function GetT(PairName: string): TValue;
+    procedure SetT(PairName: string; const Value: TValue);
   public
     //ÅÐ¶ÏÄ³¸ö×Ö¶ÎÊÇ·ñ´æÔÚ
     function Exists(PairName : string) : Boolean;
@@ -40,6 +42,7 @@ type
     property C[PairName : string] : Currency    read GetC write SetC;
     property V[PairName : string] : Variant     read GetV write SetV;
     property B[PairName : string] : Boolean     read GetB write SetB;
+    property T[PairName : string] : TValue     read GetT write SetT;
     property A[PairName : string] : TJSONArray  read GetValueA   write SetValueA;
     property O[PairName : string] : TJSONObject read GetValueO   write SetValueO;
     class function SO(const s: string = '{}'):TJSONObject;
@@ -60,6 +63,17 @@ end;
 function TJSONObjectHelper.GetC(PairName: string): Currency;
 begin
   Result := GetValue<Currency>(PairName,0);
+end;
+
+function TJSONObjectHelper.GetT(PairName: string): TValue;
+begin
+  var value := Values[PairName];
+  Result := GetValueS(PairName);
+  if value is TJSONNumber then
+  begin
+      if Pos('.',Result.ToString)>0 then Result := GetValueD(PairName)
+      else Result := GetValueI64(PairName);
+  end else if value is TJSONBool then Result := GetB(PairName);
 end;
 
 function TJSONObjectHelper.GetV(PairName: string): Variant;
@@ -110,6 +124,11 @@ procedure TJSONObjectHelper.SetC(PairName: string; const Value: Currency);
 begin
   if Exists(PairName) then Self.RemovePair(PairName).Free;
   Self.AddPair(PairName, Value);
+end;
+
+procedure TJSONObjectHelper.SetT(PairName: string; const Value: TValue);
+begin
+  SetV(PairName, Value.AsVariant);
 end;
 
 procedure TJSONObjectHelper.SetV(PairName: string; const Value: Variant);

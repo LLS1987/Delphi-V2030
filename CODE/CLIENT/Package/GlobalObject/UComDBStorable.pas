@@ -100,6 +100,7 @@ type
     procedure setAttributeFieldCaption(const AProp, Value: string);
     function getAttributeFieldVisible(const AProp: string): Boolean;
     procedure setAttributeFieldVisible(const AProp: string; const Value: Boolean);
+    function GetTitle: string;
   protected
     procedure IniSelectSQL; virtual;
   public
@@ -112,7 +113,7 @@ type
     //查询表
     function Select: string;
     //获取字段标题
-    property FieldCaption[const AFieldName: string]:string     read GetFieldTitle write SetFieldTitle;
+    //property FieldCaption[const AFieldName: string]:string     read GetFieldTitle write SetFieldTitle;
     property AttributeFieldCaption[const AProp: string]:string read getAttributeFieldCaption write setAttributeFieldCaption;
     property AttributeFieldName[const AProp:string]: string    read getAttributeFieldName write setAttributeFieldName;
     property AttributeFieldVisible[const AProp:string]:Boolean read getAttributeFieldVisible write setAttributeFieldVisible;
@@ -120,6 +121,7 @@ type
     //function SetAttributeValue(const PropName, AttributeValue: string): Boolean;
     property Wheres:TStrings read FWheres;
     property Selects:TStrings read FSelects;
+    property Title: string read GetTitle;
     //基础信息字段
     [TFieldInfo('Rec','主键REC',80,False)]
     property Rec:Integer read FRec write FRec;
@@ -135,45 +137,62 @@ type
     property FullName: string read FFullName write FFullName;
   end;
   //商品
-  [TTable('ptype','商品信息')]
+  [TTable('ptype','商品')]
   TStorable_PType = class(TStorable)
   private
     FUnit1: string;
     FType: string;
     FStandard: string;
+    FArea: Integer;
   public
-    constructor Create;override;
     [TFieldInfo('Unit1','基本单位')]
     property Unit1: string read FUnit1 write FUnit1;
     [TFieldInfo('Standard','规格')]
     property Standard: string read FStandard write FStandard;
     [TFieldInfo('Type','剂型')]
     property PType: string read FType write FType;
+    [TFieldInfo('Area','Area',80,False)]
+    property Area: Integer read FArea write FArea;
+  end;
+  [TTable('cstype','厂商')]
+  TStorable_CSType = class(TStorable)
+
   end;
   //门店
-  [TTable('posinfo','门店信息')]
+  [TTable('posinfo','门店')]
   TStorable_MType = class(TStorable)
   public
-    constructor Create;override;
   end;
   //职员
-  [TTable('employee','职员信息')]
+  [TTable('employee','职员')]
   TStorable_EType = class(TStorable)
   private
     FPosid: Integer;
     FSex: string;
+    FPosName: string;
+    FDepartment: string;
+    FTel: string;
   public
-    constructor Create;override;
+    [TFieldInfo('Department','所在部门')]
+    property Department: string read FDepartment write FDepartment;
+    [TFieldInfo('Tel','电话')]
+    property Tel: string read FTel write FTel;
     [TFieldInfo('Sex','性别')]
     property Sex: string read FSex write FSex;
-    [TFieldInfo('Posid','门店')]
+    [TFieldInfo('Posid','Posid',80,False)]
     property Posid: Integer read FPosid write FPosid;
+    [TFieldInfo('PosName','所属门店',100)]
+    property PosName: string read FPosName write FPosName;
   end;
   //仓库
-  [TTable('stock','仓库信息')]
+  [TTable('stock','仓库')]
   TStorable_KType = class(TStorable)
   public
-    constructor Create;override;
+  end;
+  //仓库
+  [TTable('btype','单位')]
+  TStorable_BType = class(TStorable)
+  public
   end;
 
   TStorableDictionary = class(TObjectDictionary<Integer,TStorable>)
@@ -281,6 +300,29 @@ begin
           Result := TFieldInfo(A2).Title;
           Break;
         end;
+      end;
+    end;
+  finally
+    Context.Free;
+  end;
+end;
+
+function TStorable.GetTitle: string;
+var
+  Context:TRttiContext;
+  Prop:TRttiProperty;
+  typ:TRttiType;
+  A1,A2:TCustomAttribute;
+begin
+  Result := EmptyStr;
+  Context := TRttiContext.Create;
+  try
+    typ := Context.GetType(ClassType);
+    for A1 in typ.GetAttributes do
+    begin
+      if A1 is TTable then
+      begin
+        Result := TTable(A1).Title;
       end;
     end;
   finally
@@ -661,45 +703,6 @@ begin
   if Count=0 then Exit;
   for Result in Values do Break;
   //Result := Values.ToArray[0];
-end;
-
-{ TStorable_PType }
-
-constructor TStorable_PType.Create;
-begin
-  inherited;
-  AttributeFieldCaption['UserCode'] := '商品编号';
-  AttributeFieldCaption['FullName'] := '商品名称';
-end;
-
-{ TStorable_MType }
-
-constructor TStorable_MType.Create;
-begin
-  inherited;
-  AttributeFieldCaption['UserCode'] := '门店编号';
-  AttributeFieldCaption['FullName'] := '门店名称';
-  //AttributeFieldName['Rec']         := 'posid';
-  //AttributeFieldName['UserCode']    := 'poscode';
-  //AttributeFieldName['FullName']    := 'posname';
-end;
-
-{ TStorable_EType }
-
-constructor TStorable_EType.Create;
-begin
-  inherited;
-  AttributeFieldCaption['UserCode'] := '职员编号';
-  AttributeFieldCaption['FullName'] := '职员名称';
-end;
-
-{ TStorable_KType }
-
-constructor TStorable_KType.Create;
-begin
-  inherited;
-  AttributeFieldCaption['UserCode'] := '仓库编号';
-  AttributeFieldCaption['FullName'] := '仓库名称';
 end;
 
 end.

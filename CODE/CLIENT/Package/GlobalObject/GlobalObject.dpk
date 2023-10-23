@@ -76,6 +76,7 @@ contains
   UBaseParams in 'UBaseParams.pas',
   UClientModule_LocalADO in 'UClientModule_LocalADO.pas' {ClientModule_LocalADO: TDataModule},
   UComDBSQLDMO in 'UComDBSQLDMO.pas',
-  UParamForm in 'UParamForm.pas' {ParamForm};
+  UParamForm in 'UParamForm.pas' {ParamForm},
+  UExcelObject in 'UExcelObject.pas';
 
 end.

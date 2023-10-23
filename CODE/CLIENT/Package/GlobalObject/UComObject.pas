@@ -216,7 +216,8 @@ function TRegisterClassFactory.ShowModal(AClass:string; AParam: TParamList): TMo
 begin
   var ff := CreateFormClass(AClass,AParam);
   try
-    if not Assigned(ff) then Exit;    
+    if not Assigned(ff) then Exit;
+    ff.Visible := False;
     Result := ff.ShowModal;
     if Assigned(AParam) then AParam.Assign((ff as IForm).GetParamList);
   finally

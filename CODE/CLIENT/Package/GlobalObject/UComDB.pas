@@ -199,7 +199,7 @@ begin
     Goo.Logger.Debug('开始数据库查询[%s]:%s',[ClientDM.ClassName,szProcedureName]);
     Result := ClientDM.OpenProc(szProcedureName,AParamName,AParamValue,ADataSet,AParams);
     Goo.Logger.Debug('数据库完成，返回行:%d',[ADataSet.RecordCount]);
-  except on E: Exception do
+  except on E: Exception do Goo.Msg.ShowError('过程：%s，打开数据错误：%s',[szProcedureName,e.Message]);
   end;
 end;
 
