@@ -223,7 +223,7 @@ begin
     begin
       for var item in _json.O['ParamList'] do
       begin
-        AParamList.Add(item.JsonString.Value,_json.O['ParamList'].S[item.JsonString.Value]);
+        AParamList.Add(item.JsonString.Value,_json.O['ParamList'].T[item.JsonString.Value]);
       end;
     end;
     case TRegisterType(_json.I['classtype']) of

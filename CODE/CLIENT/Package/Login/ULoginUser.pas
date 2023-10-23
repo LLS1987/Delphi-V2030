@@ -7,7 +7,7 @@ uses
   Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, Vcl.Buttons, Vcl.Mask,
   Vcl.ExtCtrls, Vcl.DBCtrls,UBaseDialogForm, System.ImageList, Vcl.ImgList,
   System.Actions, Vcl.ActnList, Data.DB, Datasnap.DBClient, Vcl.FileCtrl,
-  Vcl.ComCtrls, Vcl.Imaging.jpeg;
+  Vcl.ComCtrls, Vcl.Imaging.jpeg, cxStyles, cxClasses;
 
 type
   TLoginUser = class(TBaseDialogForm)
@@ -20,6 +20,8 @@ type
     DataSource1: TDataSource;
     cob_USerList: TComboBox;
     Label1: TLabel;
+    Label2: TLabel;
+    Label3: TLabel;
     procedure FormCreate(Sender: TObject);
     procedure btn_LoginClick(Sender: TObject);
   private
