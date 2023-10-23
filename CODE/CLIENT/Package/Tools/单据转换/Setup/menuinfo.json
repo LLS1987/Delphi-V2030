@@ -1,0 +1,51 @@
+{
+    "item": [
+        {
+            "caption": "工具",
+            "item": [
+                {
+                    "caption": "销售单查询",
+                    "classname": "TSaleToMoney",
+					"ParamList":{"@BillType":"11,45"},
+                    "classtype": 0,
+                    "sort": 0
+                }
+            ],
+            "sort": 0
+        },        
+        {
+            "caption": "系统",
+            "item": [
+                {
+                    "action": "Action_ChangeUser",
+                    "caption": "更换用户",
+                    "classname": "",
+                    "classtype": 0,
+                    "sort": 0
+                },
+                {
+                    "action": "Action_ChangeDB",
+                    "caption": "更换账套",
+                    "classname": "",
+                    "classtype": 0,
+                    "sort": 1
+                },
+                {
+                    "action": "Action_Upgrade",
+                    "caption": "数据库升级",
+                    "classname": "",
+                    "classtype": 0,
+                    "sort": 2
+                },				
+                {
+                    "action": "Action_Close",
+                    "caption": "退出系统",
+                    "classname": "",
+                    "classtype": 0,
+                    "sort": 3
+                }
+            ],
+            "sort": 3
+        }
+    ]
+}
