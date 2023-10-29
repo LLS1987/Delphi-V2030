@@ -11,6 +11,7 @@ type
   protected
   public
     procedure Assign(AParam:TParamList);
+    function Exists(const key:string):Boolean;
     procedure Add(const key:string; value:TValue); overload;
     procedure Add(const key:string; value:Variant); overload;
     procedure Add(const key:string; value:string); overload;
@@ -133,6 +134,11 @@ begin
   Result := Null;
   var value := AsValue(key);
   if not value.IsEmpty then Result := value.AsVariant;
+end;
+
+function TParamList.Exists(const key: string): Boolean;
+begin
+  Result := ContainsKey(key);
 end;
 
 procedure TParamList.Add(const key: string; value: TObject);

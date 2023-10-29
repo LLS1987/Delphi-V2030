@@ -31,8 +31,8 @@ type
     function QueryOneFiled(const ASQL: string):Variant;
   end;
 
-var
-  DM: TClientModule;
+//var
+//  DM: TClientModule;
 
 implementation
 

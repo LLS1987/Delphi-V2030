@@ -17,6 +17,7 @@ type
     FConnectType: TDBConnectType;
     FUserName: string;
     FPassword: string;
+    DM: TClientModule;
     function ClientDM:TClientModule;
     function GetConnected: Boolean;
     procedure SetConnected(const Value: Boolean);
