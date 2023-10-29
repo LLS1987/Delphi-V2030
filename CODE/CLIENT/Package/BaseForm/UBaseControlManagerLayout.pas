@@ -22,7 +22,6 @@ type
     //Visible:Boolean;
     GroupParent:TWinControl;
     Parent:TWinControl;
-    Control:TWinControl;
     Action:TAction;
     OWnerObject:TBaseConditionManager;
   private
@@ -33,6 +32,7 @@ type
     FOnCheckValueEvent: TCheckControlItemDataEvent;
     FGroupCaption: string;
     FVisible: Boolean;
+    FControl: TWinControl;
     function GetStringWidth(const AStr: string; AFont: TFont): Integer;
     function GetLastCaption: string;
     procedure SetLastCaption(const Value: string);
@@ -58,6 +58,7 @@ type
     property FirstPanel:TPanel read FFirstPanel;
     property CenterPanel:TPanel read FCenterPanel;
     property LastPanel:TPanel read FLastPanel;
+    property Control:TWinControl read FControl write FControl;
     function CreateControl:TWinControl; virtual;
     //控件创建之后就能设置宽度了
     procedure AfterCreateControl; virtual;
@@ -382,6 +383,7 @@ end;
 
 function TControlItem.CreateControl:TWinControl;
 begin
+  Result := nil;
   GroupParent := TPanel.Create(Parent);
   GroupParent.Parent := Parent;
   TPanel(GroupParent).BevelOuter := bvNone;
@@ -1615,7 +1617,7 @@ begin
   inherited;
   FirstPanel.Alignment := taRightJustify;
   CenterPanel.Alignment:= taLeftJustify;
-  if not string(FirstPanel.Caption).EndsWith(':') then FirstPanel.Caption := FirstPanel.Caption + ':';
+  if not string(FirstPanel.Caption).EndsWith('：') then FirstPanel.Caption := FirstPanel.Caption + '：';
   CenterPanel.Caption  := TextHint;
 end;
 

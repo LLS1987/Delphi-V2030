@@ -282,8 +282,7 @@ begin
     Close;
 end;
 
-procedure TBaseForm.DoCustomColumnGetStoredProperties
-  (Sender: TcxCustomGridTableItem; AProperties: TStrings);
+procedure TBaseForm.DoCustomColumnGetStoredProperties(Sender: TcxCustomGridTableItem; AProperties: TStrings);
 begin
   AProperties.Add('Caption'); // 标签
   AProperties.Add('VisibleForCustomization'); // 能否用户自定义
