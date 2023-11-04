@@ -27,7 +27,9 @@ type
   private
     FAllowJump: Boolean;
     function GetURL: string;
+    procedure SetUrl(const Value: string);
   public
+    procedure BeforeFormShow; override;
     /// <remarks>
     ///  是否允许网页进行页面跳转
     /// </remarks>
@@ -35,8 +37,7 @@ type
     /// <summary>
     ///  默认打开的 URL
     /// </summary>
-    property URL:string read GetURL;
-    procedure BeforeFormShow; override;
+    property URL:string read GetURL write SetUrl;
   end;
 
 var
@@ -58,19 +59,7 @@ begin
   //if not EdgeBrowser.WebViewCreated then Exit;
   //设置缓存路径
   EdgeBrowser.UserDataFolder := Goo.SystemDataPath;
-  //EdgeBrowser.Navigate(URL);
-  //线程中打开链接，
-  TThread.CreateAnonymousThread(
-    procedure
-    begin
-      TThread.Synchronize( nil,
-        procedure //var AHTMLContent: string;
-        begin
-          //EdgeBrowser1.NavigateToString(AHTMLContent);
-          if EdgeBrowser.Navigate(URL)=false then Goo.Logger.Error('网页打开错误：%s',[URL]);    //:Navigate:如果返回了错误码:=true,否则:=false
-        end);
-    end
-  ).Start;
+  URL := Self.ParamList.AsString('@URL');
 end;
 
 procedure TShowWebURL.EdgeBrowserDocumentTitleChanged(Sender:TCustomEdgeBrowser; const ADocumentTitle: string);
@@ -122,7 +111,21 @@ end;
 
 function TShowWebURL.GetURL: string;
 begin
-  Result := Self.ParamList.AsString('@URL');
+  Result := EdgeBrowser.LocationURL;
+end;
+
+procedure TShowWebURL.SetUrl(const Value: string);
+begin
+  TThread.CreateAnonymousThread(
+    procedure
+    begin
+      TThread.Synchronize( nil,
+        procedure //var AHTMLContent: string;
+        begin
+          if EdgeBrowser.Navigate(Value)=false then Goo.Logger.Error('网页打开错误：%s',[Value]);    //:Navigate:如果返回了错误码:=true,否则:=false
+        end);
+    end
+  ).Start;
 end;
 
 initialization
