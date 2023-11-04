@@ -26,7 +26,9 @@ CREATE PROCEDURE GP_BillConvertRecord_Query
 	@EndDate	ctDate
 )
 AS
-	SELECT i.BillID	,i.BillType,i.BillDate,i.BillCode,b.UserCode AS BCode,b.FullName AS BName,e.UserCode AS ECode,e.FullName AS EName,i.Comment,i.explain,i.totalqty,i.totalmoney,i.SendWay
+	SELECT i.BillID	,i.BillType,i.BillDate,i.BillCode,b.UserCode AS BCode,b.FullName AS BName,e.UserCode AS ECode,e.FullName AS EName,i.Comment,i.explain,i.SendWay,
+		CASE WHEN i.BillType = 45 THEN -i.totalqty ELSE i.totalqty END AS totalqty,
+		CASE WHEN i.BillType = 45 THEN -i.totalmoney ELSE i.totalmoney END AS totalmoney
 	FROM dbo.vBillIndex_Query i INNER JOIN dbo.GetBillTypeTable(@BillType) t ON i.BillType=t.ObjectID 
 		INNER JOIN dbo.btype b ON i.BRec=b.Rec AND b.deleted=0
 		INNER JOIN dbo.employee e ON i.ERec=e.REC AND e.deleted=0
@@ -56,14 +58,15 @@ DECLARE @BillDate	ctDate,@BillCode	ctShortStr,@Comment	ctComment,@BRec ctInt
 DECLARE @BillE	ctInt
 
 SELECT @BillDate=CONVERT(VARCHAR(10),GETDATE(),120),@BRec=BRec,@TotalMoney=CASE WHEN BillType=45 THEN -totalmoney ELSE  totalmoney END,
-	@Comment='销售单【'+BillCode+'】，生成的收款单：'+CAST(totalmoney AS VARCHAR(20)),
-	@BillE=BillE
+	--@Comment='销售单【'+BillCode+'】，生成的收款单：'+CAST(totalmoney AS VARCHAR(20)),
+	@Comment='',
+	@BillE=ERec--,@ERec=ERec
 FROM dbo.vBillIndex_Query WHERE BillID=@BillID
 
 EXEC dbo.GP_CreateBillCode @nBillId=0,@nBillType = @DescBill,@szBillCode = @BillCode OUTPUT
 
-EXEC @NewBillID=dbo.Gp_InsertBillIndex @BillDate = @BillDate,@BillCode = @BillCode,@BillType = 4,@Comment = @Comment,@BREc = @BRec,@ERec = @ERec,
-	@CheckE = @ERec,@ifchecked = 1, @BillE = @BillE,@TotalMoney = @TotalMoney, @TotalQty = 0,@posid = 0,@OfficeId = 0,@OutStockLaw = 'z'
+EXEC @NewBillID=dbo.Gp_InsertBillIndex @BillDate = @BillDate,@BillCode = @BillCode,@BillType = 4,@Comment = @Comment,@BREc = @BRec,@ERec = @BillE,
+	@CheckE = @ERec,@ifchecked = 1, @BillE = @ERec,@TotalMoney = @TotalMoney, @TotalQty = 0,@posid = 0,@OfficeId = 0,@OutStockLaw = 'z'
 
 --exec @NewBillID=Gp_InsertBillIndex @BillDate,@BillCode,4,@Comment,0,2,@ERec,0,0,0,0,@ERec,@TotalMoney,$0.0000,@TotalMoney,$0.0000,$0.0000,$0.0000,'',0,0,default,0,0,'',0,0,0,NULL,0,'z','',default,1,NULL,NULL,'','5',0,0,0,0,0,0,'','','',NULL,'','','',default,default,default,'','',@ERec,default,0,0,$0.0000,0,0,0,0,-1
 IF @NewBillID<=0 OR @@ERROR>0 RETURN @NewBillID

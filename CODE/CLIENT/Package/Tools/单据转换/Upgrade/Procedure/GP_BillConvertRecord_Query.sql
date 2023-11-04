@@ -14,7 +14,9 @@ CREATE PROCEDURE GP_BillConvertRecord_Query
 	@EndDate	ctDate
 )
 AS
-	SELECT i.BillID	,i.BillType,i.BillDate,i.BillCode,b.UserCode AS BCode,b.FullName AS BName,e.UserCode AS ECode,e.FullName AS EName,i.Comment,i.explain,i.totalqty,i.totalmoney,i.SendWay
+	SELECT i.BillID	,i.BillType,i.BillDate,i.BillCode,b.UserCode AS BCode,b.FullName AS BName,e.UserCode AS ECode,e.FullName AS EName,i.Comment,i.explain,i.SendWay,
+		CASE WHEN i.BillType = 45 THEN -i.totalqty ELSE i.totalqty END AS totalqty,
+		CASE WHEN i.BillType = 45 THEN -i.totalmoney ELSE i.totalmoney END AS totalmoney
 	FROM dbo.vBillIndex_Query i INNER JOIN dbo.GetBillTypeTable(@BillType) t ON i.BillType=t.ObjectID 
 		INNER JOIN dbo.btype b ON i.BRec=b.Rec AND b.deleted=0
 		INNER JOIN dbo.employee e ON i.ERec=e.REC AND e.deleted=0
