@@ -8,7 +8,8 @@ unit UGlobalObject_Proxy;
 interface
 
 uses
-  UGlobalInterface, UComObject,UParamList, System.UITypes, Winapi.Windows, Vcl.Forms;
+  UGlobalInterface, UComObject,UParamList, System.UITypes, Winapi.Windows,
+  Vcl.Forms, Vcl.MPlayer;
 
 type
   TLoginCommObject = class(TBaseCommObject)
@@ -96,6 +97,16 @@ type
     //进度条
     procedure ShowProgressBar(AMax:Integer=100;ATitle:string='');
     procedure StepBy(Delta: Integer=1;ATitle:string='');
+  end;
+  {多媒体播放}
+  TPlayMediaObject = class(TBaseCommObject)
+  private
+    FMediaPlayer: TMediaPlayer;
+  public
+    constructor Create(AOwner: TObject);
+    destructor Destroy; override;
+    procedure Play(AFile:string);
+    property MediaPlayer : TMediaPlayer read FMediaPlayer;
   end;
 
 implementation
@@ -417,6 +428,38 @@ begin
   finally
     Encoding.Free;
   end;
+end;
+
+{ TPlayMediaObject }
+
+constructor TPlayMediaObject.Create(AOwner: TObject);
+begin
+  inherited Create(AOwner);
+end;
+
+destructor TPlayMediaObject.Destroy;
+begin
+  if Assigned(FMediaPlayer) then
+  begin
+    FMediaPlayer.Close;
+    FMediaPlayer.Free;
+  end;
+  inherited;
+end;
+
+procedure TPlayMediaObject.Play(AFile: string);
+begin
+  if not FileExists(AFile) then Exit;
+  if not Assigned(FMediaPlayer) then
+  begin
+    FMediaPlayer := TMediaPlayer.Create(nil);
+    FMediaPlayer.Visible := False;
+    FMediaPlayer.Parent  := Application.MainForm;
+  end;
+  FMediaPlayer.Close;
+  FMediaPlayer.FileName := AFile;
+  FMediaPlayer.Open;
+  FMediaPlayer.Play;
 end;
 
 end.

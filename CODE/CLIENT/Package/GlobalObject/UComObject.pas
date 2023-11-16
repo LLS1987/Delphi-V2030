@@ -228,7 +228,7 @@ end;
 function TRegisterClassFactory.ShowWebUrl(AUrl: string; AParam:TParamList=nil): TForm;
 begin
   if AUrl.IsEmpty or AUrl.StartsWith('about:blank',True) then Exit;             
-  if not AUrl.StartsWith('http',True) then AUrl := 'http://'+AUrl;   
+  if not AUrl.StartsWith('http',True) and not AUrl.StartsWith('file',True) and not AUrl.StartsWith('ftp',True) then AUrl := 'http://'+AUrl;
   var AParamList := TParamList.Create;
   try
     if Assigned(AParam) then AParamList.Assign(AParam);

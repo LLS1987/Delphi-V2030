@@ -155,7 +155,7 @@ begin
     try
       if _LoggerProFile = nil then // double check
       begin
-        _LoggerProFile := BuildLogWriter([TLoggerProFileAppender.Create(5,1000,'',[],'%1:2.2d.%2:s.log','%0:s [TID %1:-6d][%2:-8s] %3:s')]);
+        _LoggerProFile := BuildLogWriter([TLoggerProFileAppender.Create(5,1000,'',[],'%2:s.%1:2.2d.log','%0:s [TID %1:-6d][%2:-8s] %3:s')]);
       end;
     finally
       System.TMonitor.Exit(_Lock);

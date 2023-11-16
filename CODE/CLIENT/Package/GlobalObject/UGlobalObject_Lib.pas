@@ -5,7 +5,7 @@ interface
 uses
   System.JSON,System.SysUtils,UComDB,UGlobalObject_Proxy, UGlobalInterface,
   UComObject, System.Generics.Collections, System.Rtti,UParamList, UCertManage,
-  UCrypto, UPrintFunc, ULogger;
+  UCrypto, UPrintFunc, ULogger, UComDBStorable;
 
 type
   TGlobalObject = class(TBaseCommObject)
@@ -21,6 +21,8 @@ type
     FPrintFuncObject:TPrintFuncObject;
     FCrypto: TCrypto;
     FThemeObject:TThemeObject;
+    FPlayMediaObject:TPlayMediaObject;
+    FStorableManage:TStorableManage;
     function GetComVar: TParamList;
     function GetDB: TDataBaseCommObject;
     function GetFormat: TFormatCommObject;
@@ -34,6 +36,8 @@ type
     function GetCrypto: TCrypto;
     function GetPrint: TPrintFuncObject;
     function GetTheme: TThemeObject;
+    function GetPlayMediaObject: TPlayMediaObject;
+    function GetStorableManage: TStorableManage;
   protected
 
   public
@@ -64,6 +68,10 @@ type
     property Print:TPrintFuncObject read GetPrint;
     ///样式
     property Theme:TThemeObject read GetTheme;
+    ///媒体库
+    property Media :TPlayMediaObject read GetPlayMediaObject;
+    ///缓存类
+    property Local: TStorableManage read GetStorableManage;
   end;
 
 implementation
@@ -91,7 +99,8 @@ begin
   if Assigned(FCrypto) then FreeAndNil(FCrypto);
   if Assigned(FPrintFuncObject) then FreeAndNil(FPrintFuncObject);
   if Assigned(FThemeObject) then FreeAndNil(FThemeObject);
-
+  if Assigned(FPlayMediaObject) then FreeAndNil(FPlayMediaObject);
+  if Assigned(FStorableManage) then FreeAndNil(FStorableManage);
   inherited;
 end;
 
@@ -143,6 +152,12 @@ begin
   Result := FMessageBoxObject;
 end;
 
+function TGlobalObject.GetPlayMediaObject: TPlayMediaObject;
+begin
+  if not Assigned(FPlayMediaObject) then FPlayMediaObject := TPlayMediaObject.Create(self);
+  Result := FPlayMediaObject;
+end;
+
 function TGlobalObject.GetPrint: TPrintFuncObject;
 begin
   if not Assigned(FPrintFuncObject) then FPrintFuncObject := TPrintFuncObject.Create;
@@ -153,6 +168,12 @@ function TGlobalObject.GetRegisterClassFactory: TRegisterClassFactory;
 begin
   if not Assigned(FRegisterClassFactory) then FRegisterClassFactory := TRegisterClassFactory.Create(Self);
   Result := FRegisterClassFactory;
+end;
+
+function TGlobalObject.GetStorableManage: TStorableManage;
+begin
+  if not Assigned(FStorableManage) then FStorableManage := TStorableManage.Create;
+  Result := FStorableManage;
 end;
 
 function TGlobalObject.GetSystemDataPath: string;

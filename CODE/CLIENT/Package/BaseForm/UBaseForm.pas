@@ -12,7 +12,7 @@ uses
   cxData, cxDataStorage, cxEdit, cxNavigator, dxDateRanges,
   dxScrollbarAnnotations, Data.DB, cxDBData, cxGridLevel, cxGridCustomView,
   cxGridCustomTableView, cxGridTableView, cxGridDBTableView, cxGrid,
-  cxGridPopupMenu, cxGridCustomPopupMenu, Vcl.Menus, UParamForm;
+  cxGridPopupMenu, cxGridCustomPopupMenu, Vcl.Menus, UParamForm, System.JSON;
 
 type
   TGridOption = (dgAppending, dgEditing, dgAlwaysShowEditor, dgTitles, dgIndicator,
@@ -50,6 +50,7 @@ type
     FGridOptions: TGridOptions;
     FLayoutFileName: string;
     FLayoutCustom: Boolean;
+    FLayoutJson: TJSONObject;
     function GetForm: TForm;
     function GetActionList: TActionList;
     procedure SetParamList(AParamList: TParamList);
@@ -58,6 +59,7 @@ type
     function GetLayoutFileName: string;
     procedure SetLayoutFileName(const Value: string);
     function GetLayoutFilePath: string;
+    function GetLayoutJson: TJSONObject;
   protected
     procedure DoShow; override;
     procedure DoClose(var Action: TCloseAction); override;
@@ -106,6 +108,7 @@ type
     property LayoutCustom :Boolean  read FLayoutCustom write FLayoutCustom;
     property LayoutFileName :string read GetLayoutFileName write SetLayoutFileName;
     property LayoutFilePath :string read GetLayoutFilePath;
+    property LayoutJson : TJSONObject read GetLayoutJson;
     ///创建控件方法列表
     function CreatecxGrid(const AName:string; AParent:TWinControl=nil):TcxGrid;
     function CreatecxGridView(AGrid:TcxGrid):TcxCustomGridView;
@@ -122,8 +125,7 @@ const
 implementation
 
 uses
-  UComvar, System.TypInfo, UBaseGridLayout, MidasLib, System.Math, System.JSON,
-  System.IOUtils, cxGridExportLink;
+  UComvar, System.TypInfo, UBaseGridLayout, MidasLib, System.Math, System.IOUtils, cxGridExportLink;
 
 {$R *.dfm}
 
@@ -213,6 +215,7 @@ begin
   if Assigned(FGridDataSet) then FreeAndNil(FGridDataSet);
   if Assigned(FPrintItems) then FreeAndNil(FPrintItems);
   if Assigned(FGridPopupMenu) then FreeAndNil(FGridPopupMenu);
+  if Assigned(FLayoutJson) then FreeAndNil(FLayoutJson);
   inherited;
 end;
 
@@ -500,16 +503,22 @@ begin
   Result := Goo.SystemPath+Format('\Layout\%s.Json', [GetLayoutFileName]);
 end;
 
+function TBaseForm.GetLayoutJson: TJSONObject;
+begin
+  if not Assigned(FLayoutJson) and FileExists(LayoutFilePath) then FLayoutJson := TJSONObject.ParseJSONValue(TFile.ReadAllText(LayoutFilePath)) as TJSONObject;
+  Result := FLayoutJson;
+end;
+
 class function TBaseForm.GetPrintData(AGridView: TcxCustomGridView): OleVariant;
 var ds:TClientDataSet;
   AColnum:TcxGridDBColumn;
   AField:TField;
   i:Integer;
-  AValue:Variant;
+  AValue:string;
 begin
   ds := TClientDataSet.Create(nil);
   try
-    //复制表格
+    //复制表格    TcxGridTableView
     for i := 0 to TcxGridDBTableView(AGridView).VisibleColumnCount-1 do
     begin
       AColnum := TcxGridDBTableView(AGridView).VisibleColumns[i] as TcxGridDBColumn;
@@ -529,8 +538,9 @@ begin
       for var j := 0 to TcxGridDBTableView(AGridView).VisibleColumnCount-1 do
       begin
         AColnum := TcxGridDBTableView(AGridView).VisibleColumns[j] as TcxGridDBColumn;
-        AValue  := TcxGridDBTableView(AGridView).DataController.Values[i,AColnum.Index];
-        if VarIsNull(AValue) then Continue;        
+        AValue  := TcxGridDBTableView(AGridView).DataController.GetDisplayText(i,AColnum.Index);// .Values[i,AColnum.Index];
+        if Assigned(AColnum.OnGetDisplayText) then AColnum.OnGetDisplayText(AColnum,TcxGridDBTableView(AGridView).ViewData.Records[i],AValue);
+        if VarIsNull(AValue) then Continue;
         ds.FieldValues[AColnum.Caption] := AValue;
       end;
     end;

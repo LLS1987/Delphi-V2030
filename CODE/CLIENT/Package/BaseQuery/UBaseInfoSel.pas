@@ -43,7 +43,8 @@ var
 implementation
 
 uses
-  System.Rtti, UComvar;
+  System.Rtti, UComvar, System.Generics.Collections, cxLabel, cxEdit,
+  System.JSON;
 
 {$R *.dfm}
 
@@ -100,6 +101,7 @@ begin
     end;
   end;
   edt_Find.Text := BaseParam.SearchString;
+  if BaseParam.SearchHint<>EmptyStr then edt_Find.TextHint := BaseParam.SearchHint;
   RefreshData;
 end;
 
@@ -160,6 +162,11 @@ begin
           begin
             Name := MainView.Name + '_' + Prop.Name;
             HeaderAlignmentHorz       := taCenter;
+            if TFieldInfo(A2).ColnumDisplayText.Count>0 then
+            begin
+              PropertiesClass         := TcxLabelProperties;
+              Properties.Alignment.Horz := taLeftJustify;                       //×ó¶ÔÆë
+            end;
             DataBinding.FieldName     := TFieldInfo(A2).FieldName;
             Caption   := TFieldInfo(A2).Title;
             Width     := TFieldInfo(A2).Width;
@@ -199,8 +206,13 @@ end;
 
 procedure TBaseInfoSel.OnColnumGetDisplayText(Sender: TcxCustomGridTableItem; ARecord: TcxCustomGridRecord; var AText: string);
 begin
-  if SameText(Sender.Name,MainView.Name + '_Sex') then
-    AText := Goo.Format.iif(AText.Trim='0','ÄÐ','Å®');
+  var APropName := string(Sender.Name).Substring(Length(MainView.Name)+1);
+  //var BPropName := (Sender as TcxGridDBColumn).DataBinding.FieldName;
+  var ADisplay := BaseParam.Storable.AttributeFieldDisplayText[APropName];
+  if Assigned(ADisplay) and (ADisplay.Count>0) and ADisplay.ContainsKey(AText.Trim) then
+  begin
+    AText := ADisplay.Items[AText.Trim];
+  end;
 end;
 
 procedure TBaseInfoSel.OnFocusedRecordChanged(Sender: TcxCustomGridTableView;APrevFocusedRecord, AFocusedRecord: TcxCustomGridRecord;ANewItemRecordFocusingChanged: Boolean);

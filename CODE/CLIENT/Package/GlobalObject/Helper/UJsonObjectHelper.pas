@@ -5,7 +5,7 @@ unit UJsonObjectHelper;
 interface
 
 uses
-  System.JSON, System.Rtti;
+  System.JSON, System.Rtti, REST.Json;
 
 type
 
@@ -32,6 +32,7 @@ type
     function GetT(PairName: string): TValue;
     procedure SetT(PairName: string; const Value: TValue);
   public
+    function FindPair(PairName: string; IgnoreCase: Boolean=False):TJSONPair;
     //判断某个字段是否存在
     function Exists(PairName : string) : Boolean;
     //定义字段读取函数
@@ -45,18 +46,29 @@ type
     property T[PairName : string] : TValue     read GetT write SetT;
     property A[PairName : string] : TJSONArray  read GetValueA   write SetValueA;
     property O[PairName : string] : TJSONObject read GetValueO   write SetValueO;
+    function Sort:TJSONObject;
+    function JsonToObject<T: class, constructor>(AOptions: TJsonOptions = [joDateIsUTC, joDateFormatISO8601, joBytesFormatArray, joIndentCaseCamel]): T; overload;
+    class function ObjectToJson(AObject: TObject; AOptions: TJsonOptions = [joDateIsUTC, joDateFormatISO8601, joBytesFormatArray, joIndentCaseCamel]): TJSONObject;
     class function SO(const s: string = '{}'):TJSONObject;
+  end;
+
+  TJSONArrayObjectHelper = class helper for TJSONArray
+  public
+    function Sort:TJSONArray; overload;
+    function Sort<T>(PairName: string):TJSONArray;overload;
   end;
 
 implementation
 
 uses
-  System.Variants;
+  System.Variants, System.Generics.Collections, System.Generics.Defaults,
+  System.SysUtils;
 
 { TJSONObjectHelper }
 
 function TJSONObjectHelper.Exists(PairName: string): Boolean;
 begin
+//  Result := Assigned(FindPair(PairName));
   Result := Assigned(Self.Values[PairName]);
 end;
 
@@ -80,7 +92,7 @@ function TJSONObjectHelper.GetV(PairName: string): Variant;
 begin
   Result := null;
   if not Exists(PairName) then Exit;
-  Result := GetValue<Variant>(PairName);
+  Result := GetValue<Variant>(PairName,null);
 end;
 
 function TJSONObjectHelper.GetValueA(PairName: string): TJSONArray;
@@ -89,8 +101,23 @@ begin
   Self.TryGetValue(PairName,Result);
 end;
 
+function TJSONObjectHelper.FindPair(PairName: string; IgnoreCase: Boolean): TJSONPair;
+begin
+  if not IgnoreCase then Result := self.FindPair(PairName)
+  else
+  for var item in Self do
+  begin
+    if SameText(item.JsonString.Value,PairName) then
+    begin
+      Result := item;
+      Break;
+    end;
+  end;
+end;
+
 function TJSONObjectHelper.GetB(PairName: string): Boolean;
 begin
+  //Result := (FindPair(PairName).JsonValue as TJSONBool).AsBoolean;
   Result := GetValue<Boolean>(PairName,False);
 end;
 
@@ -118,6 +145,19 @@ end;
 function TJSONObjectHelper.GetValueS(PairName: string): string;
 begin
   Result := GetValue<string>(PairName,'');
+//  Result := EmptyStr;
+//  if not Exists(PairName) then Exit;
+//  Result := FindPair(PairName).JsonValue.Value
+end;
+
+function TJSONObjectHelper.JsonToObject<T>(AOptions: TJsonOptions): T;
+begin
+  Result := TJson.JsonToObject<T>(Self,AOptions);
+end;
+
+class function TJSONObjectHelper.ObjectToJson(AObject: TObject;  AOptions: TJsonOptions): TJSONObject;
+begin
+  Result := TJson.ObjectToJsonObject(AObject,AOptions);
 end;
 
 procedure TJSONObjectHelper.SetC(PairName: string; const Value: Currency);
@@ -193,6 +233,83 @@ end;
 class function TJSONObjectHelper.SO(const s: string): TJSONObject;
 begin
   Result := TJSONObject.ParseJSONValue(s) as TJSONObject;
+end;
+
+function TJSONObjectHelper.Sort: TJSONObject;
+var elementList: TList<TJSONPair>;
+begin
+  elementList := TList<TJSONPair>.Create;
+  try
+    for var item in Self do elementList.Add(item);
+    elementList.Sort(TComparer<TJSONPair>.Construct(
+      function(const Left, Right: TJSONPair): Integer
+      begin
+        Result := TComparer<string>.Default.Compare(Left.JsonString.Value, Right.JsonString.Value);
+      end));
+
+    for var item in elementList do
+    begin
+      if Exists(item.JsonString.Value) then Self.RemovePair(item.JsonString.Value);
+      self.AddPair(item.JsonString,item.JsonValue);
+    end;
+  finally
+    elementList.Free;
+  end;
+  Result := Self;
+end;
+
+{ TJSONArrayObjectHelper }
+
+function TJSONArrayObjectHelper.Sort: TJSONArray;
+var elementList: TList<TJSONValue>;
+begin
+  elementList := TList<TJSONValue>.Create;
+  try
+    for var item in Self do elementList.Add(item);
+    elementList.Sort(TComparer<TJSONValue>.Construct(
+        function(const Left, Right: TJSONValue): Integer
+        var
+          leftObject: TJSONObject;
+          rightObject: TJSONObject;
+        begin
+          // You should do some error checking here and not just cast blindly
+          leftObject := TJSONObject(Left);
+          rightObject := TJSONObject(Right);
+
+          // Compare here. I am just comparing the ToStrings but you will probably
+          // want to compare something else.
+          Result := TComparer<string>.Default.Compare(leftObject.ToString, rightObject.ToString);
+        end));
+    Self.SetElements(elementList);
+    Result := Self;
+  finally
+    //elementList.Free; //TJSONArray  内部自动释放
+  end;
+end;
+
+function TJSONArrayObjectHelper.Sort<T>(PairName: string): TJSONArray;
+var elementList: TList<TJSONValue>;
+begin
+  elementList := TList<TJSONValue>.Create;
+  try
+    for var item in Self do elementList.Add(item);
+    elementList.Sort(TComparer<TJSONValue>.Construct(
+        function(const Left, Right: TJSONValue): Integer
+        var
+          leftObject,rightObject: T;
+        begin
+          // You should do some error checking here and not just cast blindly
+          Left.TryGetValue<T>(PairName,leftObject);
+          Right.TryGetValue<T>(PairName,rightObject);
+          // Compare here. I am just comparing the ToStrings but you will probably
+          // want to compare something else.
+          Result := TComparer<T>.Default.Compare(leftObject, rightObject);
+        end));
+    Self.SetElements(elementList);
+    Result := Self;
+  finally
+    //elementList.Free; //TJSONArray  内部自动释放
+  end;
 end;
 
 end.

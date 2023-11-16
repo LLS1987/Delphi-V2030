@@ -13,14 +13,17 @@ type
     FExcelCellCheckList: TExcelCellCheckList;
     FOnImportExcelEvent: TNotifyEvent;
     FOnCheckExcelEvent: TNotifyEvent;
+    FGrid:TStringGrid;
     function GetCheckDataColIndex: Integer;
+    function GetColumnIndex(AName: string): Integer;
   public
     constructor Create(AFiledName:string);overload;
     destructor Destroy; override;
     property CheckDataColIndex:Integer read GetCheckDataColIndex;
     property ExcelCellCheckList:TExcelCellCheckList read FExcelCellCheckList;
-    property OnImportExcelEvent:TNotifyEvent read FOnImportExcelEvent;
+    property OnImportExcelEvent:TNotifyEvent read FOnImportExcelEvent write FOnImportExcelEvent;
     property OnCheckExcelEvent:TNotifyEvent read FOnCheckExcelEvent;
+    property ColumnIndex[AName:string]:Integer read GetColumnIndex;
     function ReadExcel(AStringGrid:TStringGrid):Boolean; virtual;
     function CheckData(AStringGrid:TStringGrid):Boolean; virtual;
     function ImportExcel(AStringGrid:TStringGrid):Boolean; virtual;
@@ -68,6 +71,11 @@ begin
     end;
     Result := Result and bRowCheck;
   end;
+  //检查需要验证的列是否存在
+  for var item in ExcelCellCheckList do
+  begin
+    Goo.Msg.CheckAndAbort(ColumnIndex[item.Key]>=0,'需要的列：%s 不存在！',[item.Key]);
+  end;
   if Result and Assigned(OnCheckExcelEvent) then OnCheckExcelEvent(AStringGrid);
 end;
 
@@ -89,6 +97,19 @@ begin
   Result := 1;
   if not Assigned(Sheets[0]) then Exit;
   Result := Sheets[0].LastCol+C_Column_CheckItem_Index;
+end;
+
+function TExcelObject.GetColumnIndex(AName: string): Integer;
+begin
+  Result := -1;
+  for var i := 1 to FGrid.ColCount do
+  begin
+    if SameText(FGrid.Cells[i,0],AName) then
+    begin
+      Result := i;
+      Break;
+    end;
+  end;
 end;
 
 function TExcelObject.ImportExcel(AStringGrid: TStringGrid): Boolean;
@@ -127,6 +148,7 @@ begin
     end;
   end;
   AStringGrid.Cells[0,0] := '行号';
+  FGrid := AStringGrid;
 end;
 
 { TExcelCellCheckList }

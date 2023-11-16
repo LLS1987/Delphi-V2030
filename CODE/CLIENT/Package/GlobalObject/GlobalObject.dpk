@@ -52,7 +52,9 @@ requires
   vcldb,
   DBXMSSQLDriver,
   soaprtl,
-  adortl;
+  adortl,
+  vclx,
+  RESTComponents;
 
 contains
   UComvar in 'UComvar.pas',

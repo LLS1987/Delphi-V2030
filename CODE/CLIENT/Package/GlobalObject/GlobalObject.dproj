@@ -126,6 +126,8 @@
         <DCCReference Include="DBXMSSQLDriver.dcp"/>
         <DCCReference Include="soaprtl.dcp"/>
         <DCCReference Include="adortl.dcp"/>
+        <DCCReference Include="vclx.dcp"/>
+        <DCCReference Include="RESTComponents.dcp"/>
         <DCCReference Include="UComvar.pas"/>
         <DCCReference Include="UGlobalObject_Lib.pas"/>
         <DCCReference Include="UGlobalObject_Proxy.pas"/>
@@ -920,8 +922,8 @@
                 <ProjectRoot Platform="OSX32" Name="$(PROJECTNAME)"/>
                 <ProjectRoot Platform="OSX64" Name="$(PROJECTNAME)"/>
                 <ProjectRoot Platform="Android64" Name="$(PROJECTNAME)"/>
-                <ProjectRoot Platform="Win32" Name="$(PROJECTNAME)"/>
                 <ProjectRoot Platform="OSXARM64" Name="$(PROJECTNAME)"/>
+                <ProjectRoot Platform="Win32" Name="$(PROJECTNAME)"/>
                 <ProjectRoot Platform="Android" Name="$(PROJECTNAME)"/>
                 <ProjectRoot Platform="Win64" Name="$(PROJECTNAME)"/>
                 <ProjectRoot Platform="Linux64" Name="$(PROJECTNAME)"/>

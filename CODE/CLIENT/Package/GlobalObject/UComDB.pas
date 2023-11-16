@@ -239,7 +239,12 @@ begin
       vtString  : AParamValue[i] := p.Value.AsString;
       vtBoolean : AParamValue[i] := p.Value.AsBoolean;
     else
-      AParamValue[i] := p.Value.AsString;
+      if p.Value.IsType<string> then AParamValue[i] := p.Value.AsType<string>
+      else if p.Value.IsType<Integer> then AParamValue[i] := p.Value.AsType<Integer>
+      else if p.Value.IsType<Double> then AParamValue[i] := p.Value.AsType<Double>
+      else if p.Value.IsType<Currency> then AParamValue[i] := p.Value.AsType<Currency>
+      else if p.Value.IsType<Boolean> then AParamValue[i] := p.Value.AsType<Boolean>
+      else AParamValue[i] := p.Value.AsString;
     end;
     Inc(i);
   end;

@@ -59,7 +59,7 @@ end;
 procedure TBaseExcelPreDialog.Button_ImportDataClick(Sender: TObject);
 begin
   inherited;
-  TExcelObject(ParamList.AsObject('@InvokeObject')).ImportExcel(StringGrid1);
+  if TExcelObject(ParamList.AsObject('@InvokeObject')).ImportExcel(StringGrid1) then ModalResult := mrOk;
 end;
 
 procedure TBaseExcelPreDialog.Button_OpenFileClick(Sender: TObject);

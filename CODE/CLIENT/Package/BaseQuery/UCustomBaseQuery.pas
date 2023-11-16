@@ -47,6 +47,8 @@ type
     procedure LoadData;virtual;       //本函数用于装载数据
     procedure OnIniButton(Sender: TObject); virtual;
     procedure OnGridViewDblClick(Sender:Tobject);virtual;
+    procedure OnColumnGetDataText(Sender: TcxCustomGridTableItem; ARecordIndex: Integer; var AText: string);virtual;
+    procedure OnColnumGetDisplayText(Sender: TcxCustomGridTableItem; ARecord: TcxCustomGridRecord; var AText: string);virtual;
   public
     { Public declarations }
     destructor Destroy; override;
@@ -82,7 +84,8 @@ const C_QueryMode_OPENPROC = 1;    //查询过程
 implementation
 
 uses
-  UComvar, System.JSON, System.IOUtils, UJsonObjectHelper;
+  UComvar, System.JSON, System.IOUtils, UJsonObjectHelper, UComDBStorable,
+  UComConst, cxFindPanel;
 
 {$R *.dfm}
 
@@ -90,6 +93,7 @@ function TCustomBaseQuery.AddGridView: TcxCustomGridView;
 begin
   Result:= CreatecxGridView(MainGrid);
   TcxGridDBTableView(Result).OnDblClick := OnGridViewDblClick;
+  TcxGridDBTableView(Result).FindPanel.DisplayMode := fpdmManual;   //Ctrl+F  显示查询面板
   //创建自定义字段
   Result.BeginUpdate();
   try
@@ -101,10 +105,12 @@ end;
 
 procedure TCustomBaseQuery.CustomGrid(AView: TcxCustomGridView);
 var Json:TJSONObject;
+    _Column:TcxGridColumn;
 begin
   inherited;
   if not FileExists(LayoutFilePath) then Exit;
-  Json := Json.ParseJSONValue(TFile.ReadAllText(LayoutFilePath)) as TJSONObject;
+  //Json := Json.ParseJSONValue(TFile.ReadAllText(LayoutFilePath)) as TJSONObject;
+  Json := LayoutJson;
   try
     if not Assigned(Json) then Exit;
     if not Assigned(Json.Values['GridList']) then Exit;
@@ -121,17 +127,26 @@ begin
     if not (TJSONObject(TJSONObject(Json.Values['GridList']).Values[AView.Name]).Values['FieldList'] is TJSONArray) then Exit;
     for var item in TJSONObject(TJSONObject(Json.Values['GridList']).Values[AView.Name]).Values['FieldList'] as TJSONArray do
     begin
-      var _Column := (AView as TcxGridDBTableView).CreateColumn;
+      if AView is TcxGridDBTableView then
+      begin
+        _Column := (AView as TcxGridDBTableView).CreateColumn;
+        TcxGridDBColumn(_Column).DataBinding.FieldName := item.GetValue<string>('FieldName');
+      end else if AView is TcxGridTableView then
+      begin
+        _Column := (AView as TcxGridTableView).CreateColumn;
+        //_Column.DataBinding.FieldName := item.GetValue<string>('FieldName');
+      end;
       _Column.Name    := AView.Name + item.GetValue<string>('FieldName');
       _Column.Caption := item.GetValue<string>('Caption');
-      _Column.DataBinding.FieldName := item.GetValue<string>('FieldName');
       _Column.Width   := item.GetValue<Integer>('Width',80);
       _Column.HeaderAlignmentHorz   := taCenter;
       _Column.Visible := item.GetValue<Boolean>('Visible',False);
       _Column.VisibleForCustomization := item.GetValue<Boolean>('VisibleForCustomization',Visible);
+      _Column.OnGetDataText    := OnColumnGetDataText;
+      _Column.OnGetDisplayText := OnColnumGetDisplayText;
     end;
   finally
-    Json.Free;
+//    Json.Free;
   end;
 end;
 
@@ -242,8 +257,10 @@ begin
   if (MainGrid.ActiveView.DataController.RowCount=0) or (ARow>=MainGrid.ActiveView.DataController.RowCount) or (ARow<0) then Exit;
   var _column := ItemColumn[AFieldName];
   if not Assigned(_column) then Exit;
-//  Result := MainGrid.ActiveView.DataController.Values[ARow,_column.Index];      //排序过滤后取值异常
-  Result := MainView.DataController.GetRowValue(MainView.DataController.GetRowInfo(ARow),_column.Index);  //排序过滤后取值正常
+  if MainGrid.ActiveView is TcxGridTableView then
+    Result := MainGrid.ActiveView.DataController.Values[ARow,_column.Index]      //排序过滤后取值异常
+  else
+    Result := MainView.DataController.GetRowValue(MainView.DataController.GetRowInfo(ARow),_column.Index);  //排序过滤后取值正常
 end;
 
 procedure TCustomBaseQuery.iniForm;
@@ -304,6 +321,39 @@ begin
   end;
 end;
 
+procedure TCustomBaseQuery.OnColnumGetDisplayText(Sender: TcxCustomGridTableItem; ARecord: TcxCustomGridRecord; var AText: string);
+begin
+  var APropName := (Sender as TcxGridDBColumn).DataBinding.FieldName;
+  if not Assigned(LayoutJson) then Exit;
+  if not LayoutJson.Exists('GridList') then Exit;
+  if not LayoutJson.O['GridList'].Exists((Sender as TcxGridColumn).GridView.Name) then Exit;
+  for var item in LayoutJson.O['GridList'].O[(Sender as TcxGridColumn).GridView.Name].A['FieldList'] do
+  begin
+    if SameText(item.GetValue<string>('FieldName',''),APropName) then  //寻找列属性
+    begin
+      if not TJSONObject(item).Exists('BasicInfo') then Continue;
+      var ABasicType:Integer;
+      var ABasicField,ABasicDisplay:string;
+      if not TJSONObject(item).O['BasicInfo'].TryGetValue<Integer>('BasicType',ABasicType) then Continue;
+      if not TJSONObject(item).O['BasicInfo'].TryGetValue<string>('BasicField',ABasicField) then Continue;
+      if not TJSONObject(item).O['BasicInfo'].TryGetValue<string>('BasicDisplay',ABasicDisplay) then Continue;
+      var ABasicRec : Integer := RowData[ABasicField,ARecord.Index];
+      if not Goo.Local.BasicData[TBasicType(ABasicType)].ContainsKey(ABasicRec) then Continue;      
+      //AText := Goo.Local.GetRec<TStorable_BType>(RowData[TJSONObject(item).O['BasicInfo'].S['BasicField'],ARecord.Index]).FullName;
+      AText := Goo.Local.BasicData[TBasicType(ABasicType)].GetValue(ABasicDisplay,ABasicRec);
+      //判断本地化数据是否为枚举值
+      var ADisplay := Goo.Local.BasicData[TBasicType(ABasicType)].Items[ABasicRec].AttributeFieldDisplayText[ABasicDisplay];
+      if Assigned(ADisplay) and (ADisplay.Count>0) and ADisplay.ContainsKey(AText.Trim) then AText := ADisplay.Items[AText.Trim];
+      Break;
+    end;
+  end;
+end;
+
+procedure TCustomBaseQuery.OnColumnGetDataText(Sender: TcxCustomGridTableItem;  ARecordIndex: Integer; var AText: string);
+begin
+
+end;
+
 procedure TCustomBaseQuery.OnGridViewDblClick(Sender: Tobject);
 begin
   if Assigned(ItemColumn['TypeID']) and not VarIsNull(RowData['Sonnum',ActiveRowIndex]) and (RowData['Sonnum',ActiveRowIndex]>0) then
@@ -357,9 +407,21 @@ begin
   if not Assigned(MainGrid) then Exit;
   if not Assigned(MainGrid.ActiveView) then Exit;
   if (MainGrid.ActiveView.DataController.RowCount=0) or (ARow>=MainGrid.ActiveView.DataController.RowCount) then Exit;
-  var _column := ItemColumn[AFieldName];
-  if not Assigned(_column) then Exit;
-  MainView.DataController.Values[MainView.DataController.GetRowInfo(ARow).RecordIndex,_column.Index] := Value;
+  if MainGrid.ActiveView is TcxGridTableView then
+  begin
+    for var I := 0 to (MainGrid.ActiveView as TcxGridTableView).ColumnCount-1 do
+    begin
+      if string((MainGrid.ActiveView as TcxGridTableView).Columns[i].Name).EndsWith(AFieldName,True) then
+      begin
+        MainGrid.ActiveView.DataController.Values[ARow,(MainGrid.ActiveView as TcxGridTableView).Columns[i].Index] := Value;
+        Break;
+      end;
+    end;
+  end else begin
+    var _column := ItemColumn[AFieldName];
+    if not Assigned(_column) then Exit;
+    MainView.DataController.Values[MainView.DataController.GetRowInfo(ARow).RecordIndex,_column.Index] := Value;
+  end;
 end;
 
 destructor TConditionManager.Destroy;
