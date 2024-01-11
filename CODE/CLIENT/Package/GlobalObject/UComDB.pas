@@ -4,7 +4,7 @@ interface
 
 uses
   System.SysUtils,UClientModule, DB, Datasnap.DBClient,RTTI, TypInfo,Types,
-  UComObject, UParamList;
+  UComObject, UParamList, System.SyncObjs;
 
 type
   //数据库访问类
@@ -18,6 +18,7 @@ type
     FUserName: string;
     FPassword: string;
     DM: TClientModule;
+    FLockVar: TCriticalSection;
     function ClientDM:TClientModule;
     function GetConnected: Boolean;
     procedure SetConnected(const Value: Boolean);
@@ -45,6 +46,8 @@ type
     function QueryOneFiled<T>(const ASQL: string):Variant;overload;
     function SysCfgValue(czName: string): string;
     function SetSubValue(czName, czValue: string;ASysflag:Integer=-1;AComment:string = ''): integer;
+    procedure Lock;
+    procedure UnLock;
   published
     property HostName:string read FHostName write FHostName;
     property Port:Integer read FPort write FPort;
@@ -73,7 +76,7 @@ end;
 
 function TDataBaseCommObject.CheckConnected: Boolean;
 begin
-  if not Result then Connected := True;
+  if not Connected then Connected := True;
   Result := Connected;
 end;
 
@@ -92,11 +95,13 @@ end;
 constructor TDataBaseCommObject.Create;
 begin
   if Assigned(DM) then   FreeAndNil(DM);
+  FLockVar := TCriticalSection.Create;
 end;
 
 destructor TDataBaseCommObject.Destroy;
 begin
   if Assigned(DM) then   FreeAndNil(DM);
+  if Assigned(FLockVar) then FreeAndNil(FLockVar);
   inherited;
 end;
 
@@ -149,15 +154,19 @@ begin
   for var p in AParams do
   begin
     AParamName[i]  := p.Key;
-    case VarType(p.Value.AsVariant) of
-      vtInteger : AParamValue[i] := p.Value.AsInteger;
-      vtInt64   : AParamValue[i] := p.Value.AsInt64;
-      vtCurrency: AParamValue[i] := p.Value.AsCurrency;
-      vtExtended: AParamValue[i] := p.Value.AsExtended;
-      vtString  : AParamValue[i] := p.Value.AsString;
-      vtBoolean : AParamValue[i] := p.Value.AsBoolean;
-    else
-      AParamValue[i] := p.Value.AsString;
+    case p.Value.Kind of
+      TTypeKind.tkString,TTypeKind.tkUString,TTypeKind.tkLString,TTypeKind.tkWString  : AParamValue[i] := p.Value.AsString;
+      TTypeKind.tkInteger : AParamValue[i] := p.Value.AsInteger;
+      TTypeKind.tkInt64   : AParamValue[i] := p.Value.AsInt64;
+      TTypeKind.tkFloat   : AParamValue[i] := p.Value.AsCurrency;
+      TTypeKind.tkVariant : AParamValue[i] := p.Value.AsVariant;
+      TTypeKind.tkEnumeration:
+        if p.Value.IsType<Boolean> then
+        begin
+          AParamValue[i] := p.Value.AsBoolean;
+        end
+        else
+          AParamValue[i] := p.Value.AsInteger;
     end;
     Inc(i);
   end;
@@ -189,6 +198,11 @@ begin
     dbctLocalADO : Result := TClientModule_LocalADO(ClientDM).Conn_ADO.Connected;
   else Result := ClientDM.conn.Connected;
   end;
+end;
+
+procedure TDataBaseCommObject.Lock;
+begin
+  FLockVar.Enter;
 end;
 
 function TDataBaseCommObject.OpenProc(szProcedureName: string; AParamName: array of string; AParamValue: array of OleVariant; ADataSet: TClientDataSet; AParams: TParams): Integer;
@@ -330,7 +344,7 @@ begin
           begin
             TClientModule_LocalADO(ClientDM).Conn_ADO.Connected := False;
             TClientModule_LocalADO(ClientDM).Conn_ADO.ConnectionString := 'Provider=SQLOLEDB.1;Password='+Password+';Persist Security Info=True;User ID='+UserName+';Initial Catalog='+DatabaseName+';Data Source='+HostName;
-            TClientModule_LocalADO(ClientDM).Conn_ADO.Connected := True;
+            TClientModule_LocalADO(ClientDM).Conn_ADO.Connected := Value;
           end;
     end;
   except on E: Exception do
@@ -361,6 +375,11 @@ begin
   finally
     Vparams.free;
   end;
+end;
+
+procedure TDataBaseCommObject.UnLock;
+begin
+  FLockVar.Leave;
 end;
 
 end.
