@@ -300,9 +300,10 @@ end;
 
 procedure TDataBaseCommObject.SetConnected(const Value: Boolean);
 begin
+  ClientDM.Conn.Connected := False;
+  if ClientDM is TClientModule_LocalADO then TClientModule_LocalADO(ClientDM).Conn_ADO.Connected := False;
   if Connected = Value then Exit;
   try
-    ClientDM.Conn.Connected := False;
     case ConnectType of
       dbctRemote  :
           begin
