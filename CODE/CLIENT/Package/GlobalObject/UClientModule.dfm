@@ -42,4 +42,11 @@ object ClientModule: TClientModule
     Left = 69
     Top = 152
   end
+  object ConnectTimer: TTimer
+    Enabled = False
+    Interval = 20000
+    OnTimer = ConnectTimerTimer
+    Left = 128
+    Top = 24
+  end
 end

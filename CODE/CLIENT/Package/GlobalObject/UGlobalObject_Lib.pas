@@ -5,7 +5,7 @@ interface
 uses
   System.JSON,System.SysUtils,UComDB,UGlobalObject_Proxy, UGlobalInterface,
   UComObject, System.Generics.Collections, System.Rtti,UParamList, UCertManage,
-  UCrypto, UPrintFunc, ULogger, UComDBStorable;
+  UCrypto, UPrintFunc, ULogger, UComDBStorable, System.Classes;
 
 type
   TGlobalObject = class(TBaseCommObject)
@@ -46,6 +46,12 @@ type
     ///系统路径
     property SystemPath: string read GetSystemPath;
     property SystemDataPath: string read GetSystemDataPath;
+    ///获取MAC地址列表
+    function GetMacAddressList: TStringList;
+    //获取mac地址 排除虚拟网卡
+    function GetRealMacAddress: string;
+    //获取硬盘序列号
+    function GetHardDiskSerialNumber: string;
     ///动态的变量存储量，JOSN存储
     property ComVar: TParamList read GetComVar;
     ///登录函数
@@ -77,7 +83,8 @@ type
 implementation
 
 uses
-  Vcl.Forms, LoggerPro.GlobalLogger, LoggerPro.FileAppender;
+  Vcl.Forms, LoggerPro.GlobalLogger, LoggerPro.FileAppender, winapi.Nb30,
+  Winapi.Windows;
 
 { TGloBalObject }
 
@@ -134,6 +141,18 @@ begin
   Result := FFormatObject;
 end;
 
+function TGlobalObject.GetHardDiskSerialNumber: string;
+var
+  VolumeSerialNumber: DWORD;
+  MaximumComponentLength: DWORD;
+  FileSystemFlags: DWORD;
+  VolumeNameSize: array[0..MAX_PATH] of Char;
+  FileSystemNameSize: array[0..MAX_PATH] of Char;
+begin
+  GetVolumeInformation('C:\', VolumeNameSize, DWORD(MAX_PATH), @VolumeSerialNumber, MaximumComponentLength, FileSystemFlags, FileSystemNameSize, DWORD(MAX_PATH));
+  Result := IntToHex(VolumeSerialNumber, 8);
+end;
+
 function TGlobalObject.GetLogger: TLogger;
 begin
   if not Assigned(FLogger) then FLogger := TLogger.Create;
@@ -144,6 +163,65 @@ function TGloBalObject.GetLogin: TLoginCommObject;
 begin
   if not Assigned(FLoginCommObject) then FLoginCommObject:= TLoginCommObject.Create(Self);
   Result := FLoginCommObject;
+end;
+
+function TGlobalObject.GetMacAddressList: TStringList;
+var
+  NCB: PNCB;
+  Adapter: PAdapterStatus;
+  URetCode: PChar;
+  RetCode: char;
+  I: integer;
+  Lenum: PlanaEnum;
+  _SystemID: string;
+  TMPSTR: string;
+begin
+  Result    := TStringList.create();
+  _SystemID := '';
+  Getmem(NCB, SizeOf(TNCB));
+  Fillchar(NCB^, SizeOf(TNCB), 0);
+  Getmem(Lenum, SizeOf(TLanaEnum));
+  Fillchar(Lenum^, SizeOf(TLanaEnum), 0);
+  Getmem(Adapter, SizeOf(TAdapterStatus));
+  Fillchar(Adapter^, SizeOf(TAdapterStatus), 0);
+  Lenum.Length    := chr(0);
+  NCB.ncb_command := chr(NCBENUM);
+  NCB.ncb_buffer  := Pointer(Lenum);
+  NCB.ncb_length  := SizeOf(Lenum);
+  RetCode         := Char(Netbios(NCB));
+  try
+    i := 0;
+    repeat
+      Fillchar(NCB^, SizeOf(TNCB), 0);
+      Ncb.ncb_command  := chr(NCBRESET);
+      Ncb.ncb_lana_num := lenum.lana[I];
+      RetCode          := Char(Netbios(Ncb));
+      Fillchar(NCB^, SizeOf(TNCB), 0);
+      Ncb.ncb_command  := chr(NCBASTAT);
+      Ncb.ncb_lana_num := lenum.lana[I];
+      // Must be 16
+      Ncb.ncb_callname := '*';
+      Ncb.ncb_buffer := Pointer(Adapter);
+      Ncb.ncb_length := SizeOf(TAdapterStatus);
+      RetCode        := Char(Netbios(Ncb));
+      //---- calc _systemId from mac-address[2-5] XOR mac-address[1]...
+      if (RetCode = chr(0)) or (RetCode = chr(6)) then
+      begin
+        _SystemId := IntToHex(Ord(Adapter.adapter_address[0]), 2) + '-' +
+          IntToHex(Ord(Adapter.adapter_address[1]), 2) + '-' +
+          IntToHex(Ord(Adapter.adapter_address[2]), 2) + '-' +
+          IntToHex(Ord(Adapter.adapter_address[3]), 2) + '-' +
+          IntToHex(Ord(Adapter.adapter_address[4]), 2) + '-' +
+          IntToHex(Ord(Adapter.adapter_address[5]), 2);
+        if (_SystemID <> '00-00-00-00-00-00') and (Result.IndexOf(_SystemID)=-1) then Result.add(_SystemId);
+      end;
+    Inc(i);
+    until (I >= Ord(Lenum.Length));
+  finally
+   FreeMem(NCB);
+   FreeMem(Adapter);
+   FreeMem(Lenum);
+  end;
 end;
 
 function TGlobalObject.GetMessageBoxObject: TMessageBoxObject;
@@ -162,6 +240,36 @@ function TGlobalObject.GetPrint: TPrintFuncObject;
 begin
   if not Assigned(FPrintFuncObject) then FPrintFuncObject := TPrintFuncObject.Create;
   Result := FPrintFuncObject;
+end;
+
+function TGlobalObject.GetRealMacAddress: string;
+var
+  MacList: TStringList;
+  I: Integer;
+begin
+  Result := '';
+  MacList := GetMacAddressList;
+  try
+    for I := 0 to MacList.Count - 1 do
+    begin
+      // Exclude virtual network cards
+      if not (Pos('00-00-00-00-00-00-00-E0', MacList[I]) > 0) and
+         not (Pos('00-50-56-C0-00-08', MacList[I]) > 0) and
+         not (Pos('00-50-56-C0-00-01', MacList[I]) > 0) and
+         not (Pos('00-03-FF', MacList[I]) > 0) and
+         not (Pos('00-0C-29', MacList[I]) > 0) and
+         not (Pos('00-05-69', MacList[I]) > 0) and
+         not (Pos('00-1C-14', MacList[I]) > 0) and
+         not (Pos('00-0F-4B', MacList[I]) > 0) and
+         not (Pos('00-16-3E', MacList[I]) > 0) then
+      begin
+        Result := MacList[I];
+        Break;
+      end;
+    end;
+  finally
+    MacList.Free;
+  end;
 end;
 
 function TGlobalObject.GetRegisterClassFactory: TRegisterClassFactory;

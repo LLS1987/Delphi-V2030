@@ -26,7 +26,7 @@ type
     function GetMainView: TcxGridDBTableView;
     function GetActiveRowIndex: Integer;
     function GetItemColumn(AFieldName: string): TcxGridDBColumn;
-    function GetRowData(AFieldName: string; ARow: Integer): Variant;
+    function GetRowData(AFieldName: string; ARow: Integer): Variant;overload;
     procedure SetRowData(AFieldName: string; ARow: Integer; const Value: Variant);
     function GetQueryDictionary: TDictionary<string, TDictionary<Integer, string>>;
     function GetActiveDataSet: TClientDataSet;
@@ -49,6 +49,7 @@ type
     procedure OnGridViewDblClick(Sender:Tobject);virtual;
     procedure OnColumnGetDataText(Sender: TcxCustomGridTableItem; ARecordIndex: Integer; var AText: string);virtual;
     procedure OnColnumGetDisplayText(Sender: TcxCustomGridTableItem; ARecord: TcxCustomGridRecord; var AText: string);virtual;
+    procedure OnColnumGetFilterDisplayText(Sender: TcxCustomGridTableItem; const AValue: Variant; var ADisplayText: string);virtual;
   public
     { Public declarations }
     destructor Destroy; override;
@@ -67,6 +68,7 @@ type
     property RowData[AFieldName:string;ARow:Integer]: Variant read GetRowData write SetRowData;
     property GridDblClickID:Integer read FGridDblClickID write FGridDblClickID;
     property MultSel: Boolean read GetMultSel write SetMultSel;
+    function GetRowText(AFieldName:string;ARow:Integer=-1):string;
   end;
   TConditionManager = class(TControlManagerLayout)
   private
@@ -93,7 +95,11 @@ function TCustomBaseQuery.AddGridView: TcxCustomGridView;
 begin
   Result:= CreatecxGridView(MainGrid);
   TcxGridDBTableView(Result).OnDblClick := OnGridViewDblClick;
-  TcxGridDBTableView(Result).FindPanel.DisplayMode := fpdmManual;   //Ctrl+F  显示查询面板
+  TcxGridDBTableView(Result).FindPanel.DisplayMode := fpdmManual;//fpdmAlways;//fpdmManual;   //Ctrl+F  显示查询面板
+  TcxGridDBTableView(Result).FindPanel.InfoText    := '输入文本进行搜索';
+  TcxGridDBTableView(Result).FindPanel.Location    := fplGroupByBox;
+  //过滤筛选
+  //TcxGridDBTableView(Result).OptionsCustomize.ColumnFiltering := True;
   //创建自定义字段
   Result.BeginUpdate();
   try
@@ -127,10 +133,11 @@ begin
     if not (TJSONObject(TJSONObject(Json.Values['GridList']).Values[AView.Name]).Values['FieldList'] is TJSONArray) then Exit;
     for var item in TJSONObject(TJSONObject(Json.Values['GridList']).Values[AView.Name]).Values['FieldList'] as TJSONArray do
     begin
-      if AView is TcxGridDBTableView then
+      if (AView is TcxGridDBTableView) then
       begin
         _Column := (AView as TcxGridDBTableView).CreateColumn;
         TcxGridDBColumn(_Column).DataBinding.FieldName := item.GetValue<string>('FieldName');
+        if Assigned(item.FindValue('BasicInfo')) then _Column.Options.FilteringWithFindPanel := False;
       end else if AView is TcxGridTableView then
       begin
         _Column := (AView as TcxGridTableView).CreateColumn;
@@ -142,8 +149,10 @@ begin
       _Column.HeaderAlignmentHorz   := taCenter;
       _Column.Visible := item.GetValue<Boolean>('Visible',False);
       _Column.VisibleForCustomization := item.GetValue<Boolean>('VisibleForCustomization',Visible);
+      //_Column.OnGetFilterDisplayText  := OnColnumGetFilterDisplayText;
       _Column.OnGetDataText    := OnColumnGetDataText;
       _Column.OnGetDisplayText := OnColnumGetDisplayText;
+      //_Column.Options.Filtering:= True;
     end;
   finally
 //    Json.Free;
@@ -257,10 +266,30 @@ begin
   if (MainGrid.ActiveView.DataController.RowCount=0) or (ARow>=MainGrid.ActiveView.DataController.RowCount) or (ARow<0) then Exit;
   var _column := ItemColumn[AFieldName];
   if not Assigned(_column) then Exit;
-  if MainGrid.ActiveView is TcxGridTableView then
+  if not(MainGrid.ActiveView is TcxGridDBTableView) then
     Result := MainGrid.ActiveView.DataController.Values[ARow,_column.Index]      //排序过滤后取值异常
   else
     Result := MainView.DataController.GetRowValue(MainView.DataController.GetRowInfo(ARow),_column.Index);  //排序过滤后取值正常
+end;
+
+function TCustomBaseQuery.GetRowText(AFieldName: string; ARow: Integer): string;
+begin
+  Result := EmptyStr;
+  if not Assigned(MainGrid) then Exit;
+  if not Assigned(MainGrid.ActiveView) then Exit;
+  if ARow<0 then ARow := ActiveRowIndex;
+  if (MainGrid.ActiveView.DataController.RowCount=0) or (ARow>=MainGrid.ActiveView.DataController.RowCount) or (ARow<0) then Exit;
+  var _column := ItemColumn[AFieldName];
+  if not Assigned(_column) then Exit;
+  if not(MainGrid.ActiveView is TcxGridDBTableView) then
+  begin
+    Result := MainGrid.ActiveView.DataController.Values[ARow,_column.Index]      //排序过滤后取值异常
+  end else begin
+    var RowInfo := MainView.DataController.GetRowInfo(ARow);
+    if VarIsNull(MainView.DataController.GetRowValue(RowInfo,_column.Index)) then Exit;
+    Result := MainView.DataController.GetRowValue(RowInfo,_column.Index);  //排序过滤后取值正常
+    if Assigned(_column.OnGetDisplayText) then _column.OnGetDisplayText(_column,MainView.ViewData.Records[RowInfo.RowIndex],Result);
+  end;
 end;
 
 procedure TCustomBaseQuery.iniForm;
@@ -340,7 +369,7 @@ begin
       var ABasicRec : Integer := RowData[ABasicField,ARecord.Index];
       if not Goo.Local.BasicData[TBasicType(ABasicType)].ContainsKey(ABasicRec) then Continue;      
       //AText := Goo.Local.GetRec<TStorable_BType>(RowData[TJSONObject(item).O['BasicInfo'].S['BasicField'],ARecord.Index]).FullName;
-      AText := Goo.Local.BasicData[TBasicType(ABasicType)].GetValue(ABasicDisplay,ABasicRec);
+      //AText := Goo.Local.BasicData[TBasicType(ABasicType)].GetValue(ABasicDisplay,ABasicRec);
       //判断本地化数据是否为枚举值
       var ADisplay := Goo.Local.BasicData[TBasicType(ABasicType)].Items[ABasicRec].AttributeFieldDisplayText[ABasicDisplay];
       if Assigned(ADisplay) and (ADisplay.Count>0) and ADisplay.ContainsKey(AText.Trim) then AText := ADisplay.Items[AText.Trim];
@@ -349,9 +378,33 @@ begin
   end;
 end;
 
+procedure TCustomBaseQuery.OnColnumGetFilterDisplayText(Sender: TcxCustomGridTableItem; const AValue: Variant; var ADisplayText: string);
+begin
+  if VarIsNull(AValue) then ADisplayText := EmptyStr;
+end;
+
 procedure TCustomBaseQuery.OnColumnGetDataText(Sender: TcxCustomGridTableItem;  ARecordIndex: Integer; var AText: string);
 begin
-
+  var APropName := (Sender as TcxGridDBColumn).DataBinding.FieldName;
+  if not Assigned(LayoutJson) then Exit;
+  if not LayoutJson.Exists('GridList') then Exit;
+  if not LayoutJson.O['GridList'].Exists((Sender as TcxGridColumn).GridView.Name) then Exit;
+  for var item in LayoutJson.O['GridList'].O[(Sender as TcxGridColumn).GridView.Name].A['FieldList'] do
+  begin
+    if SameText(item.GetValue<string>('FieldName',''),APropName) then  //寻找列属性
+    begin
+      if not TJSONObject(item).Exists('BasicInfo') then Continue;
+      var ABasicType:Integer;
+      var ABasicField,ABasicDisplay:string;
+      if not TJSONObject(item).O['BasicInfo'].TryGetValue<Integer>('BasicType',ABasicType) then Continue;
+      if not TJSONObject(item).O['BasicInfo'].TryGetValue<string>('BasicField',ABasicField) then Continue;
+      if not TJSONObject(item).O['BasicInfo'].TryGetValue<string>('BasicDisplay',ABasicDisplay) then Continue;
+      var ABasicRec : Integer := RowData[ABasicField,ARecordIndex];
+      if not Goo.Local.BasicData[TBasicType(ABasicType)].ContainsKey(ABasicRec) then Continue;
+      AText := Goo.Local.BasicData[TBasicType(ABasicType)].GetValue(ABasicDisplay,ABasicRec);
+      Break;
+    end;
+  end;
 end;
 
 procedure TCustomBaseQuery.OnGridViewDblClick(Sender: Tobject);

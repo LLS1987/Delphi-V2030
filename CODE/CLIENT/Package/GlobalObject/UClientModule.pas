@@ -8,16 +8,21 @@ uses
   Datasnap.DSConnect, FireDAC.Stan.Intf, FireDAC.Stan.Option,
   FireDAC.Stan.Param, FireDAC.Stan.Error, FireDAC.DatS, FireDAC.Phys.Intf,
   FireDAC.DApt.Intf, FireDAC.Stan.Async, FireDAC.DApt, FireDAC.Comp.DataSet,
-  FireDAC.Comp.Client, FireDAC.Stan.StorageBin, Data.DBXMSSQL, Datasnap.Provider;
+  FireDAC.Comp.Client, FireDAC.Stan.StorageBin, Data.DBXMSSQL, Datasnap.Provider,
+  Vcl.ExtCtrls;
 
 type
   TClientModule = class(TDataModule)
     conn: TSQLConnection;
     DSProvider_OpenSQL: TDSProviderConnection;
     DSProvider_OpenPRoc: TDSProviderConnection;
+    ConnectTimer: TTimer;
+    procedure ConnectTimerTimer(Sender: TObject);
   private
+    FHeartbeatConnection: Boolean;
     { Private declarations }
     function CopyStream(const AStream: TStream): TMemoryStream;
+    procedure SetHeartbeatConnection(const Value: Boolean);
   public
     { Public declarations }
     destructor Destroy; override;
@@ -29,6 +34,7 @@ type
     function OpenProc(szProcedureName: string; AParamName: array of string;AParamValue: array of OleVariant; ADataSet:TClientDataSet; AParams: TParams): Integer;overload;virtual;
     function ExecProc(szProcedureName: string; AParamName: array of string;AParamValue: array of OleVariant; AParams: TParams): Integer;virtual;
     function QueryOneFiled(const ASQL: string):Variant;
+    property HeartbeatConnection:Boolean read FHeartbeatConnection write SetHeartbeatConnection;
   end;
 
 //var
@@ -107,6 +113,22 @@ destructor TClientModule.Destroy;
 begin
   conn.Connected := False;
   inherited;
+end;
+
+procedure TClientModule.ConnectTimerTimer(Sender: TObject);
+var oDataModel: TModuleUnitClient;
+begin
+  ConnectTimer.Enabled := False;
+  try
+    oDataModel := TModuleUnitClient.Create(conn.DBXConnection);
+    try
+      oDataModel.TestConnect;
+    except on E: Exception do
+    end;
+  finally
+    oDataModel.Free;
+    ConnectTimer.Enabled := True;
+  end;
 end;
 
 function TClientModule.ExecProc(szProcedureName: string; AParamName: array of string; AParamValue: array of OleVariant; AParams: TParams): Integer;
@@ -233,6 +255,13 @@ begin
   finally
     ds.Free;
   end;
+end;
+
+procedure TClientModule.SetHeartbeatConnection(const Value: Boolean);
+begin
+  FHeartbeatConnection := Value;
+  ConnectTimer.Enabled := False;
+  if Value and conn.Connected then ConnectTimer.Enabled := True;
 end;
 
 end.

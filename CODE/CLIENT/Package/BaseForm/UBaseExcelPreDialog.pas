@@ -59,6 +59,7 @@ end;
 procedure TBaseExcelPreDialog.Button_ImportDataClick(Sender: TObject);
 begin
   inherited;
+  if not TExcelObject(ParamList.AsObject('@InvokeObject')).CheckData(StringGrid1) then Exit;  
   if TExcelObject(ParamList.AsObject('@InvokeObject')).ImportExcel(StringGrid1) then ModalResult := mrOk;
 end;
 

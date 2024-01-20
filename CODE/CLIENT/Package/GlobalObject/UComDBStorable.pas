@@ -5,7 +5,7 @@ interface
 uses
   System.SysUtils,UClientModule, DB, Datasnap.DBClient,RTTI, TypInfo,Types,
   UComObject, UParamList, Vcl.DBGrids, System.Classes, UComConst,
-  System.Generics.Collections;
+  System.Generics.Collections, System.IniFiles;
 
 type
   /// 查询匹配方式      右匹配(%X)、左匹配(x%)、全匹配(%x%)。
@@ -84,7 +84,7 @@ type
   //定义用于展示数据的表格控件
   TViewGrid = TDBGrid;
   //存储仓库
-  TStorable = class(TObject)
+  TStorable = class(TComponent)
   private
     FSelectSQL : string;
     FSelectMatchType:TSelectMatchType;
@@ -207,6 +207,8 @@ type
     FProjectType: Integer;
     FPerson: string;
     FName: string;
+    FWarehouseAddress: string;
+    FUnitAddress: string;
   public
     constructor Create;override;
     [TFieldInfo('Name' ,'单位简名',80,False)]
@@ -217,12 +219,17 @@ type
     property ProjectType: Integer read FProjectType write FProjectType;
     [TFieldInfo('Person' ,'联系人',60)]
     property Person:string read FPerson write FPerson;
+    [TFieldInfo('Address' ,'单位地址',60,False)]
+    property UnitAddress: string read FUnitAddress write FUnitAddress;
+    [TFieldInfo('ckdz' ,'仓库地址',60,False)]
+    property WarehouseAddress: string read FWarehouseAddress write FWarehouseAddress;
   end;
 
   TStorableDictionary = class(TObjectDictionary<Integer,TStorable>)
   private
     FTypeIDDictionary:TDictionary<string,Integer>;
     FUSerCodeDictionary:TDictionary<string,Integer>;
+    //FHashTypeID:THashedStringList;                                              //Hash列表效率查找更高；写入时稍慢
   public
     constructor Create;overload;
     destructor Destroy; override;
@@ -868,7 +875,12 @@ var ds:TClientDataSet;
 begin
   ds := TClientDataSet.Create(nil);
   try
-    Goo.DB.OpenSQL('SELECT * FROM dbo.btype',ds);
+    Goo.DB.Lock;
+    try
+      Goo.DB.OpenSQL('SELECT * FROM dbo.btype',ds);
+    finally
+      Goo.DB.UnLock;
+    end;
     ds.First;
     while not ds.Eof do
     begin
@@ -919,7 +931,12 @@ var ds:TClientDataSet;
 begin
   ds := TClientDataSet.Create(nil);
   try
-    Goo.DB.OpenSQL('SELECT posid as Rec,posid as typeid,poscode as UserCode,* FROM dbo.posinfo',ds);
+    Goo.DB.Lock;
+    try
+      Goo.DB.OpenSQL('SELECT posid as Rec,cast(posid as varchar(20)) as typeid,poscode as UserCode,* FROM dbo.posinfo',ds);
+    finally
+      Goo.DB.UnLock;
+    end;
     ds.First;
     while not ds.Eof do
     begin
@@ -936,7 +953,12 @@ var ds:TClientDataSet;
 begin
   ds := TClientDataSet.Create(nil);
   try
-    Goo.DB.OpenSQL('SELECT * FROM dbo.ptype',ds);
+    Goo.DB.Lock;
+    try
+      Goo.DB.OpenSQL('SELECT * FROM dbo.ptype',ds);
+    finally
+      Goo.DB.UnLock;
+    end;
     ds.First;
     while not ds.Eof do
     begin
@@ -954,7 +976,8 @@ procedure TStorableDictionary.Add(AItem:TStorable);
 begin
   if not Assigned(AItem) then Exit;
   Self.AddOrSetValue(AItem.Rec,AItem);
-  FTypeIDDictionary.Add(AItem.TypeID,AItem.Rec);
+  if not FTypeIDDictionary.ContainsKey(AItem.TypeID) then FTypeIDDictionary.Add(AItem.TypeID,AItem.Rec);
+  //FHashTypeID.Values[AItem.TypeID] := AItem.Rec.ToString;
   if not FUSerCodeDictionary.ContainsKey(AItem.UserCode) then FUSerCodeDictionary.Add(AItem.UserCode,AItem.Rec);
 end;
 
@@ -962,6 +985,8 @@ procedure TStorableDictionary.ClearAndFree;
 begin
   for var _item in Self.Values do  if Assigned(_item) then FreeAndNil(_item);
   Clear;
+  FTypeIDDictionary.Clear;
+  FUSerCodeDictionary.Clear;
 end;
 
 constructor TStorableDictionary.Create;
@@ -973,7 +998,7 @@ end;
 
 destructor TStorableDictionary.Destroy;
 begin
-  for var _item in Self.Values do  if Assigned(_item) then FreeAndNil(_item);
+  ClearAndFree;
   if Assigned(FTypeIDDictionary) then FreeAndNil(FTypeIDDictionary);
   if Assigned(FUSerCodeDictionary) then FreeAndNil(FUSerCodeDictionary);
   inherited;

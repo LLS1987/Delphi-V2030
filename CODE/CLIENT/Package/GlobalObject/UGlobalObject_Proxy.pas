@@ -9,7 +9,7 @@ interface
 
 uses
   UGlobalInterface, UComObject,UParamList, System.UITypes, Winapi.Windows,
-  Vcl.Forms, Vcl.MPlayer;
+  Vcl.Forms, Vcl.MPlayer, dxAlertWindow;
 
 type
   TLoginCommObject = class(TBaseCommObject)
@@ -20,6 +20,8 @@ type
     function GetLocalComputerName: string;
     function GetLocalIPAddress: string;
     function GetLocalMACAddress(idx: Integer): string;
+    function GetHardDiskSN: string;
+    function GetCPUPSN: string;
   public
     function LoginServer:Boolean;
     function LoginUser:Boolean;
@@ -29,6 +31,10 @@ type
     property LocalComputerName: string read GetLocalComputerName;
     ///本机MAC
     property LocalMACAddress[idx:Integer]:string read GetLocalMACAddress;
+    ///本机硬盘序列号
+    property LocalHDSN: string read GetHardDiskSN;
+    ///本机CPU序列号
+    property LocalCPUSN:string read GetCPUPSN;
   published
     ///职员登录信息
     property LoginUserRec:Integer read FLoginUserRec;
@@ -78,6 +84,7 @@ type
   TMessageBoxObject = class(TBaseCommObject)
   private
     FProgressBarForm:TForm;
+    FdxAlertWindowManager:TdxAlertWindowManager;
   public
     constructor Create(AOwner: TObject);
     destructor Destroy; override;
@@ -97,6 +104,8 @@ type
     //进度条
     procedure ShowProgressBar(AMax:Integer=100;ATitle:string='');
     procedure StepBy(Delta: Integer=1;ATitle:string='');
+    //气泡提示
+    function ShowTip(const AText: string;ACaption:string='提示'): TdxAlertWindow;
   end;
   {多媒体播放}
   TPlayMediaObject = class(TBaseCommObject)
@@ -106,6 +115,7 @@ type
     constructor Create(AOwner: TObject);
     destructor Destroy; override;
     procedure Play(AFile:string);
+    procedure Close;
     property MediaPlayer : TMediaPlayer read FMediaPlayer;
   end;
 
@@ -116,6 +126,170 @@ uses
   Vcl.Graphics, System.Variants, Winapi.WinSock, Winapi.Nb30;
 
 { TLoginCommObject }
+
+function TLoginCommObject.GetCPUPSN: string;
+type
+    TCPUID = array[1..4] of longint;
+  function GetCPUID: TCPUID;
+  asm
+    PUSH    EBX
+  　PUSH    EDI
+  　MOV     EDI,EAX
+  　MOV     EAX,1
+  　DW      $A20F
+  　STOSD
+  　MOV     EAX,EBX
+  　STOSD
+  　MOV     EAX,ECX
+  　STOSD
+  　MOV     EAX,EDX
+  　STOSD
+  　POP     EDI
+  　POP     EBX
+  end;
+var
+  Buffer: array[0..25] of Char; // 存放CPU序列号的字符串
+begin
+  Result := EmptyStr;
+  try
+    var aCpuId := GetCPUID;
+    Result := IntToHex(aCpuId[4],8) + IntToHex(aCpuId[1],8)
+  except
+    on E: Exception do ;
+  end;
+end;
+
+function TLoginCommObject.GetHardDiskSN: string;
+const
+  IDENTIFY_BUFFER_SIZE = 512;
+type
+   TIDERegs = packed record
+    bFeaturesReg     : BYTE; // Used for specifying SMART "commands".
+    bSectorCountReg  : BYTE; // IDE sector count register
+    bSectorNumberReg : BYTE; // IDE sector number register
+    bCylLowReg       : BYTE; // IDE low order cylinder value
+    bCylHighReg      : BYTE; // IDE high order cylinder value
+    bDriveHeadReg    : BYTE; // IDE drive/head register
+    bCommandReg      : BYTE; // Actual IDE command.
+    bReserved        : BYTE; // reserved for future use.  Must be zero.
+  end;
+  TSendCmdInParams = packed record
+    // Buffer size in bytes
+    cBufferSize  : DWORD;
+    // Structure with drive register values.
+    irDriveRegs  : TIDERegs;
+    // Physical drive number to send command to (0,1,2,3).
+    bDriveNumber : BYTE;
+    bReserved    : Array[0..2] of Byte;
+    dwReserved   : Array[0..3] of DWORD;
+    bBuffer      : Array[0..0] of Byte;  // Input buffer.
+  end;
+  TIdSector = packed record
+    wGenConfig                 : Word;
+    wNumCyls                   : Word;
+    wReserved                  : Word;
+    wNumHeads                  : Word;
+    wBytesPerTrack             : Word;
+    wBytesPerSector            : Word;
+    wSectorsPerTrack           : Word;
+    wVendorUnique              : Array[0..2] of Word;
+    sSerialNumber              : Array[0..19] of CHAR;
+    wBufferType                : Word;
+    wBufferSize                : Word;
+    wECCSize                   : Word;
+    sFirmwareRev               : Array[0..7] of Char;
+    sModelNumber               : Array[0..39] of Char;
+    wMoreVendorUnique          : Word;
+    wDoubleWordIO              : Word;
+    wCapabilities              : Word;
+    wReserved1                 : Word;
+    wPIOTiming                 : Word;
+    wDMATiming                 : Word;
+    wBS                        : Word;
+    wNumCurrentCyls            : Word;
+    wNumCurrentHeads           : Word;
+    wNumCurrentSectorsPerTrack : Word;
+    ulCurrentSectorCapacity    : DWORD;
+    wMultSectorStuff           : Word;
+    ulTotalAddressableSectors  : DWORD;
+    wSingleWordDMA             : Word;
+    wMultiWordDMA              : Word;
+    bReserved                  : Array[0..127] of BYTE;
+  end;
+  PIdSector = ^TIdSector;
+  TDriverStatus = packed record
+    // 驱动器返回的错误代码，无错则返回0
+    bDriverError : Byte;
+    // IDE出错寄存器的内容，只有当bDriverError 为 SMART_IDE_ERROR 时有效
+    bIDEStatus   : Byte;
+    bReserved    : Array[0..1] of Byte;
+    dwReserved   : Array[0..1] of DWORD;
+  end;
+  TSendCmdOutParams = packed record
+    // bBuffer的大小
+    cBufferSize  : DWORD;
+    // 驱动器状态
+    DriverStatus : TDriverStatus;
+    // 用于保存从驱动器读出的数据的缓冲区，实际长度由cBufferSize决定
+    bBuffer      : Array[0..0] of BYTE;
+  end;
+  var hDevice : THandle;
+      cbBytesReturned : DWORD;
+      SCIP : TSendCmdInParams;
+      aIdOutCmd : Array [0..(SizeOf(TSendCmdOutParams)+IDENTIFY_BUFFER_SIZE-1)-1] of Byte;
+      IdOutCmd  : TSendCmdOutParams absolute aIdOutCmd;
+  procedure ChangeByteOrder( var Data; Size : Integer );
+  var ptr : PChar;
+      i : Integer;
+      c : Char;
+  begin
+    ptr := @Data;
+    for i := 0 to (Size shr 1)-1 do begin
+      c := ptr^;
+      ptr^ := (ptr+1)^;
+      (ptr+1)^ := c;
+      Inc(ptr,2);
+    end;
+  end;
+begin
+  Result := ''; // 如果出错则返回空串
+  if Win32Platform=VER_PLATFORM_WIN32_NT then begin// Windows NT, Windows 2000
+      // 提示! 改变名称可适用于其它驱动器，如第二个驱动器： '\\.\PhysicalDrive1\'
+      hDevice := CreateFile( '\\.\PhysicalDrive0', GENERIC_READ or GENERIC_WRITE,
+        FILE_SHARE_READ or FILE_SHARE_WRITE, nil, OPEN_EXISTING, 0, 0 );
+  end else // Version Windows 95 OSR2, Windows 98
+    hDevice := CreateFile( '\\.\SMARTVSD', 0, 0, nil, CREATE_NEW, 0, 0 );
+    if hDevice=INVALID_HANDLE_VALUE then Exit;
+   try
+    FillChar(SCIP,SizeOf(TSendCmdInParams)-1,#0);
+    FillChar(aIdOutCmd,SizeOf(aIdOutCmd),#0);
+    cbBytesReturned := 0;
+    // Set up data structures for IDENTIFY command.
+    with SCIP do begin
+      cBufferSize  := IDENTIFY_BUFFER_SIZE;
+//      bDriveNumber := 0;
+      with irDriveRegs do
+      begin
+        bSectorCountReg  := 1;
+        bSectorNumberReg := 1;
+//      if Win32Platform=VER_PLATFORM_WIN32_NT then bDriveHeadReg := $A0
+//      else bDriveHeadReg := $A0 or ((bDriveNum and 1) shl 4);
+        bDriveHeadReg    := $A0;
+        bCommandReg      := $EC;
+      end;
+    end;
+    if not DeviceIoControl( hDevice, $0007c088, @SCIP, SizeOf(TSendCmdInParams)-1,
+      @aIdOutCmd, SizeOf(aIdOutCmd), cbBytesReturned, nil ) then Exit;
+  finally
+    CloseHandle(hDevice);
+  end;
+  with PIdSector(@IdOutCmd.bBuffer)^ do
+  begin
+    ChangeByteOrder( sSerialNumber, SizeOf(sSerialNumber) );
+    (PAnsiChar(@sSerialNumber)+SizeOf(sSerialNumber))^ := #0;
+    Result := Trim(PAnsiChar(@sSerialNumber));
+  end;
+end;
 
 function TLoginCommObject.GetLocalComputerName: string;
 var
@@ -241,11 +415,16 @@ constructor TMessageBoxObject.Create(AOwner: TObject);
 begin
   inherited ;
   FProgressBarForm := nil;
+  FdxAlertWindowManager := TdxAlertWindowManager.Create(nil);
+  FdxAlertWindowManager.OptionsSize.Width := 400;
+  FdxAlertWindowManager.OptionsMessage.Caption.Font.Size  := 9;
+  //FdxAlertWindowManager.OptionsMessage.Caption.Font.Style := [];
 end;
 
 destructor TMessageBoxObject.Destroy;
 begin
-  if Assigned(FProgressBarForm) then FreeAndNil(FProgressBarForm);  
+  if Assigned(FProgressBarForm) then FreeAndNil(FProgressBarForm);
+  if Assigned(FdxAlertWindowManager) then FreeAndNil(FdxAlertWindowManager);  
   inherited;
 end;
 
@@ -313,6 +492,11 @@ begin
   finally
     AParam.Free;
   end;
+end;
+
+function TMessageBoxObject.ShowTip(const AText: string;ACaption:string='提示'): TdxAlertWindow;
+begin
+  Result := FdxAlertWindowManager.Show(ACaption,AText);
 end;
 
 procedure TMessageBoxObject.StepBy(Delta: Integer; ATitle: string);
@@ -431,6 +615,11 @@ begin
 end;
 
 { TPlayMediaObject }
+
+procedure TPlayMediaObject.Close;
+begin
+  if Assigned(FMediaPlayer) then FMediaPlayer.Close;
+end;
 
 constructor TPlayMediaObject.Create(AOwner: TObject);
 begin

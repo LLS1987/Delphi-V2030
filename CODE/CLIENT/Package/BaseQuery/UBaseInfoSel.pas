@@ -63,6 +63,8 @@ var
   typ:TRttiType;
 begin
   Result := BaseParam.Storable.ClassType.Create as TStorable;
+  //Result.Assign(Goo.Local.GetRec<TStorable_MType>(RowData['REC',ARow]));
+  //Exit;
   Context := TRttiContext.Create;
   try
     typ := Context.GetType(Result.ClassType);

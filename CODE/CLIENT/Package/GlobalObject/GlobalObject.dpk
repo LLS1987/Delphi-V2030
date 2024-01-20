@@ -54,7 +54,10 @@ requires
   soaprtl,
   adortl,
   vclx,
-  RESTComponents;
+  RESTComponents,
+  dxCoreRS28,
+  cxLibraryRS28,
+  dxGDIPlusRS28;
 
 contains
   UComvar in 'UComvar.pas',

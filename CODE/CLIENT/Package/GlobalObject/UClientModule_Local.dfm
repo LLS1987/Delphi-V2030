@@ -6,7 +6,7 @@ inherited ClientModule_Local: TClientModule_Local
     MaxBlobSize = -1
     Params = <>
     SQLConnection = conn
-    Left = 264
+    Left = 265
     Top = 24
   end
   object DataSetProvider_query_open: TDataSetProvider
@@ -22,14 +22,14 @@ inherited ClientModule_Local: TClientModule_Local
     MaxBlobSize = -1
     Params = <>
     SQLConnection = conn
-    Left = 176
+    Left = 200
     Top = 24
   end
   object proc_exec: TSQLStoredProc
     MaxBlobSize = -1
     Params = <>
     SQLConnection = conn
-    Left = 264
+    Left = 265
     Top = 88
   end
 end

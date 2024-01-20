@@ -8,7 +8,7 @@ uses
 
 type
   //数据库访问类
-  TDBConnectType = (dbctRemote,dbctLocal,dbctLocalADO);
+  TDBConnectType = (dbctRemote,dbctLocal,dbctLocalADO,dbctLocalOracle);
   TDataBaseCommObject = class(TBaseCommObject)
   private
     FHostName: string;
@@ -46,6 +46,8 @@ type
     function QueryOneFiled<T>(const ASQL: string):Variant;overload;
     function SysCfgValue(czName: string): string;
     function SetSubValue(czName, czValue: string;ASysflag:Integer=-1;AComment:string = ''): integer;
+    function GetSPID:Integer;
+    function GetDateTime:TDateTime;
     procedure Lock;
     procedure UnLock;
   published
@@ -200,6 +202,16 @@ begin
   end;
 end;
 
+function TDataBaseCommObject.GetDateTime: TDateTime;
+begin
+  Result := QueryOneFiled<TDateTime>('SELECT GETDATE()');
+end;
+
+function TDataBaseCommObject.GetSPID: Integer;
+begin
+  Result := QueryOneFiled<Integer>('SELECT @@SPID');
+end;
+
 procedure TDataBaseCommObject.Lock;
 begin
   FLockVar.Enter;
@@ -300,6 +312,7 @@ end;
 
 procedure TDataBaseCommObject.SetConnected(const Value: Boolean);
 begin
+  Goo.Logger.Info('数据库连接SetConnected='+Value.ToString);
   ClientDM.Conn.Connected := False;
   if ClientDM is TClientModule_LocalADO then TClientModule_LocalADO(ClientDM).Conn_ADO.Connected := False;
   if Connected = Value then Exit;
@@ -314,6 +327,7 @@ begin
             ClientDM.Conn.Params.Add('User_Name='+'***');
             ClientDM.Conn.Params.Add('Password='+'***');
             ClientDM.Conn.Connected := Value;
+            ClientDM.HeartbeatConnection := True;                               //开启服务端心跳连接
           end;
       dbctLocal  :
           begin

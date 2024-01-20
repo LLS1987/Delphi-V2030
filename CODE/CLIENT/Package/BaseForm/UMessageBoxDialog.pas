@@ -6,7 +6,7 @@ uses
   Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
   Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.ExtCtrls, UBaseDialogForm,
   System.ImageList, Vcl.ImgList, System.Actions, Vcl.ActnList, Vcl.StdCtrls,
-  Vcl.Buttons;
+  Vcl.Buttons, cxStyles, cxClasses;
 
 type
   TMessageBoxDialog = class(TBaseDialogForm)

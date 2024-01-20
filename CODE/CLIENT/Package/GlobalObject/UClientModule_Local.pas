@@ -9,7 +9,7 @@ uses
   FireDAC.Stan.Param, FireDAC.Stan.Error, FireDAC.DatS, FireDAC.Phys.Intf,
   FireDAC.DApt.Intf, FireDAC.Stan.Async, FireDAC.DApt, FireDAC.Comp.DataSet,
   FireDAC.Comp.Client, FireDAC.Stan.StorageBin, Data.DBXMSSQL,
-  Datasnap.Provider, UClientModule;
+  Datasnap.Provider, UClientModule, Vcl.ExtCtrls;
 
 type
   TClientModule_Local = class(TClientModule)

@@ -19,6 +19,7 @@ type
     FExecSQLCommand: TDBXCommand;
     FOpenProcCommand: TDBXCommand;
     FExecProcCommand: TDBXCommand;
+    FTestConnectCommand: TDBXCommand;
   public
     constructor Create(ADBXConnection: TDBXConnection); overload;
     constructor Create(ADBXConnection: TDBXConnection; AInstanceOwner: Boolean); overload;
@@ -30,6 +31,7 @@ type
     function ExecSQL(ASQL: string): Integer;
     function OpenProc(szProcedureName: string; AParams: OleVariant): OleVariant;
     function ExecProc(szProcedureName: string; AParams: OleVariant): OleVariant;
+    function TestConnect: Boolean;
   end;
 
 implementation
@@ -74,6 +76,19 @@ begin
   FOpenSQLCommand.Parameters[0].Value.SetWideString(ASQL);
   FOpenSQLCommand.ExecuteUpdate;
   Result := FOpenSQLCommand.Parameters[1].Value.GetInt32;
+end;
+
+function TModuleUnitClient.TestConnect: Boolean;
+begin
+  if FTestConnectCommand = nil then
+  begin
+    FTestConnectCommand := FDBXConnection.CreateCommand;
+    FTestConnectCommand.CommandType := TDBXCommandTypes.DSServerMethod;
+    FTestConnectCommand.Text := 'TModuleUnit.TestConnect';
+    FTestConnectCommand.Prepare;
+  end;
+  FTestConnectCommand.ExecuteUpdate;
+  Result := FTestConnectCommand.Parameters[0].Value.GetBoolean;
 end;
 
 function TModuleUnitClient.ExecSQL(ASQL: string): Integer;
@@ -153,6 +168,7 @@ begin
   FExecSQLCommand.DisposeOf;
   FOpenProcCommand.DisposeOf;
   FExecProcCommand.DisposeOf;
+  FTestConnectCommand.DisposeOf;
   inherited;
 end;
 
