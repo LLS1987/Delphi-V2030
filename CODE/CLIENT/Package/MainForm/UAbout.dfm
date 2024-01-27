@@ -19,11 +19,11 @@ object About: TAbout
     Left = 0
     Top = 0
     Width = 620
-    Height = 65
+    Height = 37
     Align = alTop
     BevelOuter = bvNone
     Caption = 'DClient'
-    Color = clWindow
+    Color = clMoneyGreen
     Font.Charset = DEFAULT_CHARSET
     Font.Color = clWindowText
     Font.Height = -16
@@ -33,11 +33,11 @@ object About: TAbout
     ParentFont = False
     TabOrder = 0
     object lbl_Version: TLabel
-      Left = 456
-      Top = 50
-      Width = 48
+      Left = 511
+      Top = 21
+      Width = 76
       Height = 15
-      Caption = 'V 1.0.0.1'
+      Caption = 'V 9.5.1.32700'
       Font.Charset = DEFAULT_CHARSET
       Font.Color = clWindowText
       Font.Height = -12
@@ -65,6 +65,8 @@ object About: TAbout
     RowSelect = True
     TabOrder = 1
     ViewStyle = vsReport
+    ExplicitTop = 152
+    ExplicitHeight = 128
   end
   object Panel2: TPanel
     Left = 0
@@ -94,6 +96,43 @@ object About: TAbout
       Caption = #26816#26597#26356#26032' ...'
       TabOrder = 1
       OnClick = btn_UpdateClick
+    end
+  end
+  object Panel3: TPanel
+    Left = 0
+    Top = 37
+    Width = 620
+    Height = 28
+    Align = alTop
+    BevelOuter = bvNone
+    Color = clGreen
+    ParentBackground = False
+    TabOrder = 3
+    object lbl_MacAddress: TLabel
+      Left = 8
+      Top = 13
+      Width = 30
+      Height = 15
+      Caption = 'MAC:'
+      Font.Charset = DEFAULT_CHARSET
+      Font.Color = clWindowText
+      Font.Height = -12
+      Font.Name = 'Segoe UI'
+      Font.Style = []
+      ParentFont = False
+    end
+    object lbl_IPAddress: TLabel
+      Left = 8
+      Top = 0
+      Width = 13
+      Height = 15
+      Caption = 'IP:'
+      Font.Charset = DEFAULT_CHARSET
+      Font.Color = clWindowText
+      Font.Height = -12
+      Font.Name = 'Segoe UI'
+      Font.Style = []
+      ParentFont = False
     end
   end
 end

@@ -47,17 +47,20 @@ type
     cxLocalizer1: TcxLocalizer;
     Action_Update: TAction;
     Action_About: TAction;
+    ProgressBar1: TProgressBar;
     procedure Action_AboutExecute(Sender: TObject);
     procedure Action_ChangeDBExecute(Sender: TObject);
     procedure Action_ChangeUserExecute(Sender: TObject);
     procedure Action_CloseExecute(Sender: TObject);
     procedure Action_UpdateExecute(Sender: TObject);
     procedure Action_UpgradeExecute(Sender: TObject);
+    procedure StatusBar1DrawPanel(StatusBar: TStatusBar; Panel: TStatusPanel; const Rect: TRect);
     procedure Timer_PassWorkTimer(Sender: TObject);
   private
     procedure CreateMenu;overload;
     procedure CreateMenu(JSON: TJSONObject; ParentItem:TMenuItem=nil);overload;
     procedure MenuClick(Sender: TObject);
+    procedure LoadBaseInfoThread;
   public
     { Public declarations }
     procedure ClearAllMDIForm;
@@ -70,7 +73,7 @@ implementation
 
 uses UComvar, UGlobalInterface, UParamList,
   System.IOUtils, System.Generics.Collections, System.Generics.Defaults,
-  UComConst, Winapi.ShellAPI, UJsonObjectHelper, UAbout;
+  UComConst, Winapi.ShellAPI, UJsonObjectHelper, UAbout, System.Rtti;
 
 {$R *.dfm}
 
@@ -161,7 +164,7 @@ begin
         var leftSort,rightSort: Integer;
         begin
           // You should do some error checking here and not just cast blindly
-          if not TJSONObject(Left).TryGetValue<Integer>('sort',leftSort) then leftSort := 0;;
+          if not TJSONObject(Left).TryGetValue<Integer>('sort',leftSort) then leftSort := 0;
           if not TJSONObject(Right).TryGetValue<Integer>('sort',rightSort) then rightSort := 0;
           // Compare here. I am just comparing the ToStrings but you will probably
           // want to compare something else.
@@ -206,6 +209,37 @@ begin
   end;
 end;
 
+procedure TMainClient.LoadBaseInfoThread;
+var AProBar:TProgressBar;
+begin
+  AProBar := Goo.ComVar.AsObject('@AppMainForm_ProgressBar') as TProgressBar;
+  if Assigned(AProBar) then
+  begin
+    AProBar.Visible := True;
+    AProBar.Min := 0;
+    AProBar.Max := Goo.Local.Count;
+  end;
+  TThread.CreateAnonymousThread(
+    procedure
+    begin
+      for var i := Low(TBasicType) to High(TBasicType) do
+      begin
+        Goo.Local.BasicData[i];
+        TThread.Synchronize( nil,
+          procedure
+          begin
+            //线程同步的内容
+            if Assigned(AProBar) then
+            begin
+              AProBar.Position := AProBar.Position+1;
+              if AProBar.Position=AProBar.Max then AProBar.Visible := False;
+            end;
+          end);         //|/-\|/-\|/-\:
+      end;
+    end
+  ).Start;
+end;
+
 procedure TMainClient.MenuClick(Sender: TObject);
 var Action:TAction;
   AClassName:string;
@@ -219,7 +253,7 @@ begin
   try
     AClassName := _json.S['classname'].Trim;
     if AClassName=EmptyStr then Exit;
-    if Assigned(_json.O['ParamList']) then
+    if _json.Exists('ParamList') and Assigned(_json.O['ParamList']) then
     begin
       for var item in _json.O['ParamList'] do
       begin
@@ -260,6 +294,26 @@ begin
   end;
 end;
 
+procedure TMainClient.StatusBar1DrawPanel(StatusBar: TStatusBar; Panel: TStatusPanel; const Rect: TRect);
+begin
+  if  Panel.ID = StatusBar1.Panels.Count-1 then
+    with ProgressBar1 do
+    begin
+      Parent := StatusBar1;
+      //设置长度、宽度和高度
+      left:=Rect.Right-width-15;
+      top:=Rect.Top;
+      //width:=MyRect2.Right-MyRect2.Left;
+      height:=Rect.Bottom-Rect.Top;
+      //设置进度条的值
+      //Min:=0;
+      //Max:=100;
+      //Position:=Position+10;
+      //进度条可见
+      //Visible:=True;
+    end;
+end;
+
 procedure TMainClient.Timer_PassWorkTimer(Sender: TObject);
 begin
   Timer_PassWork.Enabled := False;
@@ -276,16 +330,23 @@ begin
     Abort;
   end;
   StatusBar1.Panels[1].Text := Format('职员：%s',[Goo.Login.LoginUserName]);
+  Goo.ComVar.Add('@AppMainForm_ProgressBar',ProgressBar1);
   //创建菜单
   CreateMenu;
+  //开启线程加载本地化数据
+  LoadBaseInfoThread;
   //首次打开的菜单
   if Goo.Reg.FirstRunClass <> EmptyStr then Goo.Reg.CallFormClass(Goo.Reg.FirstRunClass);
   //cx控件的中文展示
   if FileExists(Goo.SystemPath + '\Layout\DevChs.ini') then
   begin
-    cxLocalizer1.FileName := Goo.SystemPath + '\Layout\DevChs.ini';
-    cxLocalizer1.Active := True;
-    cxLocalizer1.Language := '中文(简体，中国)';
+    TThread.CreateAnonymousThread(
+      procedure
+      begin
+        cxLocalizer1.FileName := Goo.SystemPath + '\Layout\DevChs.ini';
+        cxLocalizer1.Active := True;
+        cxLocalizer1.Language := '中文(简体，中国)';
+      end).Start;
   end;
 end;
 

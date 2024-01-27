@@ -14,6 +14,9 @@ type
     lbl_Version: TLabel;
     btn_Close: TButton;
     btn_Update: TButton;
+    Panel3: TPanel;
+    lbl_MacAddress: TLabel;
+    lbl_IPAddress: TLabel;
     procedure btn_CloseClick(Sender: TObject);
     procedure btn_UpdateClick(Sender: TObject);
     procedure FormShow(Sender: TObject);
@@ -58,7 +61,10 @@ procedure TAbout.FormShow(Sender: TObject);
 var AList:TStrings;
 begin
   Panel1.Color := RGB(133,193,95);
+  Panel3.Color := Panel1.Color;
   Panel1.Caption := Application.Title;
+  lbl_MacAddress.Caption := Format('MAC£º%s CPU£º%s HD£º%s',[Goo.GetRealMacAddress,Goo.Login.LocalCPUSN,GOO.Login.LocalHDSN]);
+  lbl_IPAddress.Caption  := Format('±¾»ú£º%s£¨%s£©',[Goo.Login.LocalComputerName,Goo.Login.LocalIPAddress]);
   lbl_Version.Caption := 'V ' + FileVersion(Application.ExeName);
   if not FileExists(Goo.SystemPath +'\' + C_PackageList_Name) then exit;
   AList := TStringList.Create;

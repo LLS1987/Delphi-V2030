@@ -22,14 +22,20 @@ object MainClient: TMainClient
     Height = 19
     Panels = <
       item
-        Width = 300
+        Text = #26381#21153#22120
+        Width = 400
       end
       item
+        Text = #32844#21592
         Width = 200
       end
       item
+        Alignment = taRightJustify
+        Style = psOwnerDraw
+        Text = #36827#24230#26465
         Width = 50
       end>
+    OnDrawPanel = StatusBar1DrawPanel
   end
   object Panel_TopBorder: TPanel
     Left = 0
@@ -161,6 +167,14 @@ object MainClient: TMainClient
         210BC58993AD10696416CBFF01F3E1A4390E70A38A0000000049454E44AE4260
         82}
     end
+  end
+  object ProgressBar1: TProgressBar
+    Left = 741
+    Top = 499
+    Width = 200
+    Height = 17
+    TabOrder = 2
+    Visible = False
   end
   object Timer_PassWork: TTimer
     Interval = 1
