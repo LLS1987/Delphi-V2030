@@ -359,7 +359,7 @@ end;
 procedure TControlItem.AfterCreateControl;
 begin
   Width := FGroupWidth;
-  FirstPanel.Width := Goo.Format.iif(GetCaptionWidth>self.FControlLeft,GetCaptionWidth,FControlLeft);
+  FirstPanel.Width := Goo.Cast.iif(GetCaptionWidth>self.FControlLeft,GetCaptionWidth,FControlLeft);
   if Assigned(Control) then
   begin
     Control.Parent := CenterPanel;
@@ -427,7 +427,7 @@ begin
   FLastPanel.Alignment  := taCenter;
   FLastPanel.Height:= GroupParent.Height;
   FLastPanel.Width := Control_Border_Width;
-  FLastPanel.Caption:= GOO.Format.iif(MustEnter,'*','');
+  FLastPanel.Caption:= GOO.Cast.iif(MustEnter,'*','');
   {$IFDEF DEBUG}
   FLastPanel.Color := clBlue;
   {$ENDIF DEBUG}
@@ -660,7 +660,7 @@ procedure TControlItem_Edit.SetWidth(const Value: Integer);
 begin
   inherited;
   if not Assigned(Control) then Exit;
-  FirstPanel.Width := Goo.Format.iif(GetCaptionWidth>self.FControlLeft,GetCaptionWidth,FControlLeft);
+  FirstPanel.Width := Goo.Cast.iif(GetCaptionWidth>self.FControlLeft,GetCaptionWidth,FControlLeft);
   Control.Width    := CenterPanel.Width;
 end;
 
@@ -836,18 +836,18 @@ end;
 
 function TControlItem_CheckBox.GetValue: Variant;
 begin
-  Result := Goo.Format.iif(TCheckBox(Control).Checked,1,0);
+  Result := Goo.Cast.iif(TCheckBox(Control).Checked,1,0);
 end;
 
 function TControlItem_CheckBox.GetValueText: string;
 begin
-  Result := Goo.Format.iif(TCheckBox(Control).Checked,'是','否');
+  Result := Goo.Cast.iif(TCheckBox(Control).Checked,'是','否');
 end;
 
 procedure TControlItem_CheckBox.SetValue(const Value: Variant);
 begin
   inherited;
-  TCheckBox(Control).Checked := Goo.Format.iif(Value=1,True,False);
+  TCheckBox(Control).Checked := Goo.Cast.iif(Value=1,True,False);
 end;
 
 { TBaseConditionManager }
@@ -1119,7 +1119,14 @@ begin
     RttiType := Context.GetType(AObject.ClassType);
     RttiProperty := RttiType.GetProperty(AName);
     try
-      if Assigned(RttiProperty) and RttiProperty.IsWritable then RttiProperty.SetValue(AObject, AValues);
+      if Assigned(RttiProperty) and RttiProperty.IsWritable then
+      begin
+        case RttiProperty.PropertyType.TypeKind of
+          TTypeKind.tkInteger : RttiProperty.SetValue(AObject, TValue.From<Integer>(StrToIntDef(AValues.AsString,0)));
+          else RttiProperty.SetValue(AObject, AValues);
+        end;
+      end;
+
     except on E: Exception do Goo.Logger.Error('加载属性：%s，%s',[AName,e.Message])
     end;
   finally
@@ -1494,6 +1501,8 @@ begin
       btKtype : FBaseInfo := TKTypeParam.Create(GroupParent);
       btBtype : FBaseInfo := TBTypeParam.Create(GroupParent);
       btMtype : FBaseInfo := TMTypeParam.Create(GroupParent);
+      btVipCard:FBaseInfo := TVipCardParam.Create(GroupParent);
+      btVchType:FBaseInfo := TBillTypeParam.Create(GroupParent);
     else FBaseInfo := TMTypeParam.Create(GroupParent);
     end;
   end;

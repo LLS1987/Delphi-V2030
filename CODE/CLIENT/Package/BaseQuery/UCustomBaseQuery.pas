@@ -69,6 +69,7 @@ type
     property GridDblClickID:Integer read FGridDblClickID write FGridDblClickID;
     property MultSel: Boolean read GetMultSel write SetMultSel;
     function GetRowText(AFieldName:string;ARow:Integer=-1):string;
+    function GetRowData<T>(AFieldName:string;ARow:Integer=-1):T; overload;
   end;
   TConditionManager = class(TControlManagerLayout)
   private
@@ -87,7 +88,7 @@ implementation
 
 uses
   UComvar, System.JSON, System.IOUtils, UJsonObjectHelper, UComDBStorable,
-  UComConst, cxFindPanel;
+  UComConst, cxFindPanel, System.Rtti;
 
 {$R *.dfm}
 
@@ -137,7 +138,7 @@ begin
       begin
         _Column := (AView as TcxGridDBTableView).CreateColumn;
         TcxGridDBColumn(_Column).DataBinding.FieldName := item.GetValue<string>('FieldName');
-        if Assigned(item.FindValue('BasicInfo')) then _Column.Options.FilteringWithFindPanel := False;
+        //if Assigned(item.FindValue('BasicInfo')) then _Column.Options.FilteringWithFindPanel := False;  是否参与过滤
       end else if AView is TcxGridTableView then
       begin
         _Column := (AView as TcxGridTableView).CreateColumn;
@@ -226,7 +227,7 @@ end;
 
 function TCustomBaseQuery.GetActiveRowIndex: Integer;
 begin
-  Result := MainGrid.ActiveView.DataController.FocusedRecordIndex;      //表格行
+  Result := ActiveGridView.DataController.FocusedRecordIndex;      //表格行
 //  Result := MainGrid.ActiveView.DataController.FocusedRecordIndex;     //数据行
 end;
 
@@ -290,6 +291,15 @@ begin
     Result := MainView.DataController.GetRowValue(RowInfo,_column.Index);  //排序过滤后取值正常
     if Assigned(_column.OnGetDisplayText) then _column.OnGetDisplayText(_column,MainView.ViewData.Records[RowInfo.RowIndex],Result);
   end;
+end;
+
+function TCustomBaseQuery.GetRowData<T>(AFieldName: string; ARow: Integer): T;
+begin
+  Result := Default(T);
+  if ARow<0 then ARow := ActiveRowIndex;
+  var AValue := MainView.DataController.GetItemByFieldName(AFieldName).EditValue;
+  if VarIsNull(AValue) then Exit;  
+  Result := TValue.FromVariant(AValue).AsType<T>;
 end;
 
 procedure TCustomBaseQuery.iniForm;
@@ -366,12 +376,12 @@ begin
       if not TJSONObject(item).O['BasicInfo'].TryGetValue<Integer>('BasicType',ABasicType) then Continue;
       if not TJSONObject(item).O['BasicInfo'].TryGetValue<string>('BasicField',ABasicField) then Continue;
       if not TJSONObject(item).O['BasicInfo'].TryGetValue<string>('BasicDisplay',ABasicDisplay) then Continue;
-      var ABasicRec : Integer := RowData[ABasicField,ARecord.Index];
-      if not Goo.Local.BasicData[TBasicType(ABasicType)].ContainsKey(ABasicRec) then Continue;      
+      //var ABasicRec : Integer := MainView.DataController.Values[ARecord.Index,ItemColumn[ABasicField].ID];//RowData[ABasicField,ARecord.Index];
+      //if not Goo.Local.BasicData[TBasicType(ABasicType)].ContainsKey(ABasicRec) then Continue;
       //AText := Goo.Local.GetRec<TStorable_BType>(RowData[TJSONObject(item).O['BasicInfo'].S['BasicField'],ARecord.Index]).FullName;
       //AText := Goo.Local.BasicData[TBasicType(ABasicType)].GetValue(ABasicDisplay,ABasicRec);
       //判断本地化数据是否为枚举值
-      var ADisplay := Goo.Local.BasicData[TBasicType(ABasicType)].Items[ABasicRec].AttributeFieldDisplayText[ABasicDisplay];
+      var ADisplay := Goo.Local.BasicData[TBasicType(ABasicType)].First.AttributeFieldDisplayText[ABasicDisplay];
       if Assigned(ADisplay) and (ADisplay.Count>0) and ADisplay.ContainsKey(AText.Trim) then AText := ADisplay.Items[AText.Trim];
       Break;
     end;
@@ -385,25 +395,28 @@ end;
 
 procedure TCustomBaseQuery.OnColumnGetDataText(Sender: TcxCustomGridTableItem;  ARecordIndex: Integer; var AText: string);
 begin
-  var APropName := (Sender as TcxGridDBColumn).DataBinding.FieldName;
-  if not Assigned(LayoutJson) then Exit;
-  if not LayoutJson.Exists('GridList') then Exit;
-  if not LayoutJson.O['GridList'].Exists((Sender as TcxGridColumn).GridView.Name) then Exit;
-  for var item in LayoutJson.O['GridList'].O[(Sender as TcxGridColumn).GridView.Name].A['FieldList'] do
-  begin
-    if SameText(item.GetValue<string>('FieldName',''),APropName) then  //寻找列属性
+  try
+    var APropName := (Sender as TcxGridDBColumn).DataBinding.FieldName;
+    if not Assigned(LayoutJson) then Exit;
+    if not LayoutJson.Exists('GridList') then Exit;
+    if not LayoutJson.O['GridList'].Exists((Sender as TcxGridColumn).GridView.Name) then Exit;
+    for var item in LayoutJson.O['GridList'].O[(Sender as TcxGridColumn).GridView.Name].A['FieldList'] do
     begin
-      if not TJSONObject(item).Exists('BasicInfo') then Continue;
-      var ABasicType:Integer;
-      var ABasicField,ABasicDisplay:string;
-      if not TJSONObject(item).O['BasicInfo'].TryGetValue<Integer>('BasicType',ABasicType) then Continue;
-      if not TJSONObject(item).O['BasicInfo'].TryGetValue<string>('BasicField',ABasicField) then Continue;
-      if not TJSONObject(item).O['BasicInfo'].TryGetValue<string>('BasicDisplay',ABasicDisplay) then Continue;
-      var ABasicRec : Integer := RowData[ABasicField,ARecordIndex];
-      if not Goo.Local.BasicData[TBasicType(ABasicType)].ContainsKey(ABasicRec) then Continue;
-      AText := Goo.Local.BasicData[TBasicType(ABasicType)].GetValue(ABasicDisplay,ABasicRec);
-      Break;
+      if SameText(item.GetValue<string>('FieldName',''),APropName) then  //寻找列属性
+      begin
+        if not TJSONObject(item).Exists('BasicInfo') then Continue;
+        var ABasicType:Integer;
+        var ABasicField,ABasicDisplay:string;
+        if not TJSONObject(item).O['BasicInfo'].TryGetValue<Integer>('BasicType',ABasicType) then Continue;
+        if not TJSONObject(item).O['BasicInfo'].TryGetValue<string>('BasicField',ABasicField) then Continue;
+        if not TJSONObject(item).O['BasicInfo'].TryGetValue<string>('BasicDisplay',ABasicDisplay) then Continue;
+        var ABasicRec : Integer := MainView.DataController.Values[ARecordIndex,ItemColumn[ABasicField].ID];// RowData[ABasicField,ARecordIndex];
+        if not Goo.Local.BasicData[TBasicType(ABasicType)].ContainsKey(ABasicRec) then Continue;
+        AText := Goo.Local.BasicData[TBasicType(ABasicType)].GetValue(ABasicDisplay,ABasicRec);
+        Break;
+      end;
     end;
+  except on E: Exception do
   end;
 end;
 

@@ -49,6 +49,7 @@ contains
   UBaseGridLayout in 'UBaseGridLayout.pas' {BaseGridLayout},
   UBaseControlManagerLayout in 'UBaseControlManagerLayout.pas',
   UShowWebURL in 'UShowWebURL.pas' {ShowWebURL},
-  UBaseExcelPreDialog in 'UBaseExcelPreDialog.pas' {BaseExcelPreDialog};
+  UBaseExcelPreDialog in 'UBaseExcelPreDialog.pas' {BaseExcelPreDialog},
+  UInputBoxDialog in 'UInputBoxDialog.pas' {InputBoxDialog};
 
 end.

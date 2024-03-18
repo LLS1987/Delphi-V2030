@@ -22,18 +22,20 @@ type
   private
     FParentButtonRec,FChildButtonRec:Integer;
     FBaseParam: TBaseParam;
+    FStorable:TStorable;
     procedure OnColnumGetDisplayText(Sender: TcxCustomGridTableItem; ARecord: TcxCustomGridRecord; var AText: string);
     procedure OnFocusedRecordChanged(Sender: TcxCustomGridTableView;APrevFocusedRecord, AFocusedRecord: TcxCustomGridRecord;ANewItemRecordFocusingChanged: Boolean);
     procedure OnSelectClick(Sender: TObject);
     procedure OnParentClick(Sender: TObject);
     procedure OnChildClick(Sender: TObject);
     function CopyRowToStorable(ARow:Integer):TStorable;
-    procedure InitViewTable(AStorable:TStorable);
+    procedure InitViewTable(AStorable:TStorableClass);
   protected
     procedure CustomGrid(AView :TcxCustomGridView);override;
     procedure OnIniButton(Sender: TObject); override;
     procedure LoadData;override;
   public
+    destructor Destroy; override;
     property BaseParam:TBaseParam read FBaseParam write FBaseParam;
   end;
 
@@ -44,7 +46,7 @@ implementation
 
 uses
   System.Rtti, UComvar, System.Generics.Collections, cxLabel, cxEdit,
-  System.JSON;
+  System.JSON, UComConst;
 
 {$R *.dfm}
 
@@ -62,9 +64,7 @@ var
   Prop:TRttiProperty;
   typ:TRttiType;
 begin
-  Result := BaseParam.Storable.ClassType.Create as TStorable;
-  //Result.Assign(Goo.Local.GetRec<TStorable_MType>(RowData['REC',ARow]));
-  //Exit;
+  Result := BaseParam.Storable.Create;
   Context := TRttiContext.Create;
   try
     typ := Context.GetType(Result.ClassType);
@@ -73,7 +73,12 @@ begin
       if not Prop.IsWritable then Continue;   
       if not Assigned(MainView.FindItemByName(MainView.Name + '_' + Prop.Name)) then Continue;
       if VarIsNull(RowData[Result.AttributeFieldName[Prop.Name],ARow]) then Continue;
-      Prop.SetValue(Result,TValue.FromVariant(RowData[Result.AttributeFieldName[Prop.Name],ARow]));
+      case Prop.PropertyType.TypeKind of
+        //tkInteger,tkInt64: Prop.SetValue(Result,TValue.From<Integer>(0));
+        //tkFloat: Prop.SetValue(Result,TValue.From<Double>(0));
+        tkString,tkUString: Prop.SetValue(Result,TValue.From<string>(VarToStr(RowData[Result.AttributeFieldName[Prop.Name],ARow])));
+        else Prop.SetValue(Result,TValue.FromVariant(RowData[Result.AttributeFieldName[Prop.Name],ARow]));
+      end;
     end;
   finally
     Context.Free;
@@ -93,7 +98,8 @@ begin
   if Assigned(BaseParam) then    
   begin
     LayoutFileName := BaseParam.ClassName;
-    if BaseParam.Title<>EmptyStr then lbl_Caption.Caption := BaseParam.Title;
+    if BaseParam.Title<>EmptyStr then lbl_Caption.Caption := BaseParam.Title+'信息选择';
+    if not Assigned(FStorable) then FStorable := BaseParam.Storable.Create;
     InitViewTable(BaseParam.Storable);
     if BaseParam.MultSel then
     begin
@@ -105,6 +111,12 @@ begin
   edt_Find.Text := BaseParam.SearchString;
   if BaseParam.SearchHint<>EmptyStr then edt_Find.TextHint := BaseParam.SearchHint;
   RefreshData;
+end;
+
+destructor TBaseInfoSel.Destroy;
+begin
+  if Assigned(FStorable) then FStorable.Free;
+  inherited;
 end;
 
 procedure TBaseInfoSel.edt_FindKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
@@ -122,7 +134,7 @@ begin
   RefreshData;
 end;
 
-procedure TBaseInfoSel.InitViewTable(AStorable:TStorable);
+procedure TBaseInfoSel.InitViewTable(AStorable:TStorableClass);
 var
   Context:TRttiContext;
   Prop:TRttiProperty;
@@ -132,7 +144,7 @@ begin
   if not Assigned(AStorable) then Exit;
   Context := TRttiContext.Create;
   try
-    typ := Context.GetType(AStorable.ClassType);
+    typ := Context.GetType(AStorable);
     //先父类
     for Prop in typ.BaseType.GetProperties do
     begin
@@ -145,7 +157,8 @@ begin
             Name := MainView.Name + '_' + Prop.Name;
             HeaderAlignmentHorz       := taCenter;
             DataBinding.FieldName     := TFieldInfo(A2).FieldName;
-            Caption   := AStorable.Title+TFieldInfo(A2).Title;                  //如：商品编号
+            //Caption   := AStorable.Title+TFieldInfo(A2).Title;                  //如：商品编号
+            Caption   := BaseParam.Title+TFieldInfo(A2).Title;                  //如：商品编号
             Width     := TFieldInfo(A2).Width;
             Visible   := TFieldInfo(A2).Visible;
           end;
@@ -208,9 +221,12 @@ end;
 
 procedure TBaseInfoSel.OnColnumGetDisplayText(Sender: TcxCustomGridTableItem; ARecord: TcxCustomGridRecord; var AText: string);
 begin
+  if not Assigned(FStorable) then Exit;
   var APropName := string(Sender.Name).Substring(Length(MainView.Name)+1);
+  if APropName=EmptyStr then Exit;  
   //var BPropName := (Sender as TcxGridDBColumn).DataBinding.FieldName;
-  var ADisplay := BaseParam.Storable.AttributeFieldDisplayText[APropName];
+  //var ADisplay := BaseParam.Storable.AttributeFieldDisplayText[APropName];
+  var ADisplay := FStorable.AttributeFieldDisplayText[APropName];
   if Assigned(ADisplay) and (ADisplay.Count>0) and ADisplay.ContainsKey(AText.Trim) then
   begin
     AText := ADisplay.Items[AText.Trim];

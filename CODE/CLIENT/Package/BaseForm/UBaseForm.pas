@@ -495,7 +495,7 @@ end;
 
 function TBaseForm.GetLayoutFileName: string;
 begin
-  Result := Goo.Format.iif(FLayoutFileName=EmptyStr,ClassName,ClassName+'_'+FLayoutFileName)
+  Result := Goo.Cast.iif(FLayoutFileName=EmptyStr,ClassName,ClassName+'_'+FLayoutFileName)
 end;
 
 function TBaseForm.GetLayoutFilePath: string;

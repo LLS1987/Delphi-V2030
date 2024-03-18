@@ -33,6 +33,7 @@ type
     procedure BeforeFormShow; override;
     ///通过空间名称定位控件的位置
     procedure LocationCondition(AName:string);virtual;
+    procedure DoPrintHeader; override;
   public
     destructor Destroy; override;
     property Condition:TControlManagerLayout read FConditionList;
@@ -78,6 +79,18 @@ begin
   if Assigned(FButtonList) then FreeAndNil(FButtonList);
   if Assigned(FList) then FreeAndNil(FList);
   inherited;
+end;
+
+procedure TBaseInfoEdit.DoPrintHeader;
+begin
+  inherited;
+  if Assigned(FConditionList) then
+  begin
+    for var i := 0 to Condition.Count-1 do
+    begin
+      PrintItems.Add(Condition.ConditionIndex[i].Caption,Condition.ConditionIndex[i].ValueText);
+    end;
+  end;
 end;
 
 procedure TBaseInfoEdit.LocationCondition(AName: string);

@@ -39,6 +39,8 @@ begin
   Self.Caption := ParamList.AsString('@Caption');
   Label1.Caption := ParamList.AsString('@Message');
   if (Label1.Left+label1.Width)>ClientWidth then ClientWidth := Label1.Left+label1.Width + 30;
+  ClientHeight := ClientHeight + Label1.ClientHeight - 15;
+  Image1.Top   := ((ClientHeight-Panel_Button.ClientHeight) div 2) - (Image1.ClientHeight div 2);
   //根据消息动态调整消息框的宽度和高度
   FDlgType     := TMsgDlgType(ParamList.AsInteger('@DlgType'));
   case DlgType of

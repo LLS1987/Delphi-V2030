@@ -17,7 +17,9 @@ inherited BaseInfoEdit: TBaseInfoEdit
     Top = 15
     Width = 684
     Height = 385
+    ExplicitTop = 15
     ExplicitWidth = 684
+    ExplicitHeight = 385
     object ScrollBox_Client: TScrollBox
       Left = 0
       Top = 16
@@ -28,8 +30,6 @@ inherited BaseInfoEdit: TBaseInfoEdit
       Color = clWindow
       ParentColor = False
       TabOrder = 0
-      ExplicitTop = 48
-      ExplicitHeight = 311
     end
     object Panel_Location: TPanel
       Left = 0

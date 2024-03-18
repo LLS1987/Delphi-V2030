@@ -9,14 +9,14 @@ inherited MessageBoxDialog: TMessageBoxDialog
   PixelsPerInch = 96
   TextHeight = 15
   object Image1: TImage [0]
-    Left = 17
-    Top = 17
+    Left = 25
+    Top = 18
     Width = 32
     Height = 32
     AutoSize = True
   end
   object Label1: TLabel [1]
-    Left = 69
+    Left = 78
     Top = 23
     Width = 34
     Height = 15
@@ -30,8 +30,6 @@ inherited MessageBoxDialog: TMessageBoxDialog
     Align = alBottom
     BevelOuter = bvNone
     TabOrder = 0
-    ExplicitTop = 90
-    ExplicitWidth = 464
   end
   inherited ActionList: TActionList
     Left = 312
