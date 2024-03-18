@@ -133,7 +133,6 @@ inherited LoginServer: TLoginServer
       Width = 75
       Height = 30
       Anchors = [akTop, akRight]
-      Cancel = True
       Caption = #30830#23450
       NumGlyphs = 2
       TabOrder = 0

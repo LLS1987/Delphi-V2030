@@ -147,7 +147,7 @@ begin
     edt_DBSa.Text   := ini.ReadString('LOGIN','LastDataBaseUserName','sa');
     edt_DBPass.Text := ini.ReadString('LOGIN','LastDataBasePassword',EmptyStr);
     rg_ServerType.ItemIndex := ini.ReadInteger('LOGIN','LastDataConnectType',0);
-    PageControl1.ActivePageIndex := Goo.Format.iif(rg_ServerType.ItemIndex=0,0,1);
+    PageControl1.ActivePageIndex := Goo.Cast.iif(rg_ServerType.ItemIndex=0,0,1);
     if edt_DBAddr.Text=EmptyStr then edt_DBAddr.Text := DataSnapAddress;
     if edt_DSAddr.Text=EmptyStr then edt_DSAddr.Text := DataSnapAddress;
     if StrToIntDef(edt_DSPort.Text,211)<211 then edt_DSPort.Text := IntToStr(DataSnapPort);
@@ -216,7 +216,7 @@ end;
 procedure TLoginServer.rg_ServerTypeClick(Sender: TObject);
 begin
   inherited;
-  PageControl1.ActivePageIndex := Goo.Format.iif(rg_ServerType.ItemIndex=0,0,1);
+  PageControl1.ActivePageIndex := Goo.Cast.iif(rg_ServerType.ItemIndex=0,0,1);
 end;
 
 initialization
