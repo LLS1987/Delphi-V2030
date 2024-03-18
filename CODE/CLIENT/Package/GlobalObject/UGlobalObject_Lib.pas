@@ -5,7 +5,8 @@ interface
 uses
   System.JSON,System.SysUtils,UComDB,UGlobalObject_Proxy, UGlobalInterface,
   UComObject, System.Generics.Collections, System.Rtti,UParamList, UCertManage,
-  UCrypto, UPrintFunc, ULogger, UComDBStorable, System.Classes;
+  UCrypto, UPrintFunc, ULogger, UComDBStorable, System.Classes, UBaseParams,
+  UComConst;
 
 type
   TGlobalObject = class(TBaseCommObject)
@@ -23,6 +24,7 @@ type
     FThemeObject:TThemeObject;
     FPlayMediaObject:TPlayMediaObject;
     FStorableManage:TStorableManage;
+    FBaseParam:TBaseParam;
     function GetComVar: TParamList;
     function GetDB: TDataBaseCommObject;
     function GetFormat: TFormatCommObject;
@@ -48,7 +50,7 @@ type
     property SystemDataPath: string read GetSystemDataPath;
     ///获取MAC地址列表
     function GetMacAddressList: TStringList;
-    //获取mac地址 排除虚拟网卡
+    ///获取mac地址 排除虚拟网卡
     function GetRealMacAddress: string;
     //获取硬盘序列号
     function GetHardDiskSerialNumber: string;
@@ -59,7 +61,7 @@ type
     ///数据库相关函数
     property DB: TDataBaseCommObject read GetDB;
     ///数据转换类、格式化
-    property Format: TFormatCommObject read GetFormat;
+    property Cast: TFormatCommObject read GetFormat;
     ///类工厂
     property Reg: TRegisterClassFactory read GetRegisterClassFactory;
     ///提示消息类
@@ -78,13 +80,17 @@ type
     property Media :TPlayMediaObject read GetPlayMediaObject;
     ///缓存类
     property Local: TStorableManage read GetStorableManage;
+    ///基本信息选择类
+    function GetBaseinfo<T:TBaseParam>(AMult:Boolean=False):TStorableDictionary;overload;
+    function GetBaseinfo(ABaseParam:TBaseParamClass;AMult:Boolean=False):TStorableDictionary;overload;
+    function GetBaseinfo(ABaseType:TBasicType;AMult:Boolean=False):TStorableDictionary;overload;
   end;
 
 implementation
 
 uses
   Vcl.Forms, LoggerPro.GlobalLogger, LoggerPro.FileAppender, winapi.Nb30,
-  Winapi.Windows;
+  Winapi.Windows, System.TypInfo;
 
 { TGloBalObject }
 
@@ -108,7 +114,38 @@ begin
   if Assigned(FThemeObject) then FreeAndNil(FThemeObject);
   if Assigned(FPlayMediaObject) then FreeAndNil(FPlayMediaObject);
   if Assigned(FStorableManage) then FreeAndNil(FStorableManage);
+  if Assigned(FBaseParam) then FreeAndNil(FBaseParam);
   inherited;
+end;
+
+function TGlobalObject.GetBaseinfo(ABaseParam: TBaseParamClass; AMult: Boolean): TStorableDictionary;
+begin
+  Result := nil;
+  if Assigned(FBaseParam) then FreeAndNil(FBaseParam);
+  FBaseParam := ABaseParam.Create(nil);
+  FBaseParam.GetBaseInfoSelect;
+  Result := FBaseParam.Return;
+end;
+
+function TGlobalObject.GetBaseinfo(ABaseType: TBasicType; AMult: Boolean): TStorableDictionary;
+begin
+  case ABaseType of
+    btPtype : Result := GetBaseinfo(TPTypeParam,AMult);
+    btBtype : Result := GetBaseinfo(TBTypeParam,AMult);
+  end;
+end;
+
+function TGlobalObject.GetBaseinfo<T>(AMult: Boolean): TStorableDictionary;
+begin
+  Result := nil;
+  if Assigned(FBaseParam) then FreeAndNil(FBaseParam);
+  var AClass := GetClass(PTypeInfo(System.TypeInfo(T))^.Name);
+  if Assigned(AClass) and AClass.InheritsFrom(TBaseParam) then
+  begin
+    FBaseParam := TBaseParam(AClass).Create(nil);
+    FBaseParam.GetBaseInfoSelect;
+    Result := FBaseParam.Return;
+  end;
 end;
 
 function TGlobalObject.GetCertManage: TCertManage;

@@ -9,7 +9,7 @@ interface
 
 uses
   UGlobalInterface, UComObject,UParamList, System.UITypes, Winapi.Windows,
-  Vcl.Forms, Vcl.MPlayer, dxAlertWindow;
+  Vcl.Forms, Vcl.MPlayer, dxAlertWindow, Vcl.ComCtrls, Data.DB;
 
 type
   TLoginCommObject = class(TBaseCommObject)
@@ -52,6 +52,10 @@ type
     function HtmlToColor(const AHtmlColor: string): TColor;
     function ColorToHtml(AColor: TColor): string;
     function StringToChinese(const AStr: string): string;
+    ///获取类的 Attribute
+    function GetClassAttribute<T: TCustomAttribute>(AClass: TClass): T;
+    ///DataSet为TObject属性赋值
+    function DataSetToObject<T:TCustomAttribute>(ADataSet:TDataSet;AObject:TObject):Boolean;
   end;
   {样式}
   TThemeGrid = record
@@ -80,9 +84,21 @@ type
     class function ColorToHtml(AColor: TColor): string;
     property Grid :TThemeGrid read FThemeGrid;
   end;
+  {录入窗体插件}
+  TInputBoxFlags = class(TObject)
+  private
+    FMaxValue: Integer;
+    FMinValue: Integer;
+    FMaxLength: Integer;
+  public
+    property MaxValue:Integer read FMaxValue write FMaxValue;
+    property MinValue:Integer read FMinValue write FMinValue;
+    property MaxLength:Integer read FMaxLength write FMaxLength;
+  end;
   {消息窗口}
   TMessageBoxObject = class(TBaseCommObject)
   private
+    FMainThreadBarTick:Integer;
     FProgressBarForm:TForm;
     FdxAlertWindowManager:TdxAlertWindowManager;
   public
@@ -101,11 +117,19 @@ type
     procedure CheckAndAbort(AResult:Boolean); overload;
     procedure CheckAndAbort(AResult:Boolean;Const AMSG:String); overload;
     procedure CheckAndAbort(AResult:Boolean;Const AMSG:String; const Args: array of const); overload;
-    //进度条
+    ///进度条
     procedure ShowProgressBar(AMax:Integer=100;ATitle:string='');
     procedure StepBy(Delta: Integer=1;ATitle:string='');
-    //气泡提示
-    function ShowTip(const AText: string;ACaption:string='提示'): TdxAlertWindow;
+    ///主程序的线程进度条：返回开始时间
+    function ShowMainThreadBar(AMax:Integer=100;ATitle:string=''): Integer;
+    ///主程序的线程进度条：返回已使用时间
+    function StepByMainThreadBar(Delta: Integer=1;ATitle:string=''): Integer;
+    ///气泡提示
+    function ShowAlert(const AText: string;ACaption:string='提示'): TdxAlertWindow;
+    /// 通用录入窗体
+    function ShowInput(var AValue:Variant; const ATitle:string;ACaption:string='提示'): Boolean; overload;
+    function ShowInput<T>(const ATitle:string;ACaption:string='提示'): T; overload;
+    function ShowInput<T>(var AValue:T;const ATitle:string;ACaption:string='提示';ADecimal:Integer=2): Boolean; overload;
   end;
   {多媒体播放}
   TPlayMediaObject = class(TBaseCommObject)
@@ -123,7 +147,8 @@ implementation
 
 uses
   Vcl.Controls,UComvar, Vcl.Dialogs, System.SysUtils, System.Rtti,
-  Vcl.Graphics, System.Variants, Winapi.WinSock, Winapi.Nb30;
+  Vcl.Graphics, System.Variants, Winapi.WinSock, Winapi.Nb30, UComDBStorable,
+  System.Math;
 
 { TLoginCommObject }
 
@@ -419,6 +444,7 @@ begin
   FdxAlertWindowManager.OptionsSize.Width := 400;
   FdxAlertWindowManager.OptionsMessage.Caption.Font.Size  := 9;
   //FdxAlertWindowManager.OptionsMessage.Caption.Font.Style := [];
+  FdxAlertWindowManager.OptionsMessage.Text.Font.Color    := clHotLight;
 end;
 
 destructor TMessageBoxObject.Destroy;
@@ -464,6 +490,39 @@ begin
   ShowErrorAndAbort(Format(AMsg,Args));
 end;
 
+function TMessageBoxObject.ShowInput(var AValue: Variant; const ATitle: string; ACaption: string): Boolean;
+begin
+  Result := ShowInput<Variant>(AValue,ATitle,ACaption);
+end;
+
+function TMessageBoxObject.ShowInput<T>(var AValue: T; const ATitle: string; ACaption: string;ADecimal:Integer): Boolean;
+var AParam:TParamList;
+begin
+  Result := False;
+  AValue := Default(T);
+  AParam := TParamList.Create;
+  try
+    AParam.Add('@Caption',ACaption);
+    AParam.Add('@Title',ATitle);
+    //AParam.Add('@InputTypeInfo',TypeInfo(T));
+    if TypeInfo(T) = TypeInfo(Integer) then AParam.Add('@Integer',True);
+    if (TypeInfo(T) = TypeInfo(Double)) or (TypeInfo(T) = TypeInfo(Currency)) then
+    begin
+      AParam.Add('@Double',True);
+      AParam.Add('@Decimal',ADecimal);
+    end;
+    Result := Goo.Reg.ShowModal('TInputBoxDialog',AParam)=mrOk;
+    if Result then AValue := AParam.AsValue<T>('@RestultInput');
+  finally
+    AParam.Free;
+  end;
+end;
+
+function TMessageBoxObject.ShowInput<T>(const ATitle: string; ACaption: string): T;
+begin
+  ShowInput<T>(Result,ATitle,ACaption);
+end;
+
 procedure TMessageBoxObject.ShowErrorAndAbort(const AMsg: String);
 begin
   ShowError(AMsg);
@@ -473,6 +532,19 @@ end;
 procedure TMessageBoxObject.ShowError(const AMsg: String);
 begin
   MessageBox(AMsg,'提示',mtError,[mbOK]);
+end;
+
+function TMessageBoxObject.ShowMainThreadBar(AMax:Integer=100; ATitle:string=''): Integer;
+var AProBar:TProgressBar;
+begin
+  FMainThreadBarTick := GetTickCount;
+  AProBar := Goo.ComVar.AsObject('@AppMainForm_ProgressBar') as TProgressBar;
+  if not Assigned(AProBar) then Exit;
+  AProBar.Visible := True;
+  AProBar.Max     := AMax;
+  AProBar.Position:=0;
+  if Assigned(Goo.ComVar.AsObject('@AppMainForm_StutasMessageBar')) then (Goo.ComVar.AsObject('@AppMainForm_StutasMessageBar') as TStatusPanel).Text := ATitle;
+  Result := FMainThreadBarTick;
 end;
 
 procedure TMessageBoxObject.ShowMsg(const AMsg:string; Args: array of const);
@@ -494,7 +566,8 @@ begin
   end;
 end;
 
-function TMessageBoxObject.ShowTip(const AText: string;ACaption:string='提示'): TdxAlertWindow;
+function TMessageBoxObject.ShowAlert(const AText: string;ACaption:string='提示'):
+    TdxAlertWindow;
 begin
   Result := FdxAlertWindowManager.Show(ACaption,AText);
 end;
@@ -505,6 +578,19 @@ begin
   begin
     SendMessage(FProgressBarForm.Handle,$8001,Delta,Integer(@ATitle));
   end;
+end;
+
+function TMessageBoxObject.StepByMainThreadBar(Delta: Integer=1; ATitle:string=''): Integer;
+var AProBar:TProgressBar;
+begin
+  Result  := GetTickCount - FMainThreadBarTick;
+  ATitle  := ATitle + Format('；共耗时：%d 秒',[Ceil(Result/1000)]);
+  AProBar := Goo.ComVar.AsObject('@AppMainForm_ProgressBar') as TProgressBar;
+  if not Assigned(AProBar) then Exit;
+  AProBar.Position := AProBar.Position+Delta;
+  if AProBar.Position=AProBar.Max then AProBar.Visible := False;
+  if not AProBar.Visible then ATitle := '完毕！';
+  if Assigned(Goo.ComVar.AsObject('@AppMainForm_StutasMessageBar')) then (Goo.ComVar.AsObject('@AppMainForm_StutasMessageBar') as TStatusPanel).Text := ATitle;
 end;
 
 { TThemeObject }
@@ -553,6 +639,55 @@ end;
 function TFormatCommObject.ColorToHtml(AColor: TColor): string;
 begin
   Result := Format('#%.2x%.2x%.2x', [GetRValue(AColor), GetGValue(AColor), GetBValue(AColor)]);
+end;
+
+function TFormatCommObject.DataSetToObject<T>(ADataSet: TDataSet; AObject: TObject): Boolean;
+var Context:TRttiContext;
+  Prop:TRttiProperty;
+  typ:TRttiType;
+  AFieldName:string;
+begin
+  Result := False;
+  Context := TRttiContext.Create;
+  try
+    typ := Context.GetType(AObject.ClassType);
+    for Prop in typ.GetProperties do
+    begin
+      if not Prop.IsWritable then Continue;
+      AFieldName := Prop.Name;
+      //获取属性对应的数据库字段
+      if Prop.HasAttribute<T> then AFieldName := (Prop.GetAttribute<T> as TFieldInfo).FieldName;
+      if AFieldName.IsEmpty then AFieldName := Prop.Name;
+      if not Assigned(ADataSet.FindField(AFieldName)) then Continue;
+      if VarIsNull(ADataSet.FieldValues[AFieldName]) then Continue;
+      try
+        case Prop.PropertyType.TypeKind of
+          tkInteger,tkInt64: Prop.SetValue(AObject,TValue.From<Integer>(ADataSet.FieldByName(AFieldName).AsInteger));
+          tkFloat: Prop.SetValue(AObject,TValue.From<Double>(ADataSet.FieldByName(AFieldName).AsFloat));
+          tkString,tkUString: Prop.SetValue(AObject,TValue.From<string>(ADataSet.FieldByName(AFieldName).AsString));
+          else Prop.SetValue(AObject,TValue.FromVariant(ADataSet.FieldValues[AFieldName]));
+        end;
+        Result := True;
+      except on E: Exception do Goo.Logger.Error('DataSetToObject：%s数据转换错误',[AObject.ClassName]);
+      end;
+    end;
+  finally
+    Context.Free;
+  end;
+end;
+
+function TFormatCommObject.GetClassAttribute<T>(AClass: TClass): T;
+var
+  Context: TRttiContext;
+  ObjType: TRttiType;
+begin
+  Result := Default(T);
+  Context := TRttiContext.Create;
+  try
+    Result := Context.GetType(AClass).GetAttribute<T>;
+  finally
+    Context.Free;
+  end;
 end;
 
 function TFormatCommObject.HtmlToColor(const AHtmlColor: string): TColor;

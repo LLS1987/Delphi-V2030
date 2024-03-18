@@ -10,20 +10,25 @@ uses
 type
   /// 查询匹配方式      右匹配(%X)、左匹配(x%)、全匹配(%x%)。
   TSelectMatchType = (smtRight, smtLeft, smtAll);
+  ///基本信息类型是否缓存类型：完整缓存；增量缓存；不缓存
+  TBasicCacheType = (bctFull  , bctIncr, bctNot);
   //数据库主表
   TTable = class(TCustomAttribute)
   private
     FName: string;
     FTitle: string;
     FMatchType: TSelectMatchType;
+    FBasicCacheType: TBasicCacheType;
   public
-    constructor Create(ATableName, ATitle: string; AMatchType: TSelectMatchType=smtLeft);
+    constructor Create(ATableName, ATitle: string; AMatchType: TSelectMatchType=smtLeft;ACacheType:TBasicCacheType=bctNot);
     //表名
     property Name: string read FName write FName;
     //表体
     property Title: string read FTitle write FTitle;
     //匹配方式
     property MatchType : TSelectMatchType read FMatchType write FMatchType;
+    //缓存类型
+    property CacheType : TBasicCacheType  read FBasicCacheType write FBasicCacheType;
   end;
   //从表
   TTableSub = class sealed(TCustomAttribute)
@@ -84,7 +89,7 @@ type
   //定义用于展示数据的表格控件
   TViewGrid = TDBGrid;
   //存储仓库
-  TStorable = class(TComponent)
+  TStorable = class(TObject)
   private
     FSelectSQL : string;
     FSelectMatchType:TSelectMatchType;
@@ -125,6 +130,7 @@ type
     property AttributeFieldName[const AProp:string]: string    read getAttributeFieldName write setAttributeFieldName;
     property AttributeFieldVisible[const AProp:string]:Boolean read getAttributeFieldVisible write setAttributeFieldVisible;
     property AttributeFieldDisplayText[const AProp:string]: TDictionary<string,string> read getAttributeFieldDisplayText;
+    class function GetAttributeTable<T:TCustomAttribute>(Obj: TObject): T;
     //设置
     //function SetAttributeValue(const PropName, AttributeValue: string): Boolean;
     property Wheres:TStrings read FWheres;
@@ -146,7 +152,7 @@ type
   end;
   TStorableClass = class of TStorable;
   //商品
-  [TTable('ptype','商品')]
+  [TTable('ptype','商品',smtAll,bctFull)]
   TStorable_PType = class(TStorable)
   private
     FUnit1: string;
@@ -163,17 +169,17 @@ type
     [TFieldInfo('Area','Area',80,False)]
     property Area: Integer read FArea write FArea;
   end;
-  [TTable('cstype','厂商')]
+  [TTable('cstype','厂商',smtAll,bctFull)]
   TStorable_CSType = class(TStorable)
 
   end;
   //门店
-  [TTable('posinfo','门店')]
+  [TTable('posinfo','门店',smtAll,bctFull)]
   TStorable_MType = class(TStorable)
   public
   end;
   //职员
-  [TTable('employee','职员')]
+  [TTable('employee','职员',smtAll,bctFull)]
   TStorable_EType = class(TStorable)
   private
     FPosid: Integer;
@@ -195,12 +201,12 @@ type
     property PosName: string read FPosName write FPosName;
   end;
   //仓库
-  [TTable('stock','仓库')]
+  [TTable('stock','仓库',smtAll,bctFull)]
   TStorable_KType = class(TStorable)
   public
   end;
   //仓库
-  [TTable('btype','单位')]
+  [TTable('btype','单位',smtAll,bctFull)]
   TStorable_BType = class(TStorable)
   private
     FUnitType: Integer;
@@ -224,12 +230,27 @@ type
     [TFieldInfo('ckdz' ,'仓库地址',60,False)]
     property WarehouseAddress: string read FWarehouseAddress write FWarehouseAddress;
   end;
+  [TTable('BillType','单据',smtAll,bctFull)]
+  TStorable_VchType = class(TStorable)
+  public
+  end;
+  [TTable('VipCard','会员卡',smtAll,bctIncr)]
+  TStorable_VipCard = class(TStorable)
+  private
+    FTel: string;
+    FSex: string;
+  public
+    constructor Create; override;
+    [TFieldInfo('Tel','电话')]
+    property Tel: string read FTel write FTel;
+    [TFieldInfo('Sex','性别',60)]
+    property Sex: string read FSex write FSex;
+  end;
 
   TStorableDictionary = class(TObjectDictionary<Integer,TStorable>)
   private
     FTypeIDDictionary:TDictionary<string,Integer>;
     FUSerCodeDictionary:TDictionary<string,Integer>;
-    //FHashTypeID:THashedStringList;                                              //Hash列表效率查找更高；写入时稍慢
   public
     constructor Create;overload;
     destructor Destroy; override;
@@ -237,7 +258,8 @@ type
     procedure ClearAndFree;
     function First:TStorable;
     //GetRec       列表
-    function GetRec<T>(ARec:Integer): T;
+    function GetRec(ARec:Integer): TStorable;overload;
+    function GetRec<T>(ARec:Integer): T;overload;
     //GetTypeID    列表
     function GetTypeID<T>(ATypeID:string): T;
     //GetUserCode  列表
@@ -250,12 +272,16 @@ type
   TStorableManage = class
   private
     FBasicData : array[Low(TBasicType)..High(TBasicType)] of TStorableDictionary;
+    FBasicClass : array[Low(TBasicType)..High(TBasicType)] of TStorableClass;
     function DataToObject(ds:TClientDataSet ;AStorable:TStorableClass):TStorable;
     procedure LoadBtype(ADic:TStorableDictionary);
     procedure LoadPtype(ADic:TStorableDictionary);
     procedure LoadEtype(ADic:TStorableDictionary);
     procedure LoadMtype(ADic:TStorableDictionary);
     procedure LoadKtype(ADic:TStorableDictionary);
+    procedure LoadCStype(ADic:TStorableDictionary);
+    procedure LoadVchType(ADic:TStorableDictionary);
+    procedure LoadVipCard(ADic:TStorableDictionary);
     function GetBasicData(ABasicType: TBasicType): TStorableDictionary;overload;
     function GetBasicData(ABasicClass: string): TStorableDictionary;overload;
   public
@@ -268,6 +294,10 @@ type
     //GetUserCode  列表
     function GetUserCode<T>(AUserCode:string): T;
     property BasicData[ABasicType:TBasicType]: TStorableDictionary read GetBasicData ;//write SetBasicData;
+    function Count:Integer;
+    procedure Clear;overload;
+    procedure Clear(ABasicType:TBasicType);overload;
+    ///基本信息类型对照表
   end;
 
 implementation
@@ -375,6 +405,20 @@ begin
     Prop:= typ.GetProperty(AProp);
     if not Assigned(Prop) then Exit;
     Result := Prop.GetAttribute<TFieldInfo>.Visible;
+  finally
+    Context.Free;
+  end;
+end;
+
+class function TStorable.GetAttributeTable<T>(Obj: TObject): T;
+var
+  Context: TRttiContext;
+  ObjType: TRttiType;
+begin
+  Result := Default(T);
+  Context := TRttiContext.Create;
+  try
+    Result := Context.GetType(Obj.ClassType).GetAttribute<T>;
   finally
     Context.Free;
   end;
@@ -723,11 +767,12 @@ end;
 
 { TTable }
 
-constructor TTable.Create(ATableName, ATitle: string; AMatchType: TSelectMatchType);
+constructor TTable.Create(ATableName, ATitle: string; AMatchType: TSelectMatchType;ACacheType:TBasicCacheType);
 begin
   FName  := ATableName;
   FTitle := ATitle;
   FMatchType := AMatchType;
+  FBasicCacheType := ACacheType;
 end;
 
 { TFieldInfo }
@@ -773,6 +818,22 @@ end;
 
 { TStorableManage }
 
+procedure TStorableManage.Clear;
+begin
+  for var i := Low(TBasicType) to High(TBasicType) do
+    Clear(i);
+end;
+
+procedure TStorableManage.Clear(ABasicType: TBasicType);
+begin
+  if Assigned(FBasicData[ABasicType]) then FreeAndNil(FBasicData[ABasicType]);  
+end;
+
+function TStorableManage.Count: Integer;
+begin
+  Result := Ord(High(TBasicType)) - Ord(Low(TBasicType)) + 1;
+end;
+
 constructor TStorableManage.Create;
 begin
 
@@ -797,7 +858,12 @@ begin
       if AFieldName.IsEmpty then AFieldName := Prop.Name;
       if not Assigned(ds.FindField(AFieldName)) then Continue;
       if VarIsNull(ds.FieldValues[AFieldName]) then Continue;
-      Prop.SetValue(Result,TValue.FromVariant(ds.FieldValues[AFieldName]));
+      case Prop.PropertyType.TypeKind of
+        tkInteger,tkInt64: Prop.SetValue(Result,TValue.From<Integer>(ds.FieldByName(AFieldName).AsInteger));
+        tkFloat: Prop.SetValue(Result,TValue.From<Double>(ds.FieldByName(AFieldName).AsFloat));
+        tkString,tkUString: Prop.SetValue(Result,TValue.From<string>(ds.FieldByName(AFieldName).AsString));
+        else Prop.SetValue(Result,TValue.FromVariant(ds.FieldValues[AFieldName]));
+      end;
     end;
   finally
     Context.Free;
@@ -826,15 +892,15 @@ begin
       btGtype: ;
       btDtype: ;
       btRtype: ;
-      btVchType: ;
+      btVchType: LoadVchType(FBasicData[ABasicType]);
       btMtype: LoadMtype(FBasicData[ABasicType]);
       btNType: ;
-      btCSType: ;
+      btCSType: LoadCStype(FBasicData[ABasicType]);
       btLBType: ;
       btOtype: ;
       btFType: ;
+      //btVipCard : LoadVipCard(FBasicData[ABasicType]);
     end;
-
   end;
   Result := FBasicData[ABasicType];
 end;
@@ -873,6 +939,7 @@ end;
 procedure TStorableManage.LoadBtype(ADic: TStorableDictionary);
 var ds:TClientDataSet;
 begin
+  Goo.Logger.Info('加载基本信息：单位');
   ds := TClientDataSet.Create(nil);
   try
     Goo.DB.Lock;
@@ -892,12 +959,43 @@ begin
   end;
 end;
 
+procedure TStorableManage.LoadCStype(ADic: TStorableDictionary);
+var ds:TClientDataSet;
+begin
+  Goo.Logger.Info('加载基本信息：厂商');
+  ds := TClientDataSet.Create(nil);
+  try
+    Goo.DB.Lock;
+    try
+      Goo.DB.OpenSQL('SELECT * FROM dbo.cstype',ds);
+    finally
+      Goo.DB.UnLock;
+    end;
+    ds.First;
+    while not ds.Eof do
+    begin
+      ADic.Add(DataToObject(ds,TStorable_CSType));
+      ds.Next;
+    end;
+  finally
+    ds.Free;
+  end;
+end;
+
 procedure TStorableManage.LoadEtype(ADic: TStorableDictionary);
 var ds:TClientDataSet;
 begin
+  Goo.Logger.Info('加载基本信息：职员');
   ds := TClientDataSet.Create(nil);
   try
-    Goo.DB.OpenSQL('SELECT * FROM dbo.employee',ds);
+    Goo.DB.Lock;
+    try
+      var ASQL := 'SELECT e.REC,e.typeId,e.Parid,e.leveal,e.soncount,e.sonnum,e.UserCode,e.FullName,d.Fullname AS Department,e.Tel,e.Sex,e.Posid,p.PosName '
+        + 'FROM dbo.employee e LEFT JOIN dbo.Department d ON e.Department=d.Rec	LEFT JOIN dbo.PosInfo p ON e.Posid=p.PosId ';
+      Goo.DB.OpenSQL(ASQL,ds);
+    finally
+      Goo.DB.UnLock;
+    end;
     ds.First;
     while not ds.Eof do
     begin
@@ -912,9 +1010,15 @@ end;
 procedure TStorableManage.LoadKtype(ADic: TStorableDictionary);
 var ds:TClientDataSet;
 begin
+  Goo.Logger.Info('加载基本信息：仓库');
   ds := TClientDataSet.Create(nil);
   try
-    Goo.DB.OpenSQL('SELECT * FROM dbo.stock',ds);
+    Goo.DB.Lock;
+    try
+      Goo.DB.OpenSQL('SELECT * FROM dbo.stock',ds);
+    finally
+      Goo.DB.UnLock;
+    end;
     ds.First;
     while not ds.Eof do
     begin
@@ -929,11 +1033,12 @@ end;
 procedure TStorableManage.LoadMtype(ADic: TStorableDictionary);
 var ds:TClientDataSet;
 begin
+  Goo.Logger.Info('加载基本信息：门店');
   ds := TClientDataSet.Create(nil);
   try
     Goo.DB.Lock;
     try
-      Goo.DB.OpenSQL('SELECT posid as Rec,cast(posid as varchar(20)) as typeid,poscode as UserCode,* FROM dbo.posinfo',ds);
+      Goo.DB.OpenSQL('SELECT posid as Rec,cast(posid as varchar(25)) as typeid,poscode as UserCode,* FROM dbo.posinfo',ds);
     finally
       Goo.DB.UnLock;
     end;
@@ -951,6 +1056,7 @@ end;
 procedure TStorableManage.LoadPtype(ADic: TStorableDictionary);
 var ds:TClientDataSet;
 begin
+  Goo.Logger.Info('加载基本信息：商品');
   ds := TClientDataSet.Create(nil);
   try
     Goo.DB.Lock;
@@ -963,6 +1069,52 @@ begin
     while not ds.Eof do
     begin
       ADic.Add(DataToObject(ds,TStorable_PType));
+      ds.Next;
+    end;
+  finally
+    ds.Free;
+  end;
+end;
+
+procedure TStorableManage.LoadVchType(ADic: TStorableDictionary);
+var ds:TClientDataSet;
+begin
+  Goo.Logger.Info('加载基本信息：单据');
+  ds := TClientDataSet.Create(nil);
+  try
+    Goo.DB.Lock;
+    try
+      Goo.DB.OpenSQL('SELECT billtype as Rec,billtype as Typeid,cast(ParID as varchar(10)) ParID,cast(billtype as varchar(10)) as UserCode,billName as FullName FROM dbo.BillType where billtype>0',ds);
+    finally
+      Goo.DB.UnLock;
+    end;
+    ds.First;
+    while not ds.Eof do
+    begin
+      ADic.Add(DataToObject(ds,TStorable_VchType));
+      ds.Next;
+    end;
+  finally
+    ds.Free;
+  end;
+end;
+
+procedure TStorableManage.LoadVipCard(ADic: TStorableDictionary);
+var ds:TClientDataSet;
+begin
+  Goo.Logger.Info('加载基本信息：会员');
+  ds := TClientDataSet.Create(nil);
+  try
+    Goo.DB.Lock;
+    try
+      Goo.DB.OpenSQL('SELECT ID as Rec,ID as Typeid,CardType as ParID,CardNo as UserCode,Name as FullName,Tel,Sex FROM dbo.VipCard',ds);
+    finally
+      Goo.DB.UnLock;
+    end;
+    ds.First;
+    while not ds.Eof do
+    begin
+      ADic.Add(DataToObject(ds,TStorable_VipCard));
       ds.Next;
     end;
   finally
@@ -1006,9 +1158,17 @@ end;
 
 function TStorableDictionary.First: TStorable;
 begin
+  Result := nil;
   if Count=0 then Exit;
   for Result in Values do Break;
   //Result := Values.ToArray[0];
+end;
+
+function TStorableDictionary.GetRec(ARec: Integer): TStorable;
+begin
+  Result := nil;
+  if not ContainsKey(ARec) then Exit;
+  Result := self.Items[ARec];
 end;
 
 function TStorableDictionary.GetRec<T>(ARec:Integer): T;
@@ -1102,6 +1262,21 @@ end;
 { TStorable_EType }
 
 constructor TStorable_EType.Create;
+begin
+  inherited;
+  if Assigned(AttributeFieldDisplayText['Sex']) then
+  begin
+    with AttributeFieldDisplayText['Sex'] do
+    begin
+      AddOrSetValue('0','男');
+      AddOrSetValue('1','女');
+    end;
+  end;
+end;
+
+{ TStorable_VipCard }
+
+constructor TStorable_VipCard.Create;
 begin
   inherited;
   if Assigned(AttributeFieldDisplayText['Sex']) then

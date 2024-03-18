@@ -15,13 +15,14 @@ type
     FTitle: string;
     FMultSel: Boolean;
     FFullSel: Boolean;
-    FStorable: TStorable;
+    //FStorable: TStorable;
     FStorableDictionary: TStorableDictionary;
     FSearchString: string;
     FSearchHint: string;
     FParID: string;
+    FBasicType: TBasicType;
   protected
-    function GetStorable: TStorable;virtual;abstract;
+    function GetStorable: TStorableClass;virtual;abstract;
     function GetStorableDictionary: TStorableDictionary;virtual;
   public
     constructor Create(ABasicType:TBasicType);overload;
@@ -30,7 +31,8 @@ type
     function Count:Integer;
     function First:TStorable;virtual;
     function GetBaseInfoSelect:Integer;overload;
-    property Storable:TStorable read GetStorable;
+    property BasicType:TBasicType read FBasicType;
+    property Storable:TStorableClass read GetStorable;
     property Return:TStorableDictionary read GetStorableDictionary;
     class function CreateParam(ABasicType:TBasicType):TBaseParam;
   published
@@ -63,49 +65,65 @@ type
   //商品信息
   TPTypeParam = class(TBaseParam)
   protected
-    function GetStorable: TStorable;override;
+    function GetStorable: TStorableClass;override;
   public
-    constructor Create(AOwner: TComponent); override;
+    constructor Create(AOwner: TComponent); overload;
     procedure GetBaseInfoDataSet(ADataSet:TClientDataSet);override;
   end;
+  TBaseParamClass = class of TBaseParam;
   //厂商信息
   TCSTypeParam = class(TBaseParam)
   protected
-    function GetStorable: TStorable;override;
+    function GetStorable: TStorableClass;override;
   public
-    constructor Create(AOwner: TComponent); override;
+    constructor Create(AOwner: TComponent); overload;
     procedure GetBaseInfoDataSet(ADataSet:TClientDataSet);override;
   end;
   //门店信息
   TMTypeParam = class(TBaseParam)
   protected
-    function GetStorable: TStorable;override;
+    function GetStorable: TStorableClass;override;
   public
-    constructor Create(AOwner: TComponent); override;
+    constructor Create(AOwner: TComponent); overload;
     procedure GetBaseInfoDataSet(ADataSet:TClientDataSet);override;
   end;
   //职员信息
   TETypeParam = class(TBaseParam)
   protected
-    function GetStorable: TStorable;override;
+    function GetStorable: TStorableClass;override;
   public
-    constructor Create(AOwner: TComponent); override;
+    constructor Create(AOwner: TComponent); overload;
     procedure GetBaseInfoDataSet(ADataSet:TClientDataSet);override;
   end;
   TKTypeParam = class(TBaseParam)
   protected
-    function GetStorable: TStorable;override;
+    function GetStorable: TStorableClass;override;
   public
-    constructor Create(AOwner: TComponent); override;
+    constructor Create(AOwner: TComponent); overload;
     procedure GetBaseInfoDataSet(ADataSet:TClientDataSet);override;
   end;
   TBTypeParam = class(TBaseParam)
   protected
-    function GetStorable: TStorable;override;
+    function GetStorable: TStorableClass;override;
   public
-    constructor Create(AOwner: TComponent); override;
+    constructor Create(AOwner: TComponent); overload;
     procedure GetBaseInfoDataSet(ADataSet:TClientDataSet);override;
   end;
+  TVipCardParam = class(TBaseParam)
+  protected
+    function GetStorable: TStorableClass;override;
+  public
+    constructor Create(AOwner: TComponent); overload;
+    procedure GetBaseInfoDataSet(ADataSet:TClientDataSet);override;
+  end;
+  TBillTypeParam = class(TBaseParam)
+  protected
+    function GetStorable: TStorableClass;override;
+  public
+    constructor Create(AOwner: TComponent); overload;
+    procedure GetBaseInfoDataSet(ADataSet:TClientDataSet);override;
+  end;
+
 
 implementation
 
@@ -123,20 +141,27 @@ constructor TBaseParam.Create(ABasicType: TBasicType);
 begin
   Create(nil);
   FParID := EmptyStr;
+  FBasicType := ABasicType;
 end;
 
 class function TBaseParam.CreateParam(ABasicType: TBasicType): TBaseParam;
 begin
   case ABasicType of
+    btBtype : Result := TBTypeParam.Create(nil);
     btPtype : Result := TPTypeParam.Create(nil);
     btEtype : Result := TETypeParam.Create(nil);
     btMtype : Result := TMTypeParam.Create(nil);
+    btCSType: Result := TCSTypeParam.Create(nil);
+
+    btVchType : Result := TBillTypeParam.Create(nil);
+    btVipCard : Result := TVipCardParam.Create(nil);
   end;
+  Result.FBasicType := ABasicType;
 end;
 
 destructor TBaseParam.Destroy;
 begin
-  if Assigned(FStorable) then FreeAndNil(FStorable);
+  //if Assigned(FStorable) then FreeAndNil(FStorable);
   if Assigned(FStorableDictionary) then FreeAndNil(FStorableDictionary);
   inherited;
 end;
@@ -170,8 +195,8 @@ end;
 
 constructor TMTypeParam.Create(AOwner: TComponent);
 begin
-  inherited Create(AOwner);
-  Title := '门店信息选择';
+  inherited Create(btMtype);
+  Title := '门店';
 end;
 
 procedure TMTypeParam.GetBaseInfoDataSet(ADataSet: TClientDataSet);
@@ -187,18 +212,18 @@ begin
   Goo.DB.OpenSQL(ASQL,ADataSet);
 end;
 
-function TMTypeParam.GetStorable: TStorable;
+function TMTypeParam.GetStorable: TStorableClass;
 begin
-  if not Assigned(FStorable) then FStorable:= TStorable_MType.Create;
-  Result := FStorable as TStorable_MType;
+  //if not Assigned(FStorable) then FStorable:= TStorable_MType.Create;
+  Result := TStorable_MType;
 end;
 
 { TPTypeParam }
 
 constructor TPTypeParam.Create(AOwner: TComponent);
 begin
-  inherited;
-  Title := '商品信息选择';
+  inherited Create(btPtype);
+  Title := '商品';
   ParID := '00000';
 end;
 
@@ -217,18 +242,18 @@ begin
   Goo.DB.OpenSQL(ASQL,ADataSet);
 end;
 
-function TPTypeParam.GetStorable: TStorable;
+function TPTypeParam.GetStorable: TStorableClass;
 begin
-  if not Assigned(FStorable) then FStorable:= TStorable_PType.Create;
-  Result := FStorable as TStorable_PType;
+  //if not Assigned(FStorable) then FStorable:= TStorable_PType.Create;
+  Result := TStorable_PType;
 end;
 
 { TETypeParam }
 
 constructor TETypeParam.Create(AOwner: TComponent);
 begin
-  inherited;
-  Title := '职员信息选择';
+  inherited Create(btEtype);
+  Title := '职员';
 end;
 
 procedure TETypeParam.GetBaseInfoDataSet(ADataSet: TClientDataSet);
@@ -246,17 +271,17 @@ begin
   Goo.DB.OpenSQL(ASQL,ADataSet);
 end;
 
-function TETypeParam.GetStorable: TStorable;
+function TETypeParam.GetStorable: TStorableClass;
 begin
-  if not Assigned(FStorable) then FStorable:= TStorable_EType.Create;
-  Result := FStorable as TStorable_EType;
+  //if not Assigned(FStorable) then FStorable:= TStorable_EType.Create;
+  Result := TStorable_EType;
 end;
 
 { TKTypeParam }
 
 constructor TKTypeParam.Create(AOwner: TComponent);
 begin
-  inherited;
+  inherited Create(btKtype);
 
 end;
 
@@ -265,7 +290,7 @@ begin
 
 end;
 
-function TKTypeParam.GetStorable: TStorable;
+function TKTypeParam.GetStorable: TStorableClass;
 begin
 
 end;
@@ -274,8 +299,8 @@ end;
 
 constructor TBTypeParam.Create(AOwner: TComponent);
 begin
-  inherited;
-  Title := '往来单位选择';
+  inherited Create(btBtype);
+  Title := '往来';
 end;
 
 procedure TBTypeParam.GetBaseInfoDataSet(ADataSet: TClientDataSet);
@@ -291,18 +316,18 @@ begin
   Goo.DB.OpenSQL(ASQL,ADataSet);
 end;
 
-function TBTypeParam.GetStorable: TStorable;
+function TBTypeParam.GetStorable: TStorableClass;
 begin
-  if not Assigned(FStorable) then FStorable:= TStorable_BType.Create;
-  Result := FStorable as TStorable_BType;
+  //if not Assigned(FStorable) then FStorable:= TStorable_BType.Create;
+  Result := TStorable_BType;
 end;
 
 { TCSTypeParam }
 
 constructor TCSTypeParam.Create(AOwner: TComponent);
 begin
-  inherited;
-  Title := '厂商信息选择';
+  inherited Create(btCSType);
+  Title := '厂商';
 end;
 
 procedure TCSTypeParam.GetBaseInfoDataSet(ADataSet: TClientDataSet);
@@ -320,10 +345,65 @@ begin
   Goo.DB.OpenSQL(ASQL,ADataSet);
 end;
 
-function TCSTypeParam.GetStorable: TStorable;
+function TCSTypeParam.GetStorable: TStorableClass;
 begin
-  if not Assigned(FStorable) then FStorable:= TStorable_CSType.Create;
-  Result := FStorable as TStorable_CSType;
+  //if not Assigned(FStorable) then FStorable:= TStorable_CSType.Create;
+  Result := TStorable_CSType;
 end;
+
+{ TVipCardParam }
+
+constructor TVipCardParam.Create(AOwner: TComponent);
+begin
+  inherited Create(btBtype);
+  Title := '会员卡';
+  SearchHint := '快速查询[Ctrl+F]：卡号、姓名、电话';
+end;
+
+procedure TVipCardParam.GetBaseInfoDataSet(ADataSet: TClientDataSet);
+var ASQL:string;
+begin
+  ASQL:= 'SELECT top 100 ID as Rec,ID as Typeid,CardType as ParID,CardNo as UserCode,Name as FullName,Tel,Sex FROM dbo.VipCard';
+  if SearchString.Trim<>EmptyStr then
+  begin
+    ASQL := ASQL + ' where (CardNo like ''%' + SearchString + '%''';
+    ASQL := ASQL + ' or    Name like ''%' + SearchString + '%''';
+    ASQL := ASQL + ' or    Tel  like ''%' + SearchString + '%'')';
+  end;
+  Goo.DB.OpenSQL(ASQL,ADataSet);
+end;
+
+function TVipCardParam.GetStorable: TStorableClass;
+begin
+  Result := TStorable_VipCard;
+end;
+
+{ TBillTypeParam }
+
+constructor TBillTypeParam.Create(AOwner: TComponent);
+begin
+  inherited Create(btBtype);
+  Title := '单据';
+  SearchHint := '快速查询[Ctrl+F]：单据类型';
+end;
+
+procedure TBillTypeParam.GetBaseInfoDataSet(ADataSet: TClientDataSet);
+var ASQL:string;
+begin
+  ASQL:= 'SELECT billtype as Rec,billtype as UserCode,billName as FullName FROM dbo.BillType where billtype>0';
+  if SearchString.Trim<>EmptyStr then
+  begin
+    ASQL := ASQL + ' and (billName like ''%' + SearchString + '%''';
+    ASQL := ASQL + ' or dbo.fGetPy(billName)  like ''%' + SearchString + '%'')';
+  end;
+  Goo.DB.OpenSQL(ASQL,ADataSet);
+end;
+
+function TBillTypeParam.GetStorable: TStorableClass;
+begin
+  Result := TStorable_VchType;
+end;
+
+initialization
 
 end.

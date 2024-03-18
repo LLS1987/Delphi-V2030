@@ -12,6 +12,7 @@ type
   public
     procedure Assign(AParam:TParamList);
     function Exists(const key:string):Boolean;
+    procedure Add<T>(const key:string; value:T); overload;
     procedure Add(const key:string; value:TValue); overload;
     procedure Add(const key:string; value:Variant); overload;
     procedure Add(const key:string; value:string); overload;
@@ -20,7 +21,8 @@ type
     procedure Add(const key:string; value:Currency); overload;
     procedure Add(const key:string; value:TObject); overload;
     procedure Add(const key:string; value:TArray); overload;
-    function AsValue(const key:string):TValue;
+    function AsValue(const key:string):TValue;overload;
+    function AsValue<T>(const key:string):T;overload;
     function AsObject(const key:string):TObject;
     function AsVariant(const key:string):Variant;
     function AsString(const key:string):string;
@@ -129,6 +131,13 @@ begin
   TryGetValue(key,Result);
 end;
 
+function TParamList.AsValue<T>(const key: string): T;
+begin
+  Result := Default(T);
+  var value := AsValue(key);
+  if not value.IsEmpty then value.TryAsType<T>(Result);
+end;
+
 function TParamList.AsVariant(const key: string): Variant;
 begin
   Result := Null;
@@ -154,6 +163,11 @@ end;
 procedure TParamList.Add(const key: string; value: TArray);
 begin
   Add(key,TValue.From<TArray>(value));
+end;
+
+procedure TParamList.Add<T>(const key: string; value: T);
+begin
+  Add(key,TValue.From<T>(value));
 end;
 
 end.

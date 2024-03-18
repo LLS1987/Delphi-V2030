@@ -43,7 +43,9 @@ type
     function ExecProc(szProcedureName: string; AParams: TParamList): Integer;overload;
     function ExecProc(szProcedureName: string): Integer;overload;
     function QueryOneFiled(const ASQL: string):Variant;overload;
-    function QueryOneFiled<T>(const ASQL: string):Variant;overload;
+    function QueryOneFiled(const ASQL: string; const Args: array of const):Variant;overload;
+    function QueryOneFiled<T>(const ASQL: string):T;overload;
+    function QueryOneFiled<T>(const ASQL: string; const Args: array of const):T;overload;
     function SysCfgValue(czName: string): string;
     function SetSubValue(czName, czValue: string;ASysflag:Integer=-1;AComment:string = ''): integer;
     function GetSPID:Integer;
@@ -298,16 +300,22 @@ begin
   Result := ClientDM.QueryOneFiled(ASQL);
 end;
 
-function TDataBaseCommObject.QueryOneFiled<T>(const ASQL: string): Variant;
+function TDataBaseCommObject.QueryOneFiled(const ASQL: string; const Args: array of const): Variant;
 begin
-  Result := QueryOneFiled(ASQL);
-  if VarIsNull(Result) then
-  begin
-    case PTypeInfo(TypeInfo(T))^.Kind of
-      TTypeKind.tkString : Result := EmptyStr;
-      TTypeKind.tkFloat,TTypeKind.tkInteger,TTypeKind.tkInt64 : Result := 0;
-    end;
-  end;
+  Result := QueryOneFiled(Format(ASQL,Args));
+end;
+
+function TDataBaseCommObject.QueryOneFiled<T>(const ASQL: string; const Args: array of const): T;
+begin
+  Result := QueryOneFiled<T>(Format(ASQL,Args));
+end;
+
+function TDataBaseCommObject.QueryOneFiled<T>(const ASQL: string): T;
+begin
+  Result := Default(T);
+  var AValue := QueryOneFiled(ASQL);
+  if VarIsNull(AValue) then Exit;
+  Result := TValue.FromVariant(AValue).AsType<T>;
 end;
 
 procedure TDataBaseCommObject.SetConnected(const Value: Boolean);
