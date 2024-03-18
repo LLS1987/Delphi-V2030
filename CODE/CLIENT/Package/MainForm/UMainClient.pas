@@ -96,6 +96,7 @@ begin
     Application.Terminate;
     Abort;
   end;
+  LoadBaseInfoThread;
   StatusBar1.Panels[1].Text := Format('职员：%s',[Goo.Login.LoginUserName]);
 end;
 
@@ -212,13 +213,8 @@ end;
 procedure TMainClient.LoadBaseInfoThread;
 var AProBar:TProgressBar;
 begin
-  AProBar := Goo.ComVar.AsObject('@AppMainForm_ProgressBar') as TProgressBar;
-  if Assigned(AProBar) then
-  begin
-    AProBar.Visible := True;
-    AProBar.Min := 0;
-    AProBar.Max := Goo.Local.Count;
-  end;
+  Goo.Local.Clear;
+  Goo.Msg.ShowMainThreadBar(Goo.Local.Count,'开始基本信息本地化');
   TThread.CreateAnonymousThread(
     procedure
     begin
@@ -228,12 +224,8 @@ begin
         TThread.Synchronize( nil,
           procedure
           begin
+            Goo.Msg.StepByMainThreadBar(1,Format('加载：%s 信息，完成 ',[TBasicCaption[i]]));
             //线程同步的内容
-            if Assigned(AProBar) then
-            begin
-              AProBar.Position := AProBar.Position+1;
-              if AProBar.Position=AProBar.Max then AProBar.Visible := False;
-            end;
           end);         //|/-\|/-\|/-\:
       end;
     end
@@ -296,13 +288,14 @@ end;
 
 procedure TMainClient.StatusBar1DrawPanel(StatusBar: TStatusBar; Panel: TStatusPanel; const Rect: TRect);
 begin
-  if  Panel.ID = StatusBar1.Panels.Count-1 then
+  if  Panel.ID = StatusBar1.Panels.Count-2 then
     with ProgressBar1 do
     begin
       Parent := StatusBar1;
       //设置长度、宽度和高度
-      left:=Rect.Right-width-15;
-      top:=Rect.Top;
+      //left:=Rect.Right-width-15;
+      left := Rect.Left;
+      top  := Rect.Top;
       //width:=MyRect2.Right-MyRect2.Left;
       height:=Rect.Bottom-Rect.Top;
       //设置进度条的值
@@ -331,6 +324,8 @@ begin
   end;
   StatusBar1.Panels[1].Text := Format('职员：%s',[Goo.Login.LoginUserName]);
   Goo.ComVar.Add('@AppMainForm_ProgressBar',ProgressBar1);
+  Goo.ComVar.Add('@AppMainForm_StutasMessageBar',StatusBar1.Panels[StatusBar1.Panels.Count-1]);
+  Goo.ComVar.Add('@AppMainForm_TopPanel',Panel_TopBorder);
   //创建菜单
   CreateMenu;
   //开启线程加载本地化数据

@@ -33,7 +33,11 @@ object MainClient: TMainClient
         Alignment = taRightJustify
         Style = psOwnerDraw
         Text = #36827#24230#26465
-        Width = 50
+        Width = 200
+      end
+      item
+        Text = #29366#24577#26639
+        Width = 100
       end>
     OnDrawPanel = StatusBar1DrawPanel
   end
@@ -169,8 +173,8 @@ object MainClient: TMainClient
     end
   end
   object ProgressBar1: TProgressBar
-    Left = 741
-    Top = 499
+    Left = 598
+    Top = 501
     Width = 200
     Height = 17
     TabOrder = 2
