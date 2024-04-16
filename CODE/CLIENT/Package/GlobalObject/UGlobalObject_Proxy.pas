@@ -461,7 +461,7 @@ begin
   try
     AParam.Add('@Caption',ATitle);
     AParam.Add('@Message',AMsg);
-    AParam.Add('@DlgType',ADlgType);
+    AParam.Add('@DlgType',Ord(ADlgType));
     AParam.AddOrSetValue('@Buttons',TValue.From<TMsgDlgButtons>(ADlgButtons));
     Result := Goo.Reg.ShowModal('TMessageBoxDialog',AParam);
   finally
