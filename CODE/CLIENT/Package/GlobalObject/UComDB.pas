@@ -115,7 +115,7 @@ begin
   if not CheckConnected then Exit;
   try
     Result := ClientDM.ExecProc(szProcedureName,AParamName,AParamValue,AParams);
-  except on E: Exception do
+  except on E: Exception do Goo.Msg.ShowError('执行过程：%s ；异常：%s',[szProcedureName,e.Message]);
   end;
 end;
 
@@ -174,7 +174,17 @@ begin
     end;
     Inc(i);
   end;
-  ExecProc(szProcedureName,AParamName,AParamValue);
+  var AParam := TParams.Create;
+  try
+    Result := ExecProc(szProcedureName,AParamName,AParamValue,AParam);
+    for var _item in AParam do
+    begin
+      AParams.Add(TParam(_item).Name,TParam(_item).Value);
+    end;
+  finally
+    AParam.Free;
+  end;
+
 end;
 
 function TDataBaseCommObject.ExecSQL(const ASQL: string; const Args: array of const): Integer;
@@ -341,8 +351,11 @@ begin
           begin
             ClientDM.Conn.ConnectionName := 'MSSQLConnection';
             ClientDM.Conn.DriverName := 'MSSQL';
-            ClientDM.Conn.LibraryName := 'dbxmss.dll';
-            ClientDM.Conn.VendorLib := 'sqlncli10.dll';
+            ClientDM.Conn.GetDriverFunc := 'getSQLDriverMSSQL';
+            ClientDM.Conn.LibraryName := 'dbxmss.dll';       //DBX
+            ClientDM.Conn.VendorLib := 'sqlncli10.dll';      //DBX
+            //ClientDM.Conn.LibraryName := 'dbexpmss.dll';     //OLEDB
+            //ClientDM.Conn.VendorLib := 'oledb';              //OLEDB
             ClientDM.Conn.Params.Values['HostName']  := HostName;
             ClientDM.Conn.Params.Values['User_Name'] := UserName;
             ClientDM.Conn.Params.Values['Password']  := Password;
