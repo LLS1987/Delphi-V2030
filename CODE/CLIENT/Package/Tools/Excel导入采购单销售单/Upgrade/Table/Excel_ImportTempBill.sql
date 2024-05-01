@@ -25,8 +25,8 @@ CREATE TABLE Excel_ImportTempBill
 	PUnit	ctShortStr,			--单位	
 	Qty	ctQty,			--数量	
 	Jobnumber	ctShortStr,	--批号	
-	OutFactoryDate	ctDate,--生产日期	
-	ValidityPeriod	ctDate,		--到期日期		
+	OutFactoryDate	DATETIME,--生产日期	
+	ValidityPeriod		DATETIME,		--到期日期		
 	----功能行字段
 	BillDate		DATETIME,
 	ERec		ctInt,
