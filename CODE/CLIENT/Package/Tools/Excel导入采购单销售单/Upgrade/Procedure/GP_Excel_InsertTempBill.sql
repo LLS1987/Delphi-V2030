@@ -26,13 +26,15 @@ CREATE PROC GP_Excel_InsertTempBill
 	@PUnit	ctShortStr,			--单位	
 	@Qty	ctQty,			--数量	
 	@Jobnumber	ctShortStr,	--批号	
-	@OutFactoryDate	ctDate,--生产日期	
-	@ValidityPeriod	ctDate,		--到期日期		
+	@OutFactoryDate	DATETIME,--生产日期	
+	@ValidityPeriod		DATETIME,		--到期日期		
 	----功能行字段
 	@ERec		ctInt,
 	@UniqueBillid	ctUID	--同一次导入的主键
 )
 AS
+	SET @OutFactoryDate = NULLIF(@OutFactoryDate,'1899-12-30')
+	SET @ValidityPeriod	 = NULLIF(@ValidityPeriod,'1899-12-30')
 	--采购
 	SET @BuyTax  = 13
 	SET @BuyTaxPrice = @BuyTaxTotal/@Qty
