@@ -13,11 +13,14 @@ type
     Image1: TImage;
     Panel_Button: TPanel;
     Label1: TLabel;
+    procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
+    procedure Image1Click(Sender: TObject);
   private
     FDlgType: TMsgDlgType;
     FButtons: TMsgDlgButtons;
   protected
     procedure BeforeFormShow; override;
+    function GetMessage:string;
   public
     property DlgType: TMsgDlgType read FDlgType;
     property Buttons: TMsgDlgButtons read FButtons;
@@ -26,7 +29,7 @@ type
 implementation
 
 uses
-  UComvar;
+  UComvar, Vcl.Clipbrd;
 
 {$R *.dfm}
 
@@ -37,7 +40,7 @@ var buttoncount,nleft:Integer;
 begin
   inherited;
   Self.Caption := ParamList.AsString('@Caption');
-  Label1.Caption := ParamList.AsString('@Message');
+  Label1.Caption := GetMessage;
   if (Label1.Left+label1.Width)>ClientWidth then ClientWidth := Label1.Left+label1.Width + 30;
   ClientHeight := ClientHeight + Label1.ClientHeight - 15;
   Image1.Top   := ((ClientHeight-Panel_Button.ClientHeight) div 2) - (Image1.ClientHeight div 2);
@@ -137,6 +140,25 @@ begin
         end;
     end;
   end;
+end;
+
+procedure TMessageBoxDialog.FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
+begin
+  inherited;
+  if (ssCtrl in Shift) and (Key = Ord('C')) then Clipboard.AsText := Label1.Caption;
+end;
+
+function TMessageBoxDialog.GetMessage: string;
+begin
+  Result := ParamList.AsString('@Message');
+  Result := Result.Replace('SQL State: 42000, SQL Error Code: 50000','');
+  Result := Result.Replace('Remote error: [FireDAC][Phys][ODBC][Microsoft][SQL Server Native Client 11.0][SQL Server]','');
+end;
+
+procedure TMessageBoxDialog.Image1Click(Sender: TObject);
+begin
+  inherited;
+  Clipboard.AsText := ParamList.AsString('@Message');
 end;
 
 initialization

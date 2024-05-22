@@ -4,6 +4,7 @@ inherited MessageBoxDialog: TMessageBoxDialog
   ClientWidth = 409
   Color = clBtnFace
   FormStyle = fsStayOnTop
+  OnKeyDown = FormKeyDown
   ExplicitWidth = 425
   ExplicitHeight = 150
   PixelsPerInch = 96
@@ -14,6 +15,7 @@ inherited MessageBoxDialog: TMessageBoxDialog
     Width = 32
     Height = 32
     AutoSize = True
+    OnClick = Image1Click
   end
   object Label1: TLabel [1]
     Left = 78
