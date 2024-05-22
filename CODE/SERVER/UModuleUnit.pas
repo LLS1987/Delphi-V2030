@@ -40,6 +40,7 @@ type
     function ExecSQL(const ASQL: string):Integer;
     function OpenProc(szProcedureName: string; AParams: OleVariant): OleVariant;
     function ExecProc(szProcedureName: string; AParams: OleVariant): OleVariant;
+    function TestConnect:Boolean;
   end;
 {$METHODINFO OFF}
 
@@ -54,25 +55,25 @@ function TModuleUnit.ChangeDataBase(const ADataBaseName: string): Boolean;
 begin
   Result := False;
   Logger.Info('ChangeDataBase=%s',[ADataBaseName],'服务端');
-  try
+//  try
     FDConnection1.Connected       := False;
     FDConnection1.Params.Database := ADataBaseName;
     Result := CheckConnected;
-  except
-    on E: Exception do Logger.Error('ChangeDataBase=%s  Error:%s',[ADataBaseName,e.Message],'服务端');
-  end;
+//  except
+//    on E: Exception do Logger.Error('ChangeDataBase=%s  Error:%s',[ADataBaseName,e.Message],'服务端');
+//  end;
 end;
 
 function TModuleUnit.ChangeSQLString(const ASQL: string): Integer;
 begin
   Result := -1;
   if not CheckConnected then Exit;
-  try
+//  try
     FDQuery_Open.Open(ASQL);
     Result   := FDQuery_Open.RecordCount;
-  except
-    on E: Exception do Logger.Error('ChangeSQLString=%s Error:%s',[ASQL,e.Message],'服务端');
-  end;
+//  except
+//    on E: Exception do Logger.Error('ChangeSQLString=%s Error:%s',[ASQL,e.Message],'服务端');
+//  end;
 end;
 
 function TModuleUnit.CheckConnected: Boolean;
@@ -114,7 +115,7 @@ var APDParams: TParams;
 begin
   Result := null;
   if not CheckConnected then Exit;
-  try
+  //try
     FDStoredProc_Open.Close;
     FDStoredProc_Open.StoredProcName := szProcedureName;
     //刷新过程的参数列表
@@ -126,8 +127,11 @@ begin
       begin
         if FDStoredProc_Open.Params[i].ParamType in [ptInput,ptInputOutput] then
         begin
-          var tmp := GetParamValues(APDParams,FDStoredProc_Open.Params[i].Name);
-          if not VarIsNull(tmp) then FDStoredProc_Open.Params[i].Value := tmp;
+          try
+            var tmp := GetParamValues(APDParams,FDStoredProc_Open.Params[i].Name);
+            if not VarIsNull(tmp) then FDStoredProc_Open.Params[i].Value := tmp;
+          except on E: Exception do
+          end;
         end;
       end;
     finally
@@ -136,35 +140,35 @@ begin
     //打开过程
     FDStoredProc_Open.ExecProc;
     Result := PackageFDParams(FDStoredProc_Open.Params);
-  except
-    on E: Exception do Logger.Error('ExecProc=%s  Error:%s',[szProcedureName,e.Message],'服务端');
-  end;
+  //except
+  //  on E: Exception do Logger.Error('ExecProc=%s  Error:%s',[szProcedureName,e.Message],'服务端');
+  //end;
 end;
 
 function TModuleUnit.ExecSQL(const ASQL: string): Integer;
 begin
   Result := -1;
   if not CheckConnected then Exit;
-  try
+//  try
     FDQuery_Exec.Close;
     Result := FDQuery_Exec.ExecSQL(ASQL);
-  except
-    on E: Exception do Logger.Error('ExecSQL=%s Error:%s',[ASQL,e.Message],'服务端');
-  end;
+//  except
+//    on E: Exception do Logger.Error('ExecSQL=%s Error:%s',[ASQL,e.Message],'服务端');
+//  end;
 end;
 
 function TModuleUnit.ExecuteFile(AFileName: string): Integer;
 begin
   Result := -1;
   if not CheckConnected then Exit;
-  try
+//  try
     AFileName := ExtractFilePath(Application.ExeName) + AFileName;
-    if not FileExists(AFileName) then Exit;    
+    if not FileExists(AFileName) then Exit;
     FDScript_Upgrade.ExecuteFile(AFileName);
     Result := FDScript_Upgrade.TotalErrors;
-  except
-    on E: Exception do Logger.Error('ExecuteFile=%s Error:%s',[AFileName,e.Message],'服务端');
-  end;
+//  except
+//    on E: Exception do Logger.Error('ExecuteFile=%s Error:%s',[AFileName,e.Message],'服务端');
+//  end;
 end;
 
 function TModuleUnit.GetParamValues(AParams: TParams;const Name: string): Variant;
@@ -185,20 +189,22 @@ var APDParams: TParams;
 begin
   Result := null;
   if not CheckConnected then Exit;
-  try
+//  try
     FDStoredProc_Open.Close;
     FDStoredProc_Open.StoredProcName := szProcedureName;
+    //不默认填充过程参数：fiMeta
+    //FDStoredProc_Open.FetchOptions.Items := FDStoredProc_Open.FetchOptions.Items-[fiMeta];
     //刷新过程的参数列表
     FDStoredProc_Open.Prepare;
     APDParams := TParams.Create;
     try
       UnpackParams(AParams, APDParams);
-      for var i:=FDStoredProc_Open.ParamCount-1 downto 0 do
+      for var i in FDStoredProc_Open.Params do
       begin
-        if FDStoredProc_Open.Params[i].ParamType in [ptInput,ptInputOutput] then
+        if TFDParam(i).ParamType in [ptInput,ptInputOutput] then
         begin
-          var tmp := GetParamValues(APDParams,FDStoredProc_Open.Params[i].Name);
-          if not VarIsNull(tmp) then FDStoredProc_Open.Params[i].Value := tmp;
+          var tmp := GetParamValues(APDParams,TFDParam(i).Name);
+          if not VarIsNull(tmp) then TFDParam(i).Value := tmp;
         end;
       end;
     finally
@@ -207,24 +213,24 @@ begin
     //打开过程
     //FDStoredProc_Open.Open;
     Result := PackageFDParams(FDStoredProc_Open.Params);
-  except
-    on E: Exception do Logger.Error('OpenProc=%s  Error:%s',[szProcedureName,e.Message],'服务端');
-  end;
+//  except
+//    on E: Exception do Logger.Error('OpenProc=%s  Error:%s',[szProcedureName,e.Message],'服务端');
+//  end;
 end;
 
 function TModuleUnit.OpenSQL(const ASQL: string): Integer;
 begin
   Result := -1;
   if not CheckConnected then Exit;
-  try
+//  try
     FDQuery_Open.Close;
     FDQuery_Open.SQL.Text := ASQL;
     DataSetProvider_Query_Open.DataSet := FDQuery_Open;
     DataSetProvider_Query_Open.Options := DataSetProvider_Query_Open.Options + [poAllowCommandText];
     Result := 0;
-  except
-    on E: Exception do Logger.Error('OpenSQL=%s  Error:%s',[ASQL,e.Message],'服务端');
-  end;
+//  except
+//    on E: Exception do Logger.Error('OpenSQL=%s  Error:%s',[ASQL,e.Message],'服务端');
+//  end;
 end;
 
 function TModuleUnit.PackageFDParams(const Params: TFDParams): OleVariant;
@@ -250,14 +256,19 @@ begin
                                      Params[I].Size, Params[I].Precision, Params[I].NumericScale]);
         Inc(Idx);
       end;
+    Result[Count-1];
   end;
-  Result[I]
 //  Result := VarArrayCreate([0, AParams.Count - 1], varVariant);
 //  for var i := 0 to AParams.Count - 1 do
 //  begin
 //    Result[I].FieldName := AParams[I].Name;
 //    Result[I].Value     := AParams[I].Value;
 //  end;
+end;
+
+function TModuleUnit.TestConnect: Boolean;
+begin
+  Result := FDConnection1.Connected;
 end;
 
 function TModuleUnit.UnpackFDParams(const OleVariantValue: OleVariant;const AParams: TFDParams): Boolean;
