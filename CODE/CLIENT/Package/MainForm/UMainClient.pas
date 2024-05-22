@@ -61,6 +61,9 @@ type
     procedure CreateMenu(JSON: TJSONObject; ParentItem:TMenuItem=nil);overload;
     procedure MenuClick(Sender: TObject);
     procedure LoadBaseInfoThread;
+    ///增加版本信息判断，升级数据库
+    function FileVersion(const FileName: string): string;
+    function CheckDBVersion:Boolean;
   public
     { Public declarations }
     procedure ClearAllMDIForm;
@@ -73,7 +76,8 @@ implementation
 
 uses UComvar, UGlobalInterface, UParamList,
   System.IOUtils, System.Generics.Collections, System.Generics.Defaults,
-  UComConst, Winapi.ShellAPI, UJsonObjectHelper, UAbout, System.Rtti;
+  UComConst, Winapi.ShellAPI, UJsonObjectHelper, UAbout, System.Rtti,
+  System.Math;
 
 {$R *.dfm}
 
@@ -124,6 +128,33 @@ end;
 procedure TMainClient.Action_UpgradeExecute(Sender: TObject);
 begin
   if Goo.DB.ExecuteFile('SQL\Upgrade.sql') then Goo.Msg.ShowMsg('数据库升级成功！');
+end;
+
+function TMainClient.CheckDBVersion: Boolean;
+  const c_sysname = 'COPYRIGHT_LINK';
+  function CompareVersion(const Version1, Version2: string): Integer;
+  var Version1Parts,Version2Parts:TArray<string>;
+  begin
+    Result := 0;
+    Version1Parts := Version1.Split(['.']);
+    Version2Parts := Version2.Split(['.']);
+    for var I := 0 to Max(High(Version1Parts), High(Version2Parts)) do
+    begin
+      if I > High(Version1Parts) then Exit(-1);
+      if I > High(Version2Parts) then Exit(1);
+
+      if StrToInt(Version1Parts[I]) < StrToInt(Version2Parts[I]) then Exit(-1)
+      else if StrToInt(Version1Parts[I]) > StrToInt(Version2Parts[I]) then Exit(1);
+    end;
+  end;
+begin
+  var _dbver := Goo.DB.SysCfgValue(c_sysname);
+  var _ffver := FileVersion(Application.ExeName);
+  if CompareVersion(_dbver,_ffver)<0 then
+  begin
+    Result := Goo.DB.ExecuteFile('SQL\Upgrade.sql');
+    if Result then Goo.DB.ExecProc('Gp_SaveSysdata',['@SubName','@SubValue','@sysflag'],[c_sysname,_ffver,0]);
+  end else Result := True;
 end;
 
 procedure TMainClient.ClearAllMDIForm;
@@ -207,6 +238,31 @@ begin
       end;
       if Assigned(ParentItem) then ParentItem.Add(MenuItem) else MainMenu.Items.Add(MenuItem);
     end;
+  end;
+end;
+
+function TMainClient.FileVersion(const FileName: string): string;
+var
+  Size: DWORD;
+  Buffer: Pointer;
+  FileInfo: PVSFixedFileInfo;
+  FileInfoSize: UINT;
+begin
+  Result := EmptyStr;
+  Size := GetFileVersionInfoSize(PChar(FileName), Size);
+  if Size = 0 then Exit;
+  GetMem(Buffer, Size);
+  try
+    if GetFileVersionInfo(PChar(FileName), 0, Size, Buffer) then
+    begin
+      //if VerQueryValue(Buffer, PChar( LookupString + 'FileVersion' ), Pointer( Value ), Len ) then  AFileVersion := Value;
+      if VerQueryValue(Buffer, '\', Pointer(FileInfo), FileInfoSize) then
+      begin
+        Result := Format('%d.%d.%d.%d', [HiWord(FileInfo.dwFileVersionMS),LoWord(FileInfo.dwFileVersionMS),HiWord(FileInfo.dwFileVersionLS),LoWord(FileInfo.dwFileVersionLS)]);
+      end;
+    end;
+  finally
+    FreeMem(Buffer);
   end;
 end;
 
@@ -317,6 +373,8 @@ begin
     Abort;
   end;
   StatusBar1.Panels[0].Text := Format('服务器：[%s:%d].[%s]',[Goo.DB.HostName,Goo.DB.Port,Goo.DB.DatabaseName]);
+  ///增加版本信息判断，升级数据库
+  if not CheckDBVersion then Exit;  
   if not Goo.Login.LoginUser then
   begin
     Application.Terminate;
