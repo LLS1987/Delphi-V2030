@@ -8,6 +8,11 @@ uses
   System.JSON, System.Rtti, REST.Json;
 
 type
+  TJSONValueHelper = class helper for TJSONValue
+  public
+    function IsObject: Boolean;
+    function IsArray : Boolean;
+  end;
 
   TJSONObjectHelper = class helper for TJSONObject
   private
@@ -310,6 +315,18 @@ begin
   finally
     //elementList.Free; //TJSONArray  内部自动释放
   end;
+end;
+
+{ TJSONValueHelper }
+
+function TJSONValueHelper.IsArray: Boolean;
+begin
+  Result := self is TJSONArray;
+end;
+
+function TJSONValueHelper.IsObject: Boolean;
+begin
+  Result := self is TJSONObject;
 end;
 
 end.

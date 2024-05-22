@@ -942,11 +942,11 @@ begin
   Goo.Logger.Info('加载基本信息：单位');
   ds := TClientDataSet.Create(nil);
   try
-    Goo.DB.Lock;
+    Goo.ThreadDB.Lock;
     try
-      Goo.DB.OpenSQL('SELECT * FROM dbo.btype',ds);
+      Goo.ThreadDB.OpenSQL('SELECT * FROM dbo.btype where deleted=0',ds);
     finally
-      Goo.DB.UnLock;
+      Goo.ThreadDB.UnLock;
     end;
     ds.First;
     while not ds.Eof do
@@ -965,11 +965,11 @@ begin
   Goo.Logger.Info('加载基本信息：厂商');
   ds := TClientDataSet.Create(nil);
   try
-    Goo.DB.Lock;
+    Goo.ThreadDB.Lock;
     try
-      Goo.DB.OpenSQL('SELECT * FROM dbo.cstype',ds);
+      Goo.ThreadDB.OpenSQL('SELECT * FROM dbo.cstype where deleted=0',ds);
     finally
-      Goo.DB.UnLock;
+      Goo.ThreadDB.UnLock;
     end;
     ds.First;
     while not ds.Eof do
@@ -988,13 +988,13 @@ begin
   Goo.Logger.Info('加载基本信息：职员');
   ds := TClientDataSet.Create(nil);
   try
-    Goo.DB.Lock;
+    Goo.ThreadDB.Lock;
     try
       var ASQL := 'SELECT e.REC,e.typeId,e.Parid,e.leveal,e.soncount,e.sonnum,e.UserCode,e.FullName,d.Fullname AS Department,e.Tel,e.Sex,e.Posid,p.PosName '
         + 'FROM dbo.employee e LEFT JOIN dbo.Department d ON e.Department=d.Rec	LEFT JOIN dbo.PosInfo p ON e.Posid=p.PosId ';
-      Goo.DB.OpenSQL(ASQL,ds);
+      Goo.ThreadDB.OpenSQL(ASQL,ds);
     finally
-      Goo.DB.UnLock;
+      Goo.ThreadDB.UnLock;
     end;
     ds.First;
     while not ds.Eof do
@@ -1013,11 +1013,11 @@ begin
   Goo.Logger.Info('加载基本信息：仓库');
   ds := TClientDataSet.Create(nil);
   try
-    Goo.DB.Lock;
+    Goo.ThreadDB.Lock;
     try
-      Goo.DB.OpenSQL('SELECT * FROM dbo.stock',ds);
+      Goo.ThreadDB.OpenSQL('SELECT * FROM dbo.stock where deleted=0',ds);
     finally
-      Goo.DB.UnLock;
+      Goo.ThreadDB.UnLock;
     end;
     ds.First;
     while not ds.Eof do
@@ -1036,11 +1036,11 @@ begin
   Goo.Logger.Info('加载基本信息：门店');
   ds := TClientDataSet.Create(nil);
   try
-    Goo.DB.Lock;
+    Goo.ThreadDB.Lock;
     try
-      Goo.DB.OpenSQL('SELECT posid as Rec,cast(posid as varchar(25)) as typeid,poscode as UserCode,* FROM dbo.posinfo',ds);
+      Goo.ThreadDB.OpenSQL('SELECT posid as Rec,cast(posid as varchar(25)) as typeid,poscode as UserCode,* FROM dbo.posinfo where deleted=0',ds);
     finally
-      Goo.DB.UnLock;
+      Goo.ThreadDB.UnLock;
     end;
     ds.First;
     while not ds.Eof do
@@ -1059,11 +1059,11 @@ begin
   Goo.Logger.Info('加载基本信息：商品');
   ds := TClientDataSet.Create(nil);
   try
-    Goo.DB.Lock;
+    Goo.ThreadDB.Lock;
     try
-      Goo.DB.OpenSQL('SELECT * FROM dbo.ptype',ds);
+      Goo.ThreadDB.OpenSQL('SELECT * FROM dbo.ptype where deleted=0',ds);
     finally
-      Goo.DB.UnLock;
+      Goo.ThreadDB.UnLock;
     end;
     ds.First;
     while not ds.Eof do
@@ -1082,11 +1082,11 @@ begin
   Goo.Logger.Info('加载基本信息：单据');
   ds := TClientDataSet.Create(nil);
   try
-    Goo.DB.Lock;
+    Goo.ThreadDB.Lock;
     try
-      Goo.DB.OpenSQL('SELECT billtype as Rec,billtype as Typeid,cast(ParID as varchar(10)) ParID,cast(billtype as varchar(10)) as UserCode,billName as FullName FROM dbo.BillType where billtype>0',ds);
+      Goo.ThreadDB.OpenSQL('SELECT billtype as Rec,billtype as Typeid,cast(ParID as varchar(10)) ParID,cast(billtype as varchar(10)) as UserCode,billName as FullName FROM dbo.BillType where billtype>0',ds);
     finally
-      Goo.DB.UnLock;
+      Goo.ThreadDB.UnLock;
     end;
     ds.First;
     while not ds.Eof do
@@ -1105,11 +1105,11 @@ begin
   Goo.Logger.Info('加载基本信息：会员');
   ds := TClientDataSet.Create(nil);
   try
-    Goo.DB.Lock;
+    Goo.ThreadDB.Lock;
     try
-      Goo.DB.OpenSQL('SELECT ID as Rec,ID as Typeid,CardType as ParID,CardNo as UserCode,Name as FullName,Tel,Sex FROM dbo.VipCard',ds);
+      Goo.ThreadDB.OpenSQL('SELECT ID as Rec,ID as Typeid,CardType as ParID,CardNo as UserCode,Name as FullName,Tel,Sex FROM dbo.VipCard',ds);
     finally
-      Goo.DB.UnLock;
+      Goo.ThreadDB.UnLock;
     end;
     ds.First;
     while not ds.Eof do

@@ -68,8 +68,6 @@ implementation
 uses
   System.Variants, UClientModule_Local, UComVar, UClientModule_LocalADO;
 
-{ TDataBaseCommObject }
-
 function TDataBaseCommObject.ChangeDataBase(const ADataBaseName: string): Boolean;
 begin
   Result := False;

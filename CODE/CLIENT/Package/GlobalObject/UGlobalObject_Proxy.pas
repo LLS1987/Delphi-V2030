@@ -101,6 +101,8 @@ type
     FMainThreadBarTick:Integer;
     FProgressBarForm:TForm;
     FdxAlertWindowManager:TdxAlertWindowManager;
+    FLastErrorMessage: string;
+    FLastErrorCode: Integer;
   public
     constructor Create(AOwner: TObject);
     destructor Destroy; override;
@@ -130,6 +132,9 @@ type
     function ShowInput(var AValue:Variant; const ATitle:string;ACaption:string='提示'): Boolean; overload;
     function ShowInput<T>(const ATitle:string;ACaption:string='提示'): T; overload;
     function ShowInput<T>(var AValue:T;const ATitle:string;ACaption:string='提示';ADecimal:Integer=2): Boolean; overload;
+    ///记录最后一次错误提示
+    property LastErrorCode : Integer read FLastErrorCode write FLastErrorCode;
+    property LastErrorMessage:string read FLastErrorMessage write FLastErrorMessage;
   end;
   {多媒体播放}
   TPlayMediaObject = class(TBaseCommObject)
@@ -439,6 +444,7 @@ end;
 constructor TMessageBoxObject.Create(AOwner: TObject);
 begin
   inherited ;
+  FLastErrorMessage := EmptyStr;
   FProgressBarForm := nil;
   FdxAlertWindowManager := TdxAlertWindowManager.Create(nil);
   FdxAlertWindowManager.OptionsSize.Width := 400;

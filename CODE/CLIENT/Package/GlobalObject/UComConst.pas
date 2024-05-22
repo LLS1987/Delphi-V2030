@@ -11,7 +11,7 @@ type
   TLimitVers = set of TLimitVer;
   ///菜单的类型    0       1       2        3         4       5
   TRegisterType = (rmtForm,rmtBill,rmtRepot,rmtMethod,rmtFile,rmtURL);
-  //基本信息类型
+  //基本信息类型     1       2       3       4       5       6        7       8       9         10      11      12        13       14      15       16
   TBasicType = (btNo,btAtype,btPtype,btBtype,btEtype,btKtype,btGtype, btDtype,btRtype,btVchType,btMtype,btNType,btCSType, btLBType,btOtype,btFType, btVipCard);
 const
   ///基本信息类型名称

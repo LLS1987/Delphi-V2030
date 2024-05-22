@@ -5,7 +5,7 @@ interface
 uses
   System.SysUtils, System.Classes, UClientModule, Data.DBXDataSnap,
   Data.DBXCommon, IPPeerClient, Datasnap.DBClient, Datasnap.DSConnect, Data.DB,
-  Data.SqlExpr, Data.Win.ADODB, Datasnap.Provider;
+  Data.SqlExpr, Data.Win.ADODB, Datasnap.Provider, Vcl.ExtCtrls;
 
 type
   TClientModule_LocalADO = class(TClientModule)
@@ -55,6 +55,7 @@ begin
   Result := -1;
   proc_exec.Active := False;
   proc_exec.ProcedureName := szProcedureName;
+  proc_exec.Parameters.Refresh;
   for var p in proc_exec.Parameters do
   begin
     for var i := Low(AParamName) to High(AParamName) do

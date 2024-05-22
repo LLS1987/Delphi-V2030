@@ -71,6 +71,7 @@ begin
   end;
   Result := proc_exec.ExecProc;
   AParams.Assign(proc_exec.Params);
+  if Assigned(AParams.FindParam('@RETURN_VALUE')) then Result := AParams.ParamValues['@RETURN_VALUE'];
 end;
 
 function TClientModule_Local.ExecSQL(const ASQL: string): Integer;
@@ -104,6 +105,8 @@ begin
     DataSetProvider_proc_open.DataSet := proc_open;
     proc_open.Active := False;
     proc_open.StoredProcName := szProcedureName;
+    //TDBDataset(proc_open).SessionName := 'Default';
+    //proc_open.ParamCheck := True;
     for var p in proc_open.Params do
     begin
       if SameText(p.DisplayName,'@RETURN_VALUE') then Continue;
@@ -115,6 +118,8 @@ begin
           Break;
         end;
       end;
+      //if VarIsEmpty(TParam(p).Value) or VarIsNull(TParam(p).Value) then TParam(p).Value := Unassigned;
+      //DBX不支持数据库的默认参数，未赋值的参数传入的是 NULL 而不是 Default
       //if not bexistsparam then proc_open.Params.RemoveParam(TParam(p));
     end;
     ADataSet.Data := DataSetProvider_proc_open.Data;

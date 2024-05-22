@@ -12,7 +12,7 @@ type
   TGlobalObject = class(TBaseCommObject)
   private
     FComVar: TParamList;
-    FDBObject:TDataBaseCommObject;
+    FDBObject,FThreadDB:TDataBaseCommObject;
     FFormatObject: TFormatCommObject;
     FLoginCommObject:TLoginCommObject;
     FRegisterClassFactory:TRegisterClassFactory;
@@ -40,6 +40,7 @@ type
     function GetTheme: TThemeObject;
     function GetPlayMediaObject: TPlayMediaObject;
     function GetStorableManage: TStorableManage;
+    function GetThreadDB: TDataBaseCommObject;
   protected
 
   public
@@ -54,12 +55,16 @@ type
     function GetRealMacAddress: string;
     //获取硬盘序列号
     function GetHardDiskSerialNumber: string;
+    ///GetGUIDString
+    function GetGUIDString:string;
     ///动态的变量存储量，JOSN存储
     property ComVar: TParamList read GetComVar;
     ///登录函数
     property Login: TLoginCommObject read GetLogin;
     ///数据库相关函数
     property DB: TDataBaseCommObject read GetDB;
+    ///线程数据库；和正常DB分开，线程DB中增加了Lock
+    property ThreadDB :TDataBaseCommObject read GetThreadDB;
     ///数据转换类、格式化
     property Cast: TFormatCommObject read GetFormat;
     ///类工厂
@@ -96,7 +101,7 @@ uses
 
 constructor TGloBalObject.Create;
 begin
-
+  FThreadDB := nil;
 end;
 
 destructor TGloBalObject.Destroy;
@@ -104,6 +109,7 @@ begin
   if Assigned(FLoginCommObject) then FreeAndNil(FLoginCommObject);  
   if Assigned(FFormatObject) then FreeAndNil(FFormatObject);  
   if Assigned(FDBObject) then FreeAndNil(FDBObject);
+  if Assigned(FThreadDB) then FreeAndNil(FThreadDB);  
   if Assigned(FComVar) then FreeAndNil(FComVar);
   if Assigned(FRegisterClassFactory) then FreeAndNil(FRegisterClassFactory);
   if Assigned(FMessageBoxObject) then FreeAndNil(FMessageBoxObject);
@@ -176,6 +182,13 @@ function TGloBalObject.GetFormat: TFormatCommObject;
 begin
   if not Assigned(FFormatObject) then FFormatObject:= TFormatCommObject.Create(Self);
   Result := FFormatObject;
+end;
+
+function TGlobalObject.GetGUIDString: string;
+begin
+  var LTep:TGUID;
+  CreateGUID(LTep);
+  Result := GUIDToString(LTep);
 end;
 
 function TGlobalObject.GetHardDiskSerialNumber: string;
@@ -335,6 +348,22 @@ function TGlobalObject.GetTheme: TThemeObject;
 begin
   if not Assigned(FThemeObject) then FThemeObject := TThemeObject.Create(Self);  
   Result := FThemeObject;
+end;
+
+function TGlobalObject.GetThreadDB: TDataBaseCommObject;
+begin
+  if not Assigned(FThreadDB) and DB.Connected then
+  begin
+    FThreadDB := TDataBaseCommObject.Create;
+    FThreadDB.ConnectType := DB.ConnectType;
+    FThreadDB.HostName    := DB.HostName;
+    FThreadDB.Port        := DB.Port;
+    FThreadDB.UserName    := DB.UserName; //复制主程序的DB连接
+    FThreadDB.Password    := DB.Password;
+    FThreadDB.Connected := True;
+    if FThreadDB.Connected then FThreadDB.ChangeDataBase(DB.DatabaseName);
+  end;
+  if FThreadDB.CheckConnected then Result := FThreadDB else Result := DB;
 end;
 
 end.

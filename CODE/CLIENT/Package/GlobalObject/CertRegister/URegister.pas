@@ -75,10 +75,10 @@ begin
   Result := False;
   var Reg := TRegister.Create(AID,StrPas(ACertNO));
   try
-    if Reg.TestNetworkConnection(Cert_URL) then
+    if not Reg.TestNetworkConnection(Cert_URL) then
     begin
       ShowMessage('请检查本地与订货平台网络是否通畅！');
-      Exit;
+      Exit(False);
     end;
     Result := Reg.Registered;
     if not Result then ShowMessage(Reg.Company +'['+reg.CertName+']注册证号：'+ACertNO+'已经过期！');

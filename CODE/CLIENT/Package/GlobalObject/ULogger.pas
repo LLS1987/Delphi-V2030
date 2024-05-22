@@ -112,6 +112,7 @@ end;
 
 procedure TLogger.Error(const aMessage, aTag: string);
 begin
+  //Goo.Msg.LastErrorMessage := aMessage;
   if not (TLogType.Error in LogTypes) then Exit;
   LoggerFile.Error(aMessage,aTag);
 end;

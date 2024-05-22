@@ -8,15 +8,26 @@ uses
 
 type
   TExcelCellCheckList = Class;
+  TExcelChecked = record
+    RowIndex:Integer;
+    Success:Boolean;
+    Mgs:string;
+  end;
+  PExcelChecked = ^TExcelChecked;
   TExcelObject = class(TXLSReadWriteII5)
   private
     FExcelCellCheckList: TExcelCellCheckList;
     FOnImportExcelEvent: TNotifyEvent;
     FOnCheckExcelEvent: TNotifyEvent;
     FGrid:TStringGrid;
+    FRowCheckedRecord:TDictionary<Integer,PExcelChecked>;
+    FIgnoreException: Boolean;
+    FCheckStatusMessage: string;
     function GetCheckDataColIndex: Integer;
     function GetColumnIndex(AName: string): Integer;
     function GetSheetColIndex(AName: string): Integer;
+    function GetRowChecked(ARow: Integer): Boolean;
+    procedure ClearExcelChecked;
   public
     constructor Create(AFiledName:string);overload;
     destructor Destroy; override;
@@ -25,7 +36,16 @@ type
     property OnImportExcelEvent:TNotifyEvent read FOnImportExcelEvent write FOnImportExcelEvent;
     property OnCheckExcelEvent:TNotifyEvent read FOnCheckExcelEvent;
     property ColumnIndex[AName:string]:Integer read GetColumnIndex;
+    /// <summary>
+    /// 获取行是否检查通过
+    /// </summary>
+    property RowChecked[ARow:Integer]:Boolean read GetRowChecked;
+    /// 导入的时候忽略异常判断
+    property IgnoreException :Boolean read FIgnoreException write FIgnoreException;
+    /// 检查状态信息
+    property CheckStatusMessage :string read FCheckStatusMessage;
     function ReadExcel(AStringGrid:TStringGrid):Boolean; virtual;
+    function ReadOneCell(ACol,ARow:Integer):Variant;
     function CheckData(AStringGrid:TStringGrid):Boolean; virtual;
     function ImportExcel(AStringGrid:TStringGrid):Boolean; virtual;
     function PreViewExcel:Boolean;
@@ -36,6 +56,8 @@ type
     function AsInteger(AColName:string;ARow:Integer):Integer;
     function AsDateTime(AColName:string;ARow:Integer):TDateTime;
     function AsBoolean(AColName:string;ARow:Integer):Boolean;
+    ///判断列是否存在
+    function FieldExists(AColName:string):Boolean;
   end;
 
   TExcelCellCheckDataEvent = function (AData:OleVariant;var AError:string):Boolean of object;
@@ -119,8 +141,12 @@ function TExcelObject.CheckData(AStringGrid: TStringGrid): Boolean;
 var ADataErrMsg:string;
 begin
   Result := True;
+  if not Assigned(FRowCheckedRecord) then FRowCheckedRecord := TDictionary<Integer,PExcelChecked>.Create;
+  ClearExcelChecked;
   if AStringGrid.ColCount <= Sheets[0].LastCol+C_Column_CheckItem_Index then AStringGrid.ColCount := Sheets[0].LastCol+C_Column_CheckItem_Index+1;
   AStringGrid.Cells[Sheets[0].LastCol+C_Column_CheckItem_Index,0] := '数据校验';
+  FCheckStatusMessage := EmptyStr;
+  var _suc :Integer := 0;
   for var i := 1 to AStringGrid.RowCount-1 do
   begin
     var bRowCheck :Boolean := True;
@@ -133,14 +159,32 @@ begin
         Break;
       end;
     end;
+    var p : PExcelChecked;
+    New(p);
+    p^.RowIndex := i;
+    p^.Success  := bRowCheck;
+    if not bRowCheck then p^.Mgs := ADataErrMsg else Inc(_suc);
+    FRowCheckedRecord.Add(i,p);
     Result := Result and bRowCheck;
   end;
+  FCheckStatusMessage := Format(' 表格总数据：%d 行；数据校验成功：%d 行；失败：%d 行',[FRowCheckedRecord.Count,_suc,FRowCheckedRecord.Count-_suc]);
   //检查需要验证的列是否存在
   for var item in ExcelCellCheckList do
   begin
     Goo.Msg.CheckAndAbort(ColumnIndex[item.Key]>=0,'需要的列：%s 不存在！',[item.Key]);
   end;
   if Result and Assigned(OnCheckExcelEvent) then OnCheckExcelEvent(AStringGrid);
+end;
+
+procedure TExcelObject.ClearExcelChecked;
+begin
+  if not Assigned(FRowCheckedRecord) then Exit;
+  for var _item in FRowCheckedRecord do
+  begin
+    Dispose(_item.Value);
+    FRowCheckedRecord.Remove(_item.Key);
+  end;
+  FRowCheckedRecord.Clear;
 end;
 
 function TExcelObject.ColCount: Integer;
@@ -153,12 +197,20 @@ begin
   inherited Create(nil);
   if AFiledName<>EmptyStr then Filename := AFiledName;
   FExcelCellCheckList := TExcelCellCheckList.Create;
+  FIgnoreException    := False;
 end;
 
 destructor TExcelObject.Destroy;
 begin
   if Assigned(FExcelCellCheckList) then FreeAndNil(FExcelCellCheckList);
+  ClearExcelChecked;
+  if Assigned(FRowCheckedRecord) then FreeAndNil(FRowCheckedRecord);  
   inherited;
+end;
+
+function TExcelObject.FieldExists(AColName: string): Boolean;
+begin
+  Result := GetSheetColIndex(AColName)>=0;
 end;
 
 function TExcelObject.GetCheckDataColIndex: Integer;
@@ -171,7 +223,8 @@ end;
 function TExcelObject.GetColumnIndex(AName: string): Integer;
 begin
   Result := -1;
-  for var i := 1 to FGrid.ColCount do
+  if not Assigned(FGrid) then Exit;  
+  for var i := 1 to FGrid.ColCount-1 do
   begin
     if SameText(FGrid.Cells[i,0],AName) then
     begin
@@ -179,6 +232,12 @@ begin
       Break;
     end;
   end;
+end;
+
+function TExcelObject.GetRowChecked(ARow: Integer): Boolean;
+begin
+  if not FRowCheckedRecord.ContainsKey(ARow) then Exit(False);
+  Result := FRowCheckedRecord.Items[ARow]^.Success;
 end;
 
 function TExcelObject.GetSheetColIndex(AName: string): Integer;
@@ -213,10 +272,16 @@ end;
 
 function TExcelObject.ReadExcel(AStringGrid: TStringGrid): Boolean;
 begin
-  Result := False;
+  if FileName=EmptyStr then Exit(False);  
   try
     Self.Read;
-  except on E: Exception do Goo.Logger.Error('加载EXCEL表格:%s，错误，%s',[FileName,e.Message]);
+  except
+    on E: Exception do
+    begin
+      Goo.Logger.Error('加载EXCEL表格:%s，错误，%s',[FileName,e.Message]);
+      Goo.Msg.ShowError('加载EXCEL表格:%s，错误，%s',[FileName,e.Message]);
+      Exit;
+    end;
   end;
   AStringGrid.ColCount := Sheets[0].LastCol+2;    //获取表格行
   AStringGrid.RowCount := Sheets[0].LastRow+1;    //获取表格列
@@ -225,11 +290,19 @@ begin
     AStringGrid.Cells[0,irow]  := irow.ToString;
     for var icol := 0 to Sheets[0].LastCol do
     begin
-      AStringGrid.Cells[icol+1,irow] := Sheets[0].AsString[icol,irow];
+      if Sheets[0].IsDateTime[icol,irow] then
+        AStringGrid.Cells[icol+1,irow] := DateTimeToStr(Sheets[0].AsDateTime[icol,irow])
+      else AStringGrid.Cells[icol+1,irow] := Sheets[0].AsString[icol,irow];
     end;
   end;
+  Result := True;
   AStringGrid.Cells[0,0] := '行号';
   FGrid := AStringGrid;
+end;
+
+function TExcelObject.ReadOneCell(ACol, ARow: Integer): Variant;
+begin
+
 end;
 
 function TExcelObject.RowCount: Integer;
@@ -258,6 +331,7 @@ end;
 
 function TExcelCellCheckList.CheckCell_BUSerCode(AData: OleVariant; var AError: string): Boolean;
 begin
+  if not CheckCell_Empty(AData,AError) then Exit(False);
   Result := CheckBasicUSerCode<TStorable_BType>(AData,AError);
 end;
 
@@ -335,7 +409,7 @@ end;
 
 procedure TExcelCellCheckList.SetUseCheckEUSerCode(const Value: Boolean);
 begin
-  if Value then Self.TryAdd('职员编号',CheckCell_EUSerCode) else Self.Remove('职员位编号');
+  if Value then Self.TryAdd('职员编号',CheckCell_EUSerCode) else Self.Remove('职员编号');
 end;
 
 procedure TExcelCellCheckList.SetUseCheckKUSerCode(const Value: Boolean);
