@@ -7,7 +7,8 @@ uses
   UModuleUnit in 'UModuleUnit.pas' {ModuleUnit: TDSServerModule},
   UCOMM in 'UCOMM.pas',
   UDBSET in 'UDBSET.pas' {DBSET},
-  ULogger in '..\CLIENT\Package\GlobalObject\ULogger.pas';
+  ULogger in '..\CLIENT\Package\GlobalObject\ULogger.pas',
+  UModuleBasicInfo in 'UModuleBasicInfo.pas';
 
 {$R *.res}
 

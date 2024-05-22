@@ -6,7 +6,7 @@ uses
   System.SysUtils, System.Classes, IPPeerServer, DbxCompressionFilter,
   Datasnap.DSHTTP, Datasnap.DSCommonServer, Datasnap.DSServer,
   Datasnap.DSTCPServerTransport, System.Rtti, System.Generics.Collections,
-  Data.DBXCommon, System.JSON;
+  Data.DBXCommon, System.JSON, Datasnap.DSHTTPCommon;
 
 type
   TContainer = class(TDataModule)
@@ -14,13 +14,15 @@ type
     DSTCPServerTransport1: TDSTCPServerTransport;
     DSServerClass1: TDSServerClass;
     DSHTTPService1: TDSHTTPService;
+    DSServerClass_Http: TDSServerClass;
     procedure DataModuleDestroy(Sender: TObject);
     procedure DataModuleCreate(Sender: TObject);
-    procedure DSHTTPService1FormatResult(Sender: TObject; var ResultVal:
-        TJSONValue; const Command: TDBXCommand; var Handled: Boolean);
+    procedure DSHTTPService1FormatResult(Sender: TObject; var ResultVal: TJSONValue; const Command: TDBXCommand; var Handled: Boolean);
+    procedure DSHTTPService1HTTPTrace(Sender: TObject; AContext: TDSHTTPContext; ARequest: TDSHTTPRequest; AResponse: TDSHTTPResponse);
     procedure DSServer1Connect(DSConnectEventObject: TDSConnectEventObject);
     procedure DSServer1Disconnect(DSConnectEventObject: TDSConnectEventObject);
     procedure DSServerClass1GetClass(DSServerClass: TDSServerClass; var PersistentClass: TPersistentClass);
+    procedure DSServerClass_HttpGetClass(DSServerClass: TDSServerClass; var PersistentClass: TPersistentClass);
     procedure DSTCPServerTransport1Connect(Event: TDSTCPConnectEventObject);
   private
     FClientConnectList: TDictionary<Integer, TValue>;
@@ -41,7 +43,8 @@ var
 implementation
 
 uses
-  UModuleUnit, IdTCPConnection,Data.DBXTransport, UCOMM, UServer,IdWinsock2;
+  UModuleUnit, IdTCPConnection,Data.DBXTransport, UCOMM, UServer,IdWinsock2,
+  UModuleBasicInfo;
 
 {%CLASSGROUP 'Vcl.Controls.TControl'}
 
@@ -62,21 +65,28 @@ begin
   inc(Connections,-1);
 end;
 
-procedure TContainer.DSHTTPService1FormatResult(Sender: TObject; var ResultVal:
-    TJSONValue; const Command: TDBXCommand; var Handled: Boolean);
+procedure TContainer.DSHTTPService1FormatResult(Sender: TObject; var ResultVal: TJSONValue; const Command: TDBXCommand; var Handled: Boolean);
 var
     Aux: TJSONValue;
 begin
   //if Command.Text.ToUpper = UpperCase('TServerMethods.EchoString') then
-  if Command.Text.Equals('') then
-  
   Aux := ResultVal;
-  //TJSONObject(ResultVal).AddPair('success',True);
-  ResultVal := TJSONArray(Aux).Items[0];
-  TJSONArray(Aux).Remove(0);
-  Aux.Free;
-  //we do not need "result" tag
-  Handled := true;
+  try
+    ResultVal := TJSONObject.Create;
+    TJSONObject(ResultVal).AddPair('success',true);
+    TJSONObject(ResultVal).AddPair('data',Aux);
+  finally
+    //Aux.Free;
+  end;
+  Handled := true;    //we do not need "result" tag
+end;
+
+procedure TContainer.DSHTTPService1HTTPTrace(Sender: TObject; AContext:TDSHTTPContext; ARequest: TDSHTTPRequest; AResponse: TDSHTTPResponse);
+begin
+//  Logger.Info('HTTP Trace :' + AContext.ToString,'服务端');
+//  Logger.Info('ARequest.Params:'+ARequest.Params.Text,'服务端');
+//  Logger.Info('ARequest.Document :' + ARequest.Document,'服务端');
+//  Logger.Info(' ' + AResponse.ResponseText,'服务端');
 end;
 
 procedure TContainer.DSServer1Connect(DSConnectEventObject: TDSConnectEventObject);
@@ -127,6 +137,11 @@ end;
 procedure TContainer.DSServerClass1GetClass(DSServerClass: TDSServerClass; var PersistentClass: TPersistentClass);
 begin
   PersistentClass := UModuleUnit.TModuleUnit;
+end;
+
+procedure TContainer.DSServerClass_HttpGetClass(DSServerClass: TDSServerClass; var PersistentClass: TPersistentClass);
+begin
+  PersistentClass := UModuleBasicInfo.TModuleBasicInfo;
 end;
 
 procedure TContainer.DSTCPServerTransport1Connect(Event:TDSTCPConnectEventObject);

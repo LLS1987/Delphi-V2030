@@ -25,15 +25,22 @@ object Container: TContainer
   object DSServerClass1: TDSServerClass
     OnGetClass = DSServerClass1GetClass
     Server = DSServer1
-    Left = 200
-    Top = 11
+    Left = 202
+    Top = 73
   end
   object DSHTTPService1: TDSHTTPService
     HttpPort = 8080
+    OnHTTPTrace = DSHTTPService1HTTPTrace
     OnFormatResult = DSHTTPService1FormatResult
     Server = DSServer1
     Filters = <>
     Left = 96
     Top = 135
+  end
+  object DSServerClass_Http: TDSServerClass
+    OnGetClass = DSServerClass_HttpGetClass
+    Server = DSServer1
+    Left = 200
+    Top = 136
   end
 end
