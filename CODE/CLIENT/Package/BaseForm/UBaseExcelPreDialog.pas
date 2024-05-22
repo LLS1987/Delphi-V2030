@@ -17,6 +17,8 @@ type
     StringGrid1: TStringGrid;
     OpenDialog1: TOpenDialog;
     Button1: TButton;
+    pnl_Status: TPanel;
+    pnl_Header: TPanel;
     procedure Button_CheckDataClick(Sender: TObject);
     procedure Button_ImportDataClick(Sender: TObject);
     procedure Button_OpenFileClick(Sender: TObject);
@@ -42,6 +44,8 @@ procedure TBaseExcelPreDialog.BeforeFormShow;
 begin
   inherited;
   Self.Caption := 'Excel 预览:' + TExcelObject(ParamList.AsObject('@InvokeObject')).FileName;
+  for var _item in TExcelObject(ParamList.AsObject('@InvokeObject')).ExcelCellCheckList do
+    pnl_Header.Caption := pnl_Header.Caption + _item.Key + '*| ';
   CoInitialize(nil);
   try
     TExcelObject(ParamList.AsObject('@InvokeObject')).ReadExcel(StringGrid1);
@@ -54,12 +58,18 @@ procedure TBaseExcelPreDialog.Button_CheckDataClick(Sender: TObject);
 begin
   inherited;
   TExcelObject(ParamList.AsObject('@InvokeObject')).CheckData(StringGrid1);
+  pnl_Status.Caption := TExcelObject(ParamList.AsObject('@InvokeObject')).CheckStatusMessage;
 end;
 
 procedure TBaseExcelPreDialog.Button_ImportDataClick(Sender: TObject);
 begin
   inherited;
-  if not TExcelObject(ParamList.AsObject('@InvokeObject')).CheckData(StringGrid1) then Exit;  
+  if not TExcelObject(ParamList.AsObject('@InvokeObject')).CheckData(StringGrid1) then
+  begin
+    pnl_Status.Caption := TExcelObject(ParamList.AsObject('@InvokeObject')).CheckStatusMessage;
+    if not TExcelObject(ParamList.AsObject('@InvokeObject')).IgnoreException then Goo.Msg.ShowErrorAndAbort('数据校验异常（表格最后一列红色为异常信息）！');
+    if not Goo.Msg.Question('存在异常数据，是否忽略异常继续导入？','') then Exit;
+  end;
   if TExcelObject(ParamList.AsObject('@InvokeObject')).ImportExcel(StringGrid1) then ModalResult := mrOk;
 end;
 
@@ -68,6 +78,7 @@ begin
   inherited;
   if not OpenDialog1.Execute then Exit;
   Self.Caption := 'Excel 预览:' + OpenDialog1.FileName;
+  pnl_Status.Caption := '  请点击"数据导入"按钮；如有异常数据信息，在表格最后一列红色字体显示。';
   TExcelObject(ParamList.AsObject('@InvokeObject')).FileName := OpenDialog1.FileName;
   TExcelObject(ParamList.AsObject('@InvokeObject')).ReadExcel(StringGrid1);
   StringGrid1.FixedRows := 1;

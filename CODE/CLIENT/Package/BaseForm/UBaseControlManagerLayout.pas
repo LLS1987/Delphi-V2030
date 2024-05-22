@@ -11,7 +11,9 @@ uses
 type
   TBaseConditionManager = class;
   TControlItem = class;
+  TEditButtonFilterVer = (efNull,efEquals,efNotEquals,efLessThan,efLessthanorEquals,efGreaterthan,efGreaterthanorEquals,efLike,efNotLike,efContains,efNotContains,efBeginsWith,efEndsWith);
 
+  TEditButtonFilterVers = set of TEditButtonFilterVer;
   TCheckControlItemDataEvent = function (AData:TControlItem;var AError:string):Boolean of object;
   TControlItem = class
     DataType:Integer;
@@ -33,6 +35,9 @@ type
     FGroupCaption: string;
     FVisible: Boolean;
     FControl: TWinControl;
+    FLeftButtonImageIndex: Integer;
+    FLeftButtonFilterVers: TEditButtonFilterVers;
+    FLeftButtonPopMenu:TPopupMenu;
     function GetStringWidth(const AStr: string; AFont: TFont): Integer;
     function GetLastCaption: string;
     procedure SetLastCaption(const Value: string);
@@ -42,6 +47,9 @@ type
     function GetEnabled: Boolean;
     procedure SetEnabled(const Value: Boolean);
     procedure SetVisible(const Value: Boolean);
+    procedure SetLeftButtonFilterVers(const Value: TEditButtonFilterVers);
+    procedure OnLeftButtonClick(Sender:TObject);
+    procedure OnLeftPopMenuClick(Sender:TObject);
   protected
     function GetValue: Variant; virtual;
     procedure SetValue(const Value: Variant);virtual;
@@ -49,6 +57,7 @@ type
     procedure SetWidth(const Value: Integer);virtual;
     function GetCaptionWidth:Integer;
     function GetValueText: string;virtual;
+    procedure SetLeftButtonImageIndex(const Value: Integer);virtual;
   public
     constructor Create;
     destructor Destroy; override;
@@ -73,6 +82,9 @@ type
     property GroupLabelCaption:string read FGroupCaption write FGroupCaption;
     ///数据检查属性
     property OnCheckValueEvent:TCheckControlItemDataEvent read FOnCheckValueEvent write FOnCheckValueEvent;
+    ///左边按钮
+    property LeftButtonImageIndex : Integer read FLeftButtonImageIndex write SetLeftButtonImageIndex;
+    property LeftButtonFilterVers :TEditButtonFilterVers read FLeftButtonFilterVers write SetLeftButtonFilterVers;
   end;
 
   TButtonItem = class(TControlItem)
@@ -95,10 +107,12 @@ type
   end;
   //EDIT
   TControlItem_Edit = class(TControlItem)
+  private
   protected
     function GetValue: Variant; override;
     procedure SetValue(const Value: Variant);override;
     procedure SetWidth(const Value: Integer);override;
+    procedure SetLeftButtonImageIndex(const Value: Integer);override;
   public
     function CreateControl: TWinControl; override;
   end;
@@ -259,7 +273,8 @@ type
     function CreateControl(ADataType:TConditionContorlType): TControlItem;overload;
     function SplitString(AStr:string;AIndex:Integer):string;
   protected
-    procedure AssignPropertyValues(AObject: TObject;const AName: string; const AValues:TValue);
+    procedure AssignPropertyValues(AObject: TObject;const AName: string; const AValues:TValue);virtual;
+    procedure CreateControlAfter(AControl:TControlItem);virtual;
   public
     constructor Create;overload;
     constructor Create(AOwner:TObject;AParent:TWinControl);overload;
@@ -312,7 +327,9 @@ type
 
   const Control_Border_Width = 15;
   const DADEPOPMENUCAPTION: array[0..9] of string =('本日','本周','本月', '本季度','本年','-','上周','上月','上季度','上年');
-
+  const EditButtonFilterImageIndex: array[TEditButtonFilterVer] of Integer = (-1,7,8,9,10,11,12,13,14,15,16,17,18);
+  const EditButtonFilterLink: array[TEditButtonFilterVer] of string = ('','=','<>','<','<=','>','>=','like','not like','','','like','like');
+  const EditButtonFilterCaption: array[TEditButtonFilterVer] of string = ('','等于','不等于','小于','小于等于','大于','大于等于','相似','不相似','包含','不包含','左相似','右相似');
 implementation
 
 uses
@@ -324,6 +341,12 @@ uses
 
 destructor TControlItem.Destroy;
 begin
+  if Assigned(FLeftButtonPopMenu) then
+  begin
+    for var i := FLeftButtonPopMenu.Items.Count - 1 downto 0 do FLeftButtonPopMenu.Items.Delete(i);
+    FLeftButtonPopMenu.Items.Clear;
+    FreeAndNil(FLeftButtonPopMenu);
+  end;
   if Assigned(Control) then FreeAndNil(Control);
   if Assigned(FLastPanel) then FreeAndNil(FLastPanel);
   if Assigned(FFirstPanel) then FreeAndNil(FFirstPanel);
@@ -354,6 +377,17 @@ begin
   begin
     Control.Width  := CenterPanel.Width;
   end;
+end;
+
+procedure TControlItem.OnLeftButtonClick(Sender: TObject);
+begin
+  FLeftButtonPopMenu.PopupComponent := TComponent(Sender);
+  FLeftButtonPopMenu.Popup(CenterPanel.ClientOrigin.x, CenterPanel.ClientOrigin.Y);
+end;
+
+procedure TControlItem.OnLeftPopMenuClick(Sender: TObject);
+begin
+  LeftButtonImageIndex := TMenuItem(Sender).Tag;
 end;
 
 procedure TControlItem.AfterCreateControl;
@@ -524,6 +558,29 @@ begin
   LastPanel.Width   := Max(GetStringWidth(Value,LastPanel.Font), Control_Border_Width);
 end;
 
+procedure TControlItem.SetLeftButtonFilterVers(const Value: TEditButtonFilterVers);
+begin
+  FLeftButtonFilterVers := Value;
+  FLeftButtonPopMenu := TPopupMenu.Create(CenterPanel);
+  FLeftButtonPopMenu.AutoHotkeys := maManual;
+  FLeftButtonPopMenu.Images := (OWnerObject.OWnerObject as TBaseForm).ImageList;
+  for var i in LeftButtonFilterVers do
+  begin
+    var vitem := TMenuItem.Create(FLeftButtonPopMenu);
+    vitem.Caption := EditButtonFilterCaption[i];
+    vitem.Tag := ord(i);
+    vitem.ImageIndex := EditButtonFilterImageIndex[i];
+    vitem.OnClick := OnLeftPopMenuClick;
+    vitem.AutoHotkeys := maParent;
+    FLeftButtonPopMenu.Items.Add(vitem);
+  end;
+end;
+
+procedure TControlItem.SetLeftButtonImageIndex(const Value: Integer);
+begin
+  FLeftButtonImageIndex := Value;
+end;
+
 procedure TControlItem.SetReadOnly(const Value: Boolean);
 var
   Context: TRttiContext;
@@ -634,26 +691,37 @@ begin
   TDateTimePicker(Control).DateTime := Value;
 end;
 
-{ TControlItem_Edit }
-
 function TControlItem_Edit.GetValue: Variant;
 begin
-  Result := TLabeledEdit(Control).Text;
+  Result := TButtonedEdit(Control).Text;
 end;
 
 function TControlItem_Edit.CreateControl: TWinControl;
 begin
   inherited;
-  Result := TLabeledEdit.Create(CenterPanel);
-  TLabeledEdit(Result).EditLabel.Caption := '';
-  TLabeledEdit(Result).LabelPosition     := lpLeft;
-  TLabeledEdit(Result).TextHint          := TextHint;
+  Result := TButtonedEdit.Create(CenterPanel);
+  //TButtonedEdit(Result).EditLabel.Caption := '';
+  //TButtonedEdit(Result).LabelPosition     := lpLeft;
+  TButtonedEdit(Result).TextHint          := TextHint;
+  TButtonedEdit(Result).Images := (OWnerObject.OWnerObject as TBaseForm).ImageList;
+  TButtonedEdit(Result).OnLeftButtonClick := OnLeftButtonClick;
+  LeftButtonFilterVers := [efEquals,efNotEquals,efLike,efNotLike,efBeginsWith,efEndsWith];
+end;
+
+procedure TControlItem_Edit.SetLeftButtonImageIndex(const Value: Integer);
+begin
+  inherited;
+  if not Assigned(Control) then Exit;
+  if not (Control is TButtonedEdit) then Exit;
+  var _index := EditButtonFilterImageIndex[TEditButtonFilterVer(Value)];
+  TButtonedEdit(Control).LeftButton.ImageIndex := _index;
+  TButtonedEdit(Control).LeftButton.Visible    := _index>0;
 end;
 
 procedure TControlItem_Edit.SetValue(const Value: Variant);
 begin
   inherited;
-  TLabeledEdit(Control).Text := Value;
+  TButtonedEdit(Control).Text := Value;
 end;
 
 procedure TControlItem_Edit.SetWidth(const Value: Integer);
@@ -1005,6 +1073,7 @@ begin
     //item.GroupParent.Parent  := Parent;
     if Assigned(item.Control) then item.Control.Parent := item.CenterPanel;
   end;
+  CreateControlAfter(item);
   var _Pair:TPair<string,TControlItem>;
   _Pair.Key   := item.Name;
   _Pair.Value := item;
@@ -1122,7 +1191,11 @@ begin
       if Assigned(RttiProperty) and RttiProperty.IsWritable then
       begin
         case RttiProperty.PropertyType.TypeKind of
-          TTypeKind.tkInteger : RttiProperty.SetValue(AObject, TValue.From<Integer>(StrToIntDef(AValues.AsString,0)));
+          TTypeKind.tkInteger : begin
+              if AValues.IsType<Integer> then
+                RttiProperty.SetValue(AObject,AValues)
+              else RttiProperty.SetValue(AObject, TValue.From<Integer>(StrToIntDef(AValues.AsString,0)));
+            end
           else RttiProperty.SetValue(AObject, AValues);
         end;
       end;
@@ -1182,6 +1255,11 @@ end;
 function TControlManagerLayout.CreateControl(ADataType: TConditionContorlType): TControlItem;
 begin
   Result := EnumerateControl[Ord(ADataType)].Create;
+end;
+
+procedure TControlManagerLayout.CreateControlAfter(AControl: TControlItem);
+begin
+
 end;
 
 function TControlManagerLayout.CreateControl(ADataType:Integer): TControlItem;
@@ -1417,21 +1495,25 @@ end;
 function TControlItem_Edit_Integer.CreateControl: TWinControl;
 begin
   inherited;
-  Result := TEdit.Create(CenterPanel);
+  Result := TButtonedEdit.Create(CenterPanel);
   Result.Parent := CenterPanel;
-  TEdit(Result).TextHint := TextHint;
-  TEdit(Result).NumbersOnly := True;
+  TButtonedEdit(Result).TextHint := TextHint;
+  TButtonedEdit(Result).NumbersOnly := True;
+
+  TButtonedEdit(Result).Images := (OWnerObject.OWnerObject as TBaseForm).ImageList;
+  TButtonedEdit(Result).OnLeftButtonClick := OnLeftButtonClick;
+  LeftButtonFilterVers := [efEquals,efNotEquals,efLessThan,efLessthanorEquals,efGreaterthan,efGreaterthanorEquals];
 end;
 
 function TControlItem_Edit_Integer.GetValue: Variant;
 begin
-  Result := StrToIntDef(TEdit(Control).Text,0);
+  Result := StrToIntDef(TButtonedEdit(Control).Text,0);
 end;
 
 procedure TControlItem_Edit_Integer.SetValue(const Value: Variant);
 begin
   inherited;
-  TEdit(Control).Text := Value;
+  TButtonedEdit(Control).Text := Value;
 end;
 
 { TControlItem_Edit_Double }

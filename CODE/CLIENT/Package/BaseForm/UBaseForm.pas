@@ -75,6 +75,7 @@ type
     // 刷新事件
     procedure DoRefreshDataByMessage(Sender: TObject); virtual;
     procedure DoExportGridToExcel(Sender: TObject); virtual;
+    procedure DoGridPopMenu_CopySelectedCellToClipboard(Sender: TObject); virtual;
     procedure RefreshData; virtual;
     // 表格
     procedure DoGridViewLayout(Sender: TObject); virtual;
@@ -94,6 +95,8 @@ type
     procedure IniComponent(AComponent: TRadioGroup); overload;
     /// 初始化cxGrid
     procedure IniComponent(AGrid: TcxGrid); overload;
+    /// 初始化cxGridView
+    procedure IniComponent(ALevel: TcxGridLevel); overload;
     // 当天按钮的打印次数
     property PrintTimes: Integer read FPrintTimes;
     property PrintItems: TPrintItems read FPrintItems;
@@ -111,7 +114,10 @@ type
     property LayoutJson : TJSONObject read GetLayoutJson;
     ///创建控件方法列表
     function CreatecxGrid(const AName:string; AParent:TWinControl=nil):TcxGrid;
-    function CreatecxGridView(AGrid:TcxGrid):TcxCustomGridView;
+    function CreatecxGridView(AGrid:TcxGrid):TcxCustomGridView;overload;
+    function CreatecxGridView(AGrid:TcxGrid;AParentLevel:TcxGridLevel;AGridName:string=''):TcxGridLevel;overload;
+    //传入要创建的View类型
+    function CreatecxGridView(AGrid:TcxGrid;AParentLevel:TcxGridLevel;AViewClass:TcxCustomGridViewClass;AGridName:string=''):TcxGridLevel;overload;
     function CreatecxGridColumn(AView:TcxCustomGridView):Integer;
     class function GetPrintData(AGridView:TcxCustomGridView):OleVariant;
   end;
@@ -125,7 +131,8 @@ const
 implementation
 
 uses
-  UComvar, System.TypInfo, UBaseGridLayout, MidasLib, System.Math, System.IOUtils, cxGridExportLink;
+  UComvar, System.TypInfo, UBaseGridLayout, MidasLib, System.Math,
+  System.IOUtils, cxGridExportLink, Vcl.Clipbrd;
 
 {$R *.dfm}
 
@@ -179,24 +186,16 @@ begin
   end;
 end;
 
+function TBaseForm.CreatecxGridView(AGrid:TcxGrid;AParentLevel: TcxGridLevel;AGridName:string): TcxGridLevel;
+begin
+  Result := CreatecxGridView(AGrid,AParentLevel,TcxGridDBTableView,AGridName);
+end;
+
 function TBaseForm.CreatecxGridView(AGrid:TcxGrid): TcxCustomGridView;
 begin
-  var Level := AGrid.Levels.Add;
-  Result := TcxGridDBTableView.Create(Level);
-  Level.GridView := Result;
-  Result.Name := 'MainGridView' + AGrid.Levels.Count.ToString;
-  {自动给数据表格创建一个数据集}
-  TcxGridDBTableView(Result).DataController.DataSource := TDataSource.Create(Self);
-  TcxGridDBTableView(Result).DataController.DataSource.DataSet := TClientDataSet.Create(Self);
+  Result := CreatecxGridView(AGrid,AGrid.Levels).GridView;
   //TcxGridDBTableView(Result).DataController.DataModeController.GridMode := True;  //大数据加载速度提升，但是丢失表格的合计
   //TcxGridDBTableView(Result).OnDblClick := OnGridViewDblClick;
-  //创建自定义字段
-//  Result.BeginUpdate();
-//  try
-//    CustomGrid(Result);
-//  finally
-//    Result.EndUpdate;
-//  end;
 end;
 
 procedure TBaseForm.DealRefreshRefreshDataMessage(var Msg: TMessage);
@@ -240,6 +239,7 @@ begin
 end;
 
 procedure TBaseForm.DoAddGridPopupmenus(APopupmenu: TcxPopupMenuInfo);
+var AItem:TMenuItem;
 begin
   if not Assigned(APopupmenu.PopupMenu) then APopupmenu.PopupMenu := TPopupMenu.Create(Self);
 {$IFDEF DEBUG}
@@ -251,13 +251,16 @@ begin
     TPopupMenu(APopupmenu.PopupMenu).Items.Add(_SetItem);
   end;
 {$ENDIF}
+  ///刷新数据
   var _MenuItem := TMenuItem.Create(APopupmenu.PopupMenu);
   _MenuItem.Caption := '刷新数据';
   _MenuItem.OnClick := DoRefreshDataByMessage;
   TPopupMenu(APopupmenu.PopupMenu).Items.Add(_MenuItem);
-  var _MenuItem_ := TMenuItem.Create(APopupmenu.PopupMenu);
-  _MenuItem_.Caption := '-';
-  TPopupMenu(APopupmenu.PopupMenu).Items.Add(_MenuItem_);
+  ///-----------
+  AItem := TMenuItem.Create(APopupmenu.PopupMenu);
+  AItem.Caption := '-';
+  TPopupMenu(APopupmenu.PopupMenu).Items.Add(AItem);
+  {$REGION '导出EXCEL'}
   if dgExportToExcel in GridOptions then
   begin
     var _MenuItem_ExportExcel := TMenuItem.Create(APopupmenu.PopupMenu);
@@ -265,6 +268,17 @@ begin
     _MenuItem_ExportExcel.OnClick := DoExportGridToExcel;
     TPopupMenu(APopupmenu.PopupMenu).Items.Add(_MenuItem_ExportExcel);
   end;
+  {$ENDREGION}
+  ///-----------
+  AItem := TMenuItem.Create(APopupmenu.PopupMenu);
+  AItem.Caption := '-';
+  TPopupMenu(APopupmenu.PopupMenu).Items.Add(AItem);
+  {$REGION '复制单元格'}
+  AItem := TMenuItem.Create(APopupmenu.PopupMenu);
+  AItem.Caption := '复制单元格';
+  AItem.OnClick := DoGridPopMenu_CopySelectedCellToClipboard;
+  TPopupMenu(APopupmenu.PopupMenu).Items.Add(AItem);
+  {$ENDREGION}
 end;
 
 procedure TBaseForm.DoClose(var Action: TCloseAction);
@@ -378,10 +392,34 @@ begin
     if SaveFileDialog.Execute then
     begin
       if pos('.XLS', UpperCase(SaveFileDialog.FileName)) <= 0 then SaveFileDialog.FileName := SaveFileDialog.FileName + '.XLS';
-      //ExportGridToExcel(SaveFileDialog.FileName, cxGrid);
+      ExportGridToExcel(SaveFileDialog.FileName, FGridPopupMenu.Grid);
+//      ExportGridDataToExcel(SaveFileDialog.FileName, FGridPopupMenu.Grid); //只导数据，无表格效果
     end;
   finally
     SaveFileDialog.Free;
+  end;
+end;
+
+procedure TBaseForm.DoGridPopMenu_CopySelectedCellToClipboard(Sender: TObject);
+begin
+  var AView := FGridPopupMenu.Grid.FocusedView;
+  if AView is TcxGridTableView then
+  begin
+    with TcxGridTableView(AView) do
+    begin
+      if Controller.FocusedRecordIndex <> -1 then
+      begin
+        var _row := Controller.SelectedRows[0].RecordIndex;
+        var _col := Controller.FocusedColumn.Index;
+        //Controller.FocusedColumn.OnGetDisplayText
+        var AColnum := Controller.FocusedColumn;
+        var AValue  := DataController.GetDisplayText(_row,AColnum.Index);// .Values[i,AColnum.Index];
+        if Assigned(AColnum.OnGetDisplayText) then AColnum.OnGetDisplayText(AColnum,ViewData.Records[_row],AValue);
+        Clipboard.AsText := AValue;
+        //var ACellContent := DataController.Values[_row, _col];
+        //Clipboard.AsText := VarToStr(ACellContent);
+      end;
+    end;
   end;
 end;
 
@@ -451,23 +489,20 @@ begin
 end;
 
 procedure TBaseForm.StoreToIniFile;
+  procedure LevelToIniFile(ALevel: TcxGridLevel);
+  begin
+    for var i := 0 to ALevel.Count-1 do
+    begin
+      var AView := ALevel[i].GridView;
+      if Assigned(AView) then AView.StoreToIniFile(Goo.SystemDataPath + Format('\Layout\%s_%s.ini', [LayoutFileName,AView.Name]), True, [gsoUseFilter, gsoUseSummary]);
+      if ALevel[i].Count>0 then LevelToIniFile(ALevel[i]);
+    end;
+  end;
 begin
   if not TDirectory.Exists(Goo.SystemDataPath+'\Layout') then TDirectory.CreateDirectory(Goo.SystemDataPath+'\Layout');
   for var i := 0 to Self.ComponentCount - 1 do
   begin
-    if Self.Components[i] is TWinControl then
-    begin
-      if Self.Components[i] is TcxGrid then
-      begin
-        for var j := 0 to TcxGrid(Self.Components[i]).Levels.Count - 1 do
-        begin
-          var GridView := TcxGrid(Self.Components[i]).Levels[j].GridView;
-          if not Assigned(GridView) then Continue;
-          // 保存表格配置
-          GridView.StoreToIniFile(Goo.SystemDataPath + Format('\Layout\%s_%s.ini', [LayoutFileName,GridView.Name]), True, [gsoUseFilter, gsoUseSummary])
-        end;
-      end;
-    end;
+    if Self.Components[i] is TcxGrid then LevelToIniFile(TcxGrid(Self.Components[i]).Levels);
   end;
 end;
 
@@ -551,6 +586,72 @@ begin
   end;
 end;
 
+procedure TBaseForm.IniComponent(ALevel: TcxGridLevel);
+begin
+  for var i := 0 to ALevel.Count - 1 do
+  begin
+    var GridView := ALevel[i].GridView;
+    //TcxGridTableView(GridView).OptionsView.GridLines := glNone;
+    //.GridLineStyle := xlGridLinesNone;
+    if GridView is TcxGridTableView then // TcxGridTableView
+    begin
+      // 右键菜单
+      var
+      _Popupmenu := TcxPopupMenuInfo(FGridPopupMenu.PopupMenus.Add);
+      _Popupmenu.GridView := GridView;
+      _Popupmenu.HitTypes := [gvhtCell,gvhtNone];
+      DoAddGridPopupmenus(_Popupmenu);
+      // 样式
+      TcxGridTableView(GridView).Styles.Header := cxStyle_GridView_Header;
+      // 表头样式
+      TcxGridTableView(GridView).Styles.Content := cxStyle_GridView_Content;
+      // 表格默认
+      TcxGridTableView(GridView).Styles.ContentEven := cxStyle_GridView_ContentEven; // 奇数行
+      TcxGridTableView(GridView).Styles.ContentOdd :=  cxStyle_GridView_ContentOdd; // 偶数行
+      TcxGridTableView(GridView).Styles.Selection := cxStyle_GridView_Selection;
+      // 选中行样式
+      TcxGridTableView(GridView).Styles.Footer := cxStyle_GridView_Footer;
+      // 表尾样式
+      // 读写
+      TcxGridTableView(GridView).NewItemRow.Visible    := dgAppending in GridOptions;
+      TcxGridTableView(GridView).OptionsBehavior.CopyCaptionsToClipboard := False;  //Ctrl+C 复制表头
+      TcxGridTableView(GridView).OptionsBehavior.FocusCellOnCycle := dgAppending in GridOptions;
+      TcxGridTableView(GridView).OptionsBehavior.FocusFirstCellOnNewRecord := dgAppending in GridOptions;
+      TcxGridTableView(GridView).OptionsBehavior.GoToNextCellOnEnter := dgAppending in GridOptions;
+      //TcxGridTableView(GridView).NewItemRow.
+      TcxGridTableView(GridView).OptionsData.Deleting  := dgEditing in GridOptions;
+      TcxGridTableView(GridView).OptionsData.Inserting := dgEditing in GridOptions;
+      TcxGridTableView(GridView).OptionsData.Editing   := dgEditing in GridOptions;
+      TcxGridTableView(GridView).OptionsView.DataRowHeight := Goo.Theme.Grid.GridItemHeight; // 网格高度
+      TcxGridTableView(GridView).OptionsSelection.MultiSelect := dgMultiSelect in GridOptions;
+      // 表头
+      TcxGridTableView(GridView).OptionsView.HeaderHeight := Goo.Theme.Grid.GridHeadHeight; // 行高
+      TcxGridTableView(GridView).OptionsView.Indicator := dgIndicator in GridOptions; // 显示行号
+      TcxGridTableView(GridView).OptionsView.IndicatorWidth := 60; // 行号宽度
+      TcxGridTableView(GridView).Styles.Header.Color := Goo.Theme.Grid.GridHeadBackColor;
+      // 颜色
+      TcxGridTableView(GridView).Styles.ContentEven.Color := Goo.Theme.Grid.GridOneItemColor; // 奇数行颜色
+      TcxGridTableView(GridView).Styles.ContentOdd.Color  := Goo.Theme.Grid.GridTwoItemColor; // 偶数行颜色
+      // SelectRow
+      TcxGridTableView(GridView).Styles.Selection.Color := Goo.Theme.Grid.GridSelectItemColor; // 选中行颜色
+      TcxGridTableView(GridView).Styles.Selection.TextColor := cxStyle_GridView_Selection.TextColor; // 选中行字体颜色
+      TcxGridTableView(GridView).OnCustomDrawIndicatorCell  := DoCustomDrawIndicatorCell;
+      TcxGridTableView(GridView).OnCustomDrawCell := DoCustomDrawCell;
+      for var j := 0 to TcxGridTableView(GridView).ColumnCount - 1 do
+      begin
+        TcxGridTableView(GridView).Columns[j].Styles.Header := cxStyle_GridView_Header;
+        TcxGridTableView(GridView).Columns[j].Styles.Header.Color   := Goo.Theme.Grid.GridHeadBackColor;
+        TcxGridTableView(GridView).Columns[j].OnGetStoredProperties := DoCustomColumnGetStoredProperties;
+      end;
+      // 读取配置信息
+      var layoutpath := Goo.SystemDataPath + Format('\Layout\%s_%s.ini', [LayoutFileName,GridView.Name]);
+      if LayoutCustom and FileExists(layoutpath) then GridView.RestoreFromIniFile(layoutpath, True, False,[gsoUseFilter, gsoUseSummary]);
+    end;
+    //递归子表格
+    if ALevel[i].Count>0 then IniComponent(ALevel[i]);
+  end;
+end;
+
 procedure TBaseForm.IniComponent(AForm: TForm);
 var
   APropInfo: PPropInfo;
@@ -611,74 +712,30 @@ end;
 
 procedure TBaseForm.IniComponent(AGrid: TcxGrid);
 begin
-  if AGrid.Levels.Count > 1 then
-    AGrid.RootLevelOptions.DetailTabsPosition := dtpTop;
+  if AGrid.Levels.Count > 1 then AGrid.RootLevelOptions.DetailTabsPosition := dtpTop;
   if not Assigned(FGridPopupMenu) then FGridPopupMenu := TcxGridPopupMenu.Create(Self);
   FGridPopupMenu.Grid := AGrid;
-  for var i := 0 to AGrid.Levels.Count - 1 do
-  begin
-    var
-    GridView := AGrid.Levels[i].GridView;
-    if GridView is TcxGridTableView then // TcxGridTableView
-    begin
-      // 右键菜单
-      var
-      _Popupmenu := TcxPopupMenuInfo(FGridPopupMenu.PopupMenus.Add);
-      _Popupmenu.GridView := GridView;
-      _Popupmenu.HitTypes := [gvhtCell,gvhtNone];
-      DoAddGridPopupmenus(_Popupmenu);
-      // 样式
-      TcxGridTableView(GridView).Styles.Header := cxStyle_GridView_Header;
-      // 表头样式
-      TcxGridTableView(GridView).Styles.Content := cxStyle_GridView_Content;
-      // 表格默认
-      TcxGridTableView(GridView).Styles.ContentEven := cxStyle_GridView_ContentEven; // 奇数行
-      TcxGridTableView(GridView).Styles.ContentOdd :=  cxStyle_GridView_ContentOdd; // 偶数行
-      TcxGridTableView(GridView).Styles.Selection := cxStyle_GridView_Selection;
-      // 选中行样式
-      TcxGridTableView(GridView).Styles.Footer := cxStyle_GridView_Footer;
-      // 表尾样式
-      // 读写
-      TcxGridTableView(GridView).NewItemRow.Visible    := dgAppending in GridOptions;
-      TcxGridTableView(GridView).OptionsBehavior.CopyCaptionsToClipboard := False;  //Ctrl+C 复制表头
-      TcxGridTableView(GridView).OptionsBehavior.FocusCellOnCycle := dgAppending in GridOptions;
-      TcxGridTableView(GridView).OptionsBehavior.FocusFirstCellOnNewRecord := dgAppending in GridOptions;
-      TcxGridTableView(GridView).OptionsBehavior.GoToNextCellOnEnter := dgAppending in GridOptions;
-      //TcxGridTableView(GridView).NewItemRow.
-      TcxGridTableView(GridView).OptionsData.Deleting  := dgEditing in GridOptions;
-      TcxGridTableView(GridView).OptionsData.Inserting := dgEditing in GridOptions;
-      TcxGridTableView(GridView).OptionsData.Editing   := dgEditing in GridOptions;
-      TcxGridTableView(GridView).OptionsView.DataRowHeight := Goo.Theme.Grid.GridItemHeight; // 网格高度
-      TcxGridTableView(GridView).OptionsSelection.MultiSelect := dgMultiSelect in GridOptions;
-      // 表头
-      TcxGridTableView(GridView).OptionsView.HeaderHeight := Goo.Theme.Grid.GridHeadHeight; // 行高
-      TcxGridTableView(GridView).OptionsView.Indicator := dgIndicator in GridOptions; // 显示行号
-      TcxGridTableView(GridView).OptionsView.IndicatorWidth := 60; // 行号宽度
-      TcxGridTableView(GridView).Styles.Header.Color := Goo.Theme.Grid.GridHeadBackColor;
-      // 颜色
-      TcxGridTableView(GridView).Styles.ContentEven.Color := Goo.Theme.Grid.GridOneItemColor; // 奇数行颜色
-      TcxGridTableView(GridView).Styles.ContentOdd.Color  := Goo.Theme.Grid.GridTwoItemColor; // 偶数行颜色
-      // SelectRow
-      TcxGridTableView(GridView).Styles.Selection.Color := Goo.Theme.Grid.GridSelectItemColor; // 选中行颜色
-      TcxGridTableView(GridView).Styles.Selection.TextColor := cxStyle_GridView_Selection.TextColor; // 选中行字体颜色
-      TcxGridTableView(GridView).OnCustomDrawIndicatorCell  := DoCustomDrawIndicatorCell;
-      TcxGridTableView(GridView).OnCustomDrawCell := DoCustomDrawCell;
-      for var j := 0 to TcxGridTableView(GridView).ColumnCount - 1 do
-      begin
-        TcxGridTableView(GridView).Columns[j].Styles.Header := cxStyle_GridView_Header;
-        TcxGridTableView(GridView).Columns[j].Styles.Header.Color   := Goo.Theme.Grid.GridHeadBackColor;
-        TcxGridTableView(GridView).Columns[j].OnGetStoredProperties := DoCustomColumnGetStoredProperties;
-      end;
-      // 读取配置信息
-      var layoutpath := Goo.SystemDataPath + Format('\Layout\%s_%s.ini', [LayoutFileName,GridView.Name]);
-      if LayoutCustom and FileExists(layoutpath) then GridView.RestoreFromIniFile(layoutpath, True, False,[gsoUseFilter, gsoUseSummary]);
-    end;
-  end;
+  //AGrid.BorderStyle := cxcbsNone; //去掉表格外边框
+  IniComponent(AGrid.Levels);
 end;
 
 procedure TBaseForm.IniComponent(AComponent: TRadioGroup);
 begin
   AComponent.Color := Default_Color;
+end;
+
+function TBaseForm.CreatecxGridView(AGrid: TcxGrid; AParentLevel: TcxGridLevel;AViewClass: TcxCustomGridViewClass; AGridName: string): TcxGridLevel;
+begin
+  Result := AParentLevel.Add;
+  Result.GridView  := AViewClass.Create(AGrid);
+  if AGridName = '' then AGridName := 'MainGridView' + (Result.Level*100 + AParentLevel.Count).ToString;
+  Result.GridView.Name := AGridName;
+  {自动给数据表格创建一个数据集}
+  if Result.GridView is TcxGridDBTableView then
+  begin
+    TcxGridDBTableView(Result.GridView).DataController.DataSource := TDataSource.Create(Self);
+    TcxGridDBTableView(Result.GridView).DataController.DataSource.DataSet := TClientDataSet.Create(Self);
+  end;
 end;
 
 end.
