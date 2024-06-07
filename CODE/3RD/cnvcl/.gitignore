@@ -1,0 +1,15 @@
+__history
+*.dcu
+*.dsk
+*.drc
+*.local
+*.old
+*.identcache
+*.map
+*.dll
+*.exe
+*.ppu
+*.compiled
+*.or
+*.o
+*.~*
