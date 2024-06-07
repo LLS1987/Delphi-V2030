@@ -1,0 +1,163 @@
+object frmMain: TfrmMain
+  Left = 0
+  Top = 0
+  Caption = 'Read and write cells'
+  ClientHeight = 588
+  ClientWidth = 659
+  Position = ScreenCenter
+  FormFactor.Width = 320
+  FormFactor.Height = 480
+  FormFactor.Devices = [Desktop, iPhone, iPad]
+  OnCreate = FormCreate
+  OnDestroy = FormDestroy
+  DesignerMasterStyle = 0
+  object Button1: TButton
+    Position.X = 16.000000000000000000
+    Position.Y = 72.000000000000000000
+    Size.Width = 80.000000000000000000
+    Size.Height = 22.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 6
+    Text = 'Close'
+    OnClick = Button1Click
+  end
+  object btnSheet: TButton
+    Position.X = 16.000000000000000000
+    Position.Y = 8.000000000000000000
+    Size.Width = 80.000000000000000000
+    Size.Height = 22.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 0
+    Text = 'Read'
+    OnClick = btnSheetClick
+  end
+  object edFilenameRead: TEdit
+    Touch.InteractiveGestures = [LongTap, DoubleTap]
+    TabOrder = 1
+    Position.X = 104.000000000000000000
+    Position.Y = 8.000000000000000000
+    Size.Width = 445.000000000000000000
+    Size.Height = 22.000000000000000000
+    Size.PlatformDefault = False
+  end
+  object Button3: TButton
+    Position.X = 560.000000000000000000
+    Position.Y = 8.000000000000000000
+    Size.Width = 33.000000000000000000
+    Size.Height = 22.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 2
+    Text = '...'
+    OnClick = Button3Click
+  end
+  object dlgOpen: TOpenDialog
+    Left = 544
+    Top = 72
+  end
+  object Grid: TStringGrid
+    Anchors = [akLeft, akTop, akRight, akBottom]
+    Align = Bottom
+    CanFocus = True
+    ClipChildren = True
+    Position.Y = 104.000000000000000000
+    Size.Width = 659.000000000000000000
+    Size.Height = 484.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 8
+    RowHeight = 21.000000000000000000
+    RowCount = 256
+    OnEditingDone = GridEditingDone
+    Viewport.Width = 639.000000000000000000
+    Viewport.Height = 443.000000000000000000
+    object StringColumn1: TStringColumn
+    end
+    object StringColumn2: TStringColumn
+    end
+    object StringColumn3: TStringColumn
+    end
+    object StringColumn4: TStringColumn
+    end
+    object StringColumn5: TStringColumn
+    end
+    object StringColumn6: TStringColumn
+    end
+    object StringColumn7: TStringColumn
+    end
+    object StringColumn8: TStringColumn
+    end
+    object StringColumn9: TStringColumn
+    end
+    object StringColumn10: TStringColumn
+    end
+    object StringColumn11: TStringColumn
+    end
+    object StringColumn12: TStringColumn
+    end
+    object StringColumn13: TStringColumn
+    end
+    object StringColumn14: TStringColumn
+    end
+    object StringColumn15: TStringColumn
+    end
+    object StringColumn16: TStringColumn
+    end
+  end
+  object Label1: TLabel
+    Position.X = 120.000000000000000000
+    Position.Y = 74.000000000000000000
+    Size.Width = 165.000000000000000000
+    Size.Height = 17.000000000000000000
+    Size.PlatformDefault = False
+    Text = 'Select sheet to fill grid:'
+  end
+  object cbSheets: TComboBox
+    Position.X = 292.000000000000000000
+    Position.Y = 72.000000000000000000
+    Size.Width = 253.000000000000000000
+    Size.Height = 22.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 7
+    OnClosePopup = cbSheetsClosePopup
+  end
+  object edFilenameWrite: TEdit
+    Touch.InteractiveGestures = [LongTap, DoubleTap]
+    TabOrder = 4
+    Position.X = 104.000000000000000000
+    Position.Y = 40.000000000000000000
+    Size.Width = 445.000000000000000000
+    Size.Height = 22.000000000000000000
+    Size.PlatformDefault = False
+  end
+  object btnWrite: TButton
+    Position.X = 16.000000000000000000
+    Position.Y = 40.000000000000000000
+    Size.Width = 80.000000000000000000
+    Size.Height = 22.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 3
+    Text = 'Write'
+    OnClick = btnWriteClick
+  end
+  object Button2: TButton
+    Position.X = 560.000000000000000000
+    Position.Y = 40.000000000000000000
+    Size.Width = 33.000000000000000000
+    Size.Height = 22.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 5
+    Text = '...'
+    OnClick = Button2Click
+  end
+  object dlgSave: TSaveDialog
+    Left = 592
+    Top = 72
+  end
+  object XLS: TXLSReadWriteII5
+    ComponentVersion = '6.00.57'
+    Version = xvExcel2007
+    DirectRead = False
+    DirectWrite = False
+    Left = 492
+    Top = 72
+  end
+end
