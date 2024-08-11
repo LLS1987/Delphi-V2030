@@ -55,6 +55,9 @@ begin
       swhere := swhere +Format(' and %s %s %s',[_con.Value.Name,_link,_value]);
     end;
     Goo.DB.OpenSQL(_ProceName+swhere,ActiveDataSet);
+  end else if _Dic.TryGetValue(C_QueryMode_OPENJSON,_ProceName) and not _ProceName.IsEmpty then
+  begin
+    //表格展示JSON数据
   end;
   //查询主从表
   if MainGrid.Levels[0].IsMaster and (MainGrid.Levels[0].Count>0) then

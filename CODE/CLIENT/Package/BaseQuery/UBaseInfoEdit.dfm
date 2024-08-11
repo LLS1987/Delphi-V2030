@@ -9,33 +9,31 @@ inherited BaseInfoEdit: TBaseInfoEdit
   TextHeight = 15
   inherited Panel_Top: TPanel
     Width = 684
-    Height = 15
     ExplicitWidth = 684
-    ExplicitHeight = 15
   end
   inherited Panel_Client: TPanel
-    Top = 15
     Width = 684
-    Height = 385
     ExplicitTop = 15
     ExplicitWidth = 684
     ExplicitHeight = 385
     object ScrollBox_Client: TScrollBox
       Left = 0
-      Top = 16
+      Top = 25
       Width = 684
-      Height = 369
+      Height = 334
       Align = alClient
       BorderStyle = bsNone
       Color = clWindow
       ParentColor = False
       TabOrder = 0
+      ExplicitTop = 16
+      ExplicitHeight = 369
     end
     object Panel_Location: TPanel
       Left = 0
       Top = 0
       Width = 684
-      Height = 16
+      Height = 25
       Align = alTop
       BevelOuter = bvNone
       Color = clGradientActiveCaption

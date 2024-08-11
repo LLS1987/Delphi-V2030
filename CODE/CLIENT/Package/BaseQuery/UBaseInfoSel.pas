@@ -235,21 +235,25 @@ end;
 
 procedure TBaseInfoSel.OnFocusedRecordChanged(Sender: TcxCustomGridTableView;APrevFocusedRecord, AFocusedRecord: TcxCustomGridRecord;ANewItemRecordFocusingChanged: Boolean);
 begin
+  if (FChildButtonRec>0) then ButtonList.ConditionIndex[FChildButtonRec].Control.Visible := False;
+  if (FParentButtonRec>0) then ButtonList.ConditionIndex[FParentButtonRec].Control.Visible := False;
   if Assigned(ItemColumn['Sonnum']) then
   begin
+    ButtonList.ConditionIndex[FChildButtonRec].Control.Visible := True;
     var _sonnum := RowData['Sonnum',ActiveRowIndex];
     if not VarIsNull(_sonnum) then
     begin
       ButtonList.ConditionIndex[FChildButtonRec].Control.Enabled  := _sonnum>0;
-    end else ButtonList.ConditionIndex[FChildButtonRec].Control.Visible := False;
+    end;
   end;
   if Assigned(ItemColumn['ParID']) then
   begin
+    ButtonList.ConditionIndex[FParentButtonRec].Control.Visible := True;
     var _parid := RowData['ParID',ActiveRowIndex];
     if not VarIsNull(_parid) then
     begin
       ButtonList.ConditionIndex[FParentButtonRec].Control.Enabled := _parid<>'00000';
-    end else ButtonList.ConditionIndex[FParentButtonRec].Control.Visible := False;
+    end;
   end;
 end;
 

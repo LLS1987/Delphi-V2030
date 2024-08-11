@@ -55,6 +55,7 @@ type
     procedure LoadData;virtual;       //本函数用于装载数据
     procedure OnIniButton(Sender: TObject); virtual;
     procedure OnGridViewDblClick(Sender:Tobject);virtual;
+    procedure OnGridViewSelectionChanged(Sender: TcxCustomGridTableView);virtual;
     procedure OnColumnGetDataText(Sender: TcxCustomGridTableItem; ARecordIndex: Integer; var AText: string);virtual;
     procedure OnColnumGetDisplayText(Sender: TcxCustomGridTableItem; ARecord: TcxCustomGridRecord; var AText: string);virtual;
     procedure OnColnumGetFilterDisplayText(Sender: TcxCustomGridTableItem; const AValue: Variant; var ADisplayText: string);virtual;
@@ -104,6 +105,7 @@ type
 
 const C_QueryMode_OPENSQL  = 0;    //查询SQL
 const C_QueryMode_OPENPROC = 1;    //查询过程
+const C_QueryMode_OPENJSON = 2;    //查询JSON
 
 implementation
 
@@ -161,11 +163,19 @@ begin
     for var item in AJson as TJSONArray do
     begin
       //ALevel := AddGridView(ALevel,item.GetValue<string>('Name',''));
-      Result:= CreatecxGridView(MainGrid,ALevel,item.GetValue<string>('Name',''));
+      Result := CreatecxGridView(MainGrid,ALevel,item.GetValue<string>('Name',''));
+      Result.Caption := item.GetValue<string>('Caption','');
       TcxGridDBTableView(Result.GridView).OnDblClick := OnGridViewDblClick;
       TcxGridDBTableView(Result.GridView).FindPanel.DisplayMode := fpdmManual;//fpdmAlways;//fpdmManual;   //Ctrl+F  显示查询面板
       TcxGridDBTableView(Result.GridView).FindPanel.InfoText    := '输入文本进行搜索';
       TcxGridDBTableView(Result.GridView).FindPanel.Location    := fplGroupByBox;
+      //表格是否多选
+      if item.GetValue<Boolean>('MultSel',False) then
+      begin
+        TcxGridDBTableView(Result.GridView).OptionsSelection.MultiSelect := True;
+        TcxGridDBTableView(Result.GridView).OptionsSelection.CellMultiSelect := True;
+        TcxGridDBTableView(Result.GridView).OptionsSelection.CheckBoxVisibility := [cbvDataRow, cbvGroupRow, cbvColumnHeader];
+      end;
       //过滤筛选
       //TcxGridDBTableView(Result).OptionsCustomize.ColumnFiltering := True;
       //创建自定义字段
@@ -183,7 +193,7 @@ begin
       //递归子表
       if TJSONObject(item).Exists('GridList') and Assigned(item.GetValue<TJSONArray>('GridList')) then AddGridView(item.GetValue<TJSONArray>('GridList'),Result);
     end;
-  end else AddGridView(ALevel);
+  end else AddGridView(ALevel).Caption := AJson.GetValue<string>('Caption','');
 end;
 
 procedure TCustomBaseQuery.CustomGrid(AView: TcxCustomGridView; AJson: TJSONObject);
@@ -198,6 +208,7 @@ begin
   var _Dic := TDictionary<Integer,string>.Create;
   _Dic.AddOrSetValue(C_QueryMode_OPENSQL,_SQLText);
   _Dic.AddOrSetValue(C_QueryMode_OPENPROC,_ProceName);
+  _Dic.AddOrSetValue(C_QueryMode_OPENJSON,AJson.S['JSON']);
   QueryDictionary.AddOrSetValue(AView.Name,_Dic);
   if (AView is TcxGridDBTableView) then
   begin
@@ -327,7 +338,7 @@ end;
 
 function TCustomBaseQuery.GetMainView: TcxGridDBTableView;
 begin
-  var view := ItemView[0];
+  var view := MainGrid.ActiveView;
   if view is TcxGridDBTableView then
     Result := view as TcxGridDBTableView;
 end;
@@ -381,9 +392,12 @@ function TCustomBaseQuery.GetRowData<T>(AFieldName: string; ARow: Integer): T;
 begin
   Result := Default(T);
   if ARow<0 then ARow := ActiveRowIndex;
-  var AValue := MainView.DataController.GetItemByFieldName(AFieldName).EditValue;
+  var AValue := RowData[AFieldName,ARow];
+  //if not Assigned(ItemColumn[AFieldName]) then Exit;
+  //var AValue := MainView.DataController.GetItemByFieldName(AFieldName).EditValue;
   if VarIsNull(AValue) then Exit;  
-  Result := TValue.FromVariant(AValue).AsType<T>;
+  //Result := TValue.FromVariant(AValue).AsType<T>;
+  Result := TValue.From<Variant>(AValue).AsType<T>;
 end;
 
 procedure TCustomBaseQuery.iniForm;
@@ -559,6 +573,11 @@ begin
   else if (GridDblClickID>0) and Assigned(ButtonList.Button[GridDblClickID]) then ButtonList.Button[GridDblClickID].OnClick(Sender);
 end;
 
+procedure TCustomBaseQuery.OnGridViewSelectionChanged(Sender: TcxCustomGridTableView);
+begin
+
+end;
+
 procedure TCustomBaseQuery.OnIniButton(Sender: TObject);
 begin
   FCloseButtonRec := ButtonList.Add(Action_Close,True);//关闭
@@ -605,6 +624,7 @@ begin
     TcxGridDBTableView(ActiveGridView).OptionsSelection.MultiSelect := True;
     TcxGridDBTableView(ActiveGridView).OptionsSelection.CellMultiSelect := True;
     TcxGridDBTableView(ActiveGridView).OptionsSelection.CheckBoxVisibility := [cbvDataRow, cbvGroupRow, cbvColumnHeader];
+    MainView.OnSelectionChanged := OnGridViewSelectionChanged;
   end else begin
     TcxGridDBTableView(ActiveGridView).OptionsSelection.MultiSelect := False;
     TcxGridDBTableView(ActiveGridView).OptionsSelection.CellMultiSelect := False;

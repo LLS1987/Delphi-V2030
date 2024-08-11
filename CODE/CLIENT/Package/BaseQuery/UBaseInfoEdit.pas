@@ -20,6 +20,8 @@ type
     FConditionList: TControlManagerLayout;
     FList:TList<TPair<string,TLabel>>;
     procedure OnLocationClick(Sender: TObject);
+    function GetPanel_Location_Visible: Boolean;
+    procedure SetPanel_Location_Visible(const Value: Boolean);
   protected
     FCloseButtonRec:Integer;
     FPrintButtonRec:Integer;
@@ -38,6 +40,7 @@ type
     destructor Destroy; override;
     property Condition:TControlManagerLayout read FConditionList;
     property ButtonList:TButtonManager read FButtonList;
+    property Panel_Location_Visible:Boolean read GetPanel_Location_Visible write SetPanel_Location_Visible;
   end;
 
 implementation
@@ -93,6 +96,11 @@ begin
   end;
 end;
 
+function TBaseInfoEdit.GetPanel_Location_Visible: Boolean;
+begin
+  Result := Panel_Location.Visible;
+end;
+
 procedure TBaseInfoEdit.LocationCondition(AName: string);
 begin
   var AControl := Condition.ControlItem[AName];
@@ -120,21 +128,16 @@ procedure TBaseInfoEdit.OnIniCondition(Sender: TObject);
     end;
   end;
 begin
-  var JSON := TJSONObject.ParseJSONValue(TFile.ReadAllText(LayoutFilePath)) as TJSONObject;
-  try
-    Caption := JSON.GetValue<string>('Caption',Caption);
-  finally
-    JSON.free;
-  end;
+  if Assigned(LayoutJson) then Caption := LayoutJson.GetValue<string>('Caption',Caption);
   Condition.AddFromFile(LayoutFilePath);
+  if not Panel_Location_Visible then Exit;
   if not Assigned(FList) then FList := TList<TPair<string,TLabel>>.Create;
-  
+
   var ALeft:Integer := 10;
   for var item in Condition do
   begin
     if item.Value.GroupLabelCaption=EmptyStr then Continue;
     if ExistsGroupLabel(item.Value.GroupLabelCaption) then Continue;
-    Panel_Location.Visible := True;
     var _Pair:TPair<string,TLabel>;
     _Pair.Key   := item.Value.GroupLabelCaption;
     _Pair.Value := TLabel.Create(Panel_Location);
@@ -157,6 +160,11 @@ end;
 procedure TBaseInfoEdit.OnLocationClick(Sender: TObject);
 begin
   LocationCondition(TLabel(Sender).Hint);
+end;
+
+procedure TBaseInfoEdit.SetPanel_Location_Visible(const Value: Boolean);
+begin
+  Panel_Location.Visible := Value;
 end;
 
 initialization
