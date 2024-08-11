@@ -127,7 +127,8 @@ type
     ///主程序的线程进度条：返回已使用时间
     function StepByMainThreadBar(Delta: Integer=1;ATitle:string=''): Integer;
     ///气泡提示
-    function ShowAlert(const AText: string;ACaption:string='提示'): TdxAlertWindow;
+    function ShowAlert(const AText: string;ACaption:string='提示'): TdxAlertWindow;overload;
+    function ShowAlert(const AText:string; Args:array of const): TdxAlertWindow;overload;
     /// 通用录入窗体
     function ShowInput(var AValue:Variant; const ATitle:string;ACaption:string='提示'): Boolean; overload;
     function ShowInput<T>(const ATitle:string;ACaption:string='提示'): T; overload;
@@ -484,6 +485,11 @@ end;
 function TMessageBoxObject.Question(const AMsg, ATitle: string): Boolean;
 begin
   Result := MessageBox(AMsg,'请确认？？？',mtConfirmation,[mbOK,TMsgDlgBtn.mbCancel]) = mrOk;
+end;
+
+function TMessageBoxObject.ShowAlert(const AText: string; Args: array of const): TdxAlertWindow;
+begin
+  Result := ShowAlert(Format(AText,Args));
 end;
 
 procedure TMessageBoxObject.ShowError(const AMsg: String; const Args: array of const);

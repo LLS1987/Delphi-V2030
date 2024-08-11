@@ -5,13 +5,15 @@ unit UJsonObjectHelper;
 interface
 
 uses
-  System.JSON, System.Rtti, REST.Json;
+  System.JSON, System.Rtti, REST.Json, Datasnap.DBClient, Data.DB;
 
 type
   TJSONValueHelper = class helper for TJSONValue
   public
     function IsObject: Boolean;
     function IsArray : Boolean;
+    function CreateDataSet:TClientDataSet;
+    function ToClientDataSet(ADataSet:TClientDataSet = nil): TClientDataSet;
   end;
 
   TJSONObjectHelper = class helper for TJSONObject
@@ -51,6 +53,7 @@ type
     property T[PairName : string] : TValue     read GetT write SetT;
     property A[PairName : string] : TJSONArray  read GetValueA   write SetValueA;
     property O[PairName : string] : TJSONObject read GetValueO   write SetValueO;
+    procedure RemovePairAndNil(const PairName: string);
     function Sort:TJSONObject;
     function JsonToObject<T: class, constructor>(AOptions: TJsonOptions = [joDateIsUTC, joDateFormatISO8601, joBytesFormatArray, joIndentCaseCamel]): T; overload;
     class function ObjectToJson(AObject: TObject; AOptions: TJsonOptions = [joDateIsUTC, joDateFormatISO8601, joBytesFormatArray, joIndentCaseCamel]): TJSONObject;
@@ -67,7 +70,7 @@ implementation
 
 uses
   System.Variants, System.Generics.Collections, System.Generics.Defaults,
-  System.SysUtils;
+  System.SysUtils, MidasLib, System.Math;
 
 { TJSONObjectHelper }
 
@@ -163,6 +166,12 @@ end;
 class function TJSONObjectHelper.ObjectToJson(AObject: TObject;  AOptions: TJsonOptions): TJSONObject;
 begin
   Result := TJson.ObjectToJsonObject(AObject,AOptions);
+end;
+
+procedure TJSONObjectHelper.RemovePairAndNil(const PairName: string);
+begin
+  var _Pair := Self.RemovePair(PairName);
+  if Assigned(_Pair) then FreeAndNil(_Pair);  
 end;
 
 procedure TJSONObjectHelper.SetC(PairName: string; const Value: Currency);
@@ -319,6 +328,29 @@ end;
 
 { TJSONValueHelper }
 
+function TJSONValueHelper.CreateDataSet: TClientDataSet;
+var FieldDef: TFieldDef;
+begin
+  Result := TClientDataSet.Create(nil);
+  if IsObject then
+  begin
+    Result.FieldDefs.Clear;
+    for var _Pair in Self as TJSONObject do
+    begin
+      FieldDef := Result.FieldDefs.AddFieldDef;
+      FieldDef.Name := _Pair.JsonString.Value;
+      if _Pair.JsonValue is TJSONNumber then FieldDef.DataType := ftFloat
+      else if _Pair.JsonValue is TJSONBool then FieldDef.DataType := ftBoolean
+      else
+      begin
+        FieldDef.DataType := ftString;
+        FieldDef.Size     := Max(100,Length(_Pair.JsonValue.Value));
+      end;
+    end;
+    Result.CreateDataSet;
+  end;
+end;
+
 function TJSONValueHelper.IsArray: Boolean;
 begin
   Result := self is TJSONArray;
@@ -327,6 +359,56 @@ end;
 function TJSONValueHelper.IsObject: Boolean;
 begin
   Result := self is TJSONObject;
+end;
+
+function TJSONValueHelper.ToClientDataSet(ADataSet:TClientDataSet = nil): TClientDataSet;
+var
+  JSONObject: TJSONObject;
+  JSONArray: TJSONArray;
+  JSONValue: TJSONValue;
+  Field: TField;
+  I: Integer;
+begin
+  Result := ADataSet;
+  Result.DisableControls;
+  try
+    Result.EmptyDataSet;
+    if IsArray then    // [数据集]
+    begin
+      JSONArray := Self as TJSONArray;
+      if Assigned(JSONArray) then
+      begin
+        for JSONValue in JSONArray do
+        begin
+          Result.Append;
+          for I := 0 to Result.FieldCount - 1 do
+          begin
+            Field := Result.Fields[I];
+            Field.Value := JSONValue.GetValue<Variant>(Field.FieldName);
+          end;
+          Result.Post;
+        end;
+      end;
+    end else begin     // {单节点}
+      JSONObject := Self as TJSONObject;
+      try
+        if Assigned(JSONObject) then
+        begin
+          Result.Append;
+          for I := 0 to Result.FieldCount - 1 do
+          begin
+            Field := Result.Fields[I];
+            Field.Value := JSONObject.GetValue<Variant>(Field.FieldName);
+          end;
+          Result.Post;
+        end;
+      finally
+        JSONObject.Free;
+      end;
+    end;
+  finally
+    Result.EnableControls;
+  end;
 end;
 
 end.

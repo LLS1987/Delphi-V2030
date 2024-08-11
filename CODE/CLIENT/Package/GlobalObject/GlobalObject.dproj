@@ -80,7 +80,7 @@
         <DCC_DcpOutput>$(LLS)\CODE\CLIENT\Package\DCP</DCC_DcpOutput>
         <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
         <VerInfo_Locale>1033</VerInfo_Locale>
-        <DCC_UnitSearchPath>..\..\..\3RD\loggerpro;..\..\..\3RD\XLSReadWrite\Src;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
+        <DCC_UnitSearchPath>..\..\..\3RD\loggerpro;..\..\..\3RD\XLSReadWrite\Src;..\..\..\3RD\cnvcl\Source\Common;..\..\..\3RD\cnvcl\Source\Crypto;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
         <Debugger_HostApplication>$(LLS)\CODE\CLIENT\Package\Debug\DClient.exe</Debugger_HostApplication>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_2)'!=''">
@@ -95,7 +95,7 @@
         <DCC_DcuOutput>$(LLS)\CODE\CLIENT\Package\DCU</DCC_DcuOutput>
         <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
         <VerInfo_Locale>1033</VerInfo_Locale>
-        <DCC_UnitSearchPath>..\..\..\3RD\loggerpro;..\..\..\3RD\XLSReadWrite\Src;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
+        <DCC_UnitSearchPath>..\..\..\3RD\loggerpro;..\..\..\3RD\XLSReadWrite\Src;..\..\..\3RD\cnvcl\Source\Common;..\..\..\3RD\cnvcl\Source\Crypto;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
     </PropertyGroup>
     <ItemGroup>
         <DelphiCompile Include="$(MainSource)">
@@ -925,10 +925,10 @@
                 </DeployClass>
                 <ProjectRoot Platform="OSX32" Name="$(PROJECTNAME)"/>
                 <ProjectRoot Platform="OSX64" Name="$(PROJECTNAME)"/>
+                <ProjectRoot Platform="Android64" Name="$(PROJECTNAME)"/>
                 <ProjectRoot Platform="Win32" Name="$(PROJECTNAME)"/>
                 <ProjectRoot Platform="OSXARM64" Name="$(PROJECTNAME)"/>
                 <ProjectRoot Platform="Android" Name="$(PROJECTNAME)"/>
-                <ProjectRoot Platform="Android64" Name="$(PROJECTNAME)"/>
                 <ProjectRoot Platform="Win64" Name="$(PROJECTNAME)"/>
                 <ProjectRoot Platform="Linux64" Name="$(PROJECTNAME)"/>
                 <ProjectRoot Platform="iOSDevice32" Name="$(PROJECTNAME).app"/>

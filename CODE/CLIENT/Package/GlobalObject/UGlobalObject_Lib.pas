@@ -138,6 +138,7 @@ begin
   case ABaseType of
     btPtype : Result := GetBaseinfo(TPTypeParam,AMult);
     btBtype : Result := GetBaseinfo(TBTypeParam,AMult);
+    btMtype : Result := GetBaseinfo(TMTypeParam,AMult);
   end;
 end;
 

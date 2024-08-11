@@ -282,17 +282,25 @@ end;
 constructor TKTypeParam.Create(AOwner: TComponent);
 begin
   inherited Create(btKtype);
-
+  Title := '²Ö¿â';
 end;
 
 procedure TKTypeParam.GetBaseInfoDataSet(ADataSet: TClientDataSet);
+var ASQL:string;
 begin
-
+  ASQL:= 'select * from stock where deleted=0 AND sonnum=0 AND typeId NOT LIKE ''9%''';
+  if SearchString.Trim<>EmptyStr then
+  begin
+    ASQL := ASQL + ' and (usercode like ''%' + SearchString + '%''';
+    ASQL := ASQL + ' or    fullname like ''%' + SearchString + '%''';
+    ASQL := ASQL + ' or    pyzjm    like ''%' + SearchString + '%'')';
+  end;
+  Goo.DB.OpenSQL(ASQL,ADataSet);
 end;
 
 function TKTypeParam.GetStorable: TStorableClass;
 begin
-
+  Result := TStorable_KType;
 end;
 
 { TBTypeParam }

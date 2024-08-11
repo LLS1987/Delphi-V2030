@@ -3,7 +3,8 @@ unit UCrypto;
 interface
 
 uses
-  System.Classes, Windows, System.SysUtils, System.RTLConsts, System.Hash;
+  System.Classes, Windows, System.SysUtils, System.RTLConsts, System.Hash,
+  CnAES;
 
 type
 
@@ -23,9 +24,13 @@ type
     class function RSA_Encrypt(const data, Key: string): string;
     class function RSA_Decrypt(const data, Key: string): string;
     ///  AES 加解密
+    class function AES_Encrypt(const data, key: AnsiString; InitVector: AnsiString = ''): string;
     ///  sm4 加解密
     class function SM4_Encrypt(const data, Key: string): string;
     class function SM4_Decrypt(const data, Key: string): string;
+    ///SM3
+    class function SM3(inputstr: string): string;
+    class function HMAC_SM3(const data, Key: string): string;
   end;
 
   Tcrypto_sm4 = function(encdectype: Integer; inputstr: PAnsiChar; key: PAnsiChar; outsing: PAnsiChar): Integer; stdcall;
@@ -33,9 +38,21 @@ type
 implementation
 
 uses
-  UComvar, IdHashSHA, IdGlobal;
+  UComvar, IdHashSHA, IdGlobal, CnSM3, System.Math;
 
 { TCrypto }
+
+class function TCrypto.AES_Encrypt(const data, key: AnsiString; InitVector: AnsiString): string;
+var Source,Dest: TStream;
+    cnVector: TCnAESBuffer;
+    cnKey: TCnAESKey128;
+begin
+  //偏移量
+  FillChar(cnVector, SizeOf(cnVector), 0);
+  Move(PAnsiChar(InitVector)^, cnVector, Min(SizeOf(cnVector), Length(InitVector)));
+            //AESEncryptEcbStrToHex
+  Result := AESEncryptCbcStrToHex(UTF8Encode(data),UTF8Encode(key),cnVector,kbt192);
+end;
 
 class function TCrypto.crypto_sm4(encdectype: Integer; inputstr, key, outsing: PAnsiChar): Integer;
 var
@@ -97,6 +114,15 @@ begin
   Result := THashSHA2.Create.GetHMAC(data, key);
 end;
 
+class function TCrypto.HMAC_SM3(const data, Key: string): string;
+var
+  Output: TCnSM3Digest;
+begin
+  var _len := Length(TEncoding.UTF8.GetBytes(data));
+  SM3Hmac(PAnsiChar(AnsiString(key)),Length(AnsiString(key)),PAnsiChar(UTF8Encode(data)),_len,Output);
+  Result := SM3Print(Output);
+end;
+
 class function TCrypto.RSA_Decrypt(const data, Key: string): string;
 begin
 
@@ -125,6 +151,14 @@ begin
   finally
     Free;
   end;
+end;
+
+class function TCrypto.SM3(inputstr: string): string;
+var
+  Output: TCnSM3Digest;
+begin
+  Output := SM3String(inputstr);
+  Result := SM3Print(Output);
 end;
 
 class function TCrypto.SM4_Decrypt(const data, Key: string): string;

@@ -302,10 +302,20 @@ begin
 end;
 
 function TDataBaseCommObject.QueryOneFiled(const ASQL: string): Variant;
+var ds:TClientDataSet;
 begin
   Result := Null;
   if not CheckConnected then Exit;
-  Result := ClientDM.QueryOneFiled(ASQL);
+  //Result := ClientDM.QueryOneFiled(ASQL);
+  ds := TClientDataSet.Create(nil);
+  try
+    if OpenSQL(ASQL,ds)<0 then Exit;
+    if not ds.Active then Exit;
+    if ds.RecordCount=0 then Exit;
+    Result := ds.FieldValues[ds.Fields[0].FieldName];
+  finally
+    ds.Free;
+  end;
 end;
 
 function TDataBaseCommObject.QueryOneFiled(const ASQL: string; const Args: array of const): Variant;

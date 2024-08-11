@@ -2,7 +2,8 @@ unit UDbHelper;
 
 interface
 uses
-  Vcl.Forms, System.SysUtils, System.Classes, Datasnap.DBClient, Data.DB, Winapi.Windows, Winapi.Messages, Vcl.Dialogs;
+  Vcl.Forms, System.SysUtils, System.Classes, Datasnap.DBClient, Data.DB,
+  Winapi.Windows, Winapi.Messages, Vcl.Dialogs, System.JSON;
 
 type
   TClientDataSetHelper = class helper for TClientDataSet
@@ -27,12 +28,14 @@ type
     property C[const FieldName: string]: Currency read GetCurrency write SetCurrency;
     property D[const FieldName: string]: TDateTime read GetDateTime write SetDateTime;
     property V[const FieldName: string]: Variant read GetVariant write SetVariant;
+    function ToJSONObject:TJSONObject;  //数据集转JSON单节点
+    function ToJSONArray:TJSONArray;    //数据集转JSON表单
   end;
 
 implementation
 
 uses
-  System.Variants;
+  System.Variants, UJsonObjectHelper, System.DateUtils;
 
 { TClientDataSetHelper }
 
@@ -118,6 +121,40 @@ begin
   var _field := self.FindField(FieldName);
   if not Assigned(_field) then Exit;
   _field.AsVariant := Value;
+end;
+
+function TClientDataSetHelper.ToJSONArray: TJSONArray;
+begin
+  Result := TJSONArray.Create;
+  if not self.Active then Exit;
+  if Self.RecordCount=0 then Exit;
+  Self.First;
+  while not Self.Eof do
+  begin
+    Result.AddElement(ToJSONObject);
+    Self.Next;
+  end;
+  
+end;
+
+function TClientDataSetHelper.ToJSONObject: TJSONObject;
+begin
+  Result := TJSONObject.SO();
+  if not self.Active then Exit;
+  if Self.RecordCount=0 then Exit;
+  for var f in self.Fields do
+  begin
+    case f.DataType of
+      ftString, ftWideString, ftMemo, ftWideMemo: Result.AddPair(f.FieldName, f.AsString);
+      ftSmallint, ftInteger, ftWord, ftAutoInc:  Result.AddPair(f.FieldName, TJSONNumber.Create(f.AsInteger));
+      ftFloat, ftCurrency, ftBCD, ftFMTBcd: Result.AddPair(f.FieldName, TJSONNumber.Create(f.AsFloat));
+      ftBoolean: Result.AddPair(f.FieldName, TJSONBool.Create(f.AsBoolean));
+      ftDate, ftTime, ftDateTime, ftTimeStamp: Result.AddPair(f.FieldName, DateToISO8601(f.AsDateTime));
+    else
+      Result.V[f.FieldName] := f.Value;
+    end;
+  end;
+    
 end;
 
 end.

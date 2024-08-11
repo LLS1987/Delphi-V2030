@@ -159,6 +159,8 @@ type
     FType: string;
     FStandard: string;
     FArea: Integer;
+    FBarCode: string;
+    FPermitNo: string;
   public
     [TFieldInfo('Unit1','基本单位')]
     property Unit1: string read FUnit1 write FUnit1;
@@ -168,6 +170,10 @@ type
     property PType: string read FType write FType;
     [TFieldInfo('Area','Area',80,False)]
     property Area: Integer read FArea write FArea;
+    [TFieldInfo('BarCode','条码',80,False)]
+    property BarCode: string read FBarCode write FBarCode;
+    [TFieldInfo('PermitNo','批准文号',80,False)]
+    property PermitNo: string read FPermitNo write FPermitNo;
   end;
   [TTable('cstype','厂商',smtAll,bctFull)]
   TStorable_CSType = class(TStorable)
@@ -176,7 +182,11 @@ type
   //门店
   [TTable('posinfo','门店',smtAll,bctFull)]
   TStorable_MType = class(TStorable)
+  private
+    FKRec: Integer;
   public
+    [TFieldInfo('KRec','KRec',80,False)]
+    property KRec: Integer read FKRec write FKRec;
   end;
   //职员
   [TTable('employee','职员',smtAll,bctFull)]
@@ -1038,7 +1048,7 @@ begin
   try
     Goo.ThreadDB.Lock;
     try
-      Goo.ThreadDB.OpenSQL('SELECT posid as Rec,cast(posid as varchar(25)) as typeid,poscode as UserCode,* FROM dbo.posinfo where deleted=0',ds);
+      Goo.ThreadDB.OpenSQL('SELECT posid as Rec,cast(posid as varchar(25)) as typeid,poscode as UserCode,posname as FullName,* FROM dbo.posinfo where deleted=0',ds);
     finally
       Goo.ThreadDB.UnLock;
     end;
