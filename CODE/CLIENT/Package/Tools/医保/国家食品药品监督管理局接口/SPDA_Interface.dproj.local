@@ -1,0 +1,30 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<BorlandProject>
+	<Transactions>
+    <Transaction>1899-12-30 00:00:00.000.156,D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\Tools\医保\国家食品药品监督管理局接口\Unit1.pas=D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\Tools\医保\国家食品药品监督管理局接口\UBaseSPDABuss.pas</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.071,=D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\Tools\医保\国家食品药品监督管理局接口\Unit1.pas</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.657,D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\Tools\医保\国家食品药品监督管理局接口\Unit1.pas=D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\Tools\医保\国家食品药品监督管理局接口\UBaseClassFactory.pas</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.289,=D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\Tools\医保\国家食品药品监督管理局接口\Unit1.pas</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.984,D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\Tools\医保\国家食品药品监督管理局接口\Unit1.pas=D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\Tools\医保\国家食品药品监督管理局接口\USPDA_UploadBill.pas</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.809,D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\Tools\医保\国家食品药品监督管理局接口\Unit1.pas=D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\Tools\医保\国家食品药品监督管理局接口\UBaseSPDADefine.pas</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.283,=BaseQuery.dcp</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.959,D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\Tools\医保\国家食品药品监督管理局接口\UBaseClassFactory.pas=D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\Tools\医保\国家食品药品监督管理局接口\UBaseSPDAClassFactory.pas</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.332,D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\Tools\医保\国家食品药品监督管理局接口\UBaseSPDADate.pas=D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\Tools\医保\国家食品药品监督管理局接口\UBaseSPDAData.pas</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.110,=rtl.dcp</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.508,=rtl.dcp</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.241,=BaseForm.dcp</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.400,D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\Tools\医保\国家食品药品监督管理局接口\Unit1.pas=D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\Tools\医保\国家食品药品监督管理局接口\USPDA_QingHai.pas</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.188,=D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\Tools\医保\国家食品药品监督管理局接口\Unit1.pas</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.431,=D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\Tools\医保\国家食品药品监督管理局接口\Unit1.pas</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.170,=D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\Tools\医保\国家食品药品监督管理局接口\Unit1.pas</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.883,D:\LLS\Documents\Embarcadero\Studio\Projects\Package1.dproj=D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\Tools\医保\国家食品药品监督管理局接口\SPDA_Interface.dproj</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.790,D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\Tools\医保\国家食品药品监督管理局接口\Unit1.dfm=D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\Tools\医保\国家食品药品监督管理局接口\USPDA_Config.dfm</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.303,=GlobalObject.dcp</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.456,D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\Tools\医保\国家食品药品监督管理局接口\Unit1.pas=D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\Tools\医保\国家食品药品监督管理局接口\UBaseSPDADate.pas</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.790,D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\Tools\医保\国家食品药品监督管理局接口\Unit1.pas=D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\Tools\医保\国家食品药品监督管理局接口\USPDA_Config.pas</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.630,D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\Tools\医保\国家食品药品监督管理局接口\Unit1.pas=D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\Tools\医保\国家食品药品监督管理局接口\USPDA_Query.pas</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.718,=D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\Tools\医保\国家食品药品监督管理局接口\Unit1.pas</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.433,=D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\Tools\医保\国家食品药品监督管理局接口\Unit1.pas</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.492,=D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\Tools\医保\国家食品药品监督管理局接口\Unit1.pas</Transaction>
+  </Transactions>
+</BorlandProject>

@@ -1,0 +1,89 @@
+unit UBaseSPDAClassFactory;
+
+interface
+
+uses
+  System.Generics.Collections, System.SysUtils, UBaseSPDADefine;
+
+type
+  TSPDA_InterfaceClass = class of TBaseSPDA;
+  TSPDA_BussClass = class of TBaseSPDA;
+  ///节点
+  TSPDAClassItem = record
+    ID:Integer;
+    Name:string;
+    InterfaceClass:TSPDA_InterfaceClass;
+    BussClass:TSPDA_BussClass;
+  end;
+  PSPDAClassItem = ^TSPDAClassItem;
+  ///全国药监工厂类
+  TSPDAClassFactory = class(TObject)
+  private
+    FClassFactory: TList<PSPDAClassItem>;
+    function GetItem(AID: Integer): TSPDAClassItem;
+  public
+    constructor Create(AOwner: TObject);
+    destructor Destroy; override;
+    property Item[AID:Integer] : TSPDAClassItem read GetItem;
+    property ClassFactory:TList<PSPDAClassItem> read FClassFactory;
+    function Count:Integer;
+    class function RegisterClass(AItem:PSPDAClassItem):Integer;overload;
+    class function RegisterClass(AID:Integer;AName:string;AInterface:TSPDA_InterfaceClass;ABuss:TSPDA_BussClass):Integer;overload;
+  end;
+
+var FSPDAClassFactory:TSPDAClassFactory;
+
+implementation
+
+{ TSPDAClassFactory }
+
+class function TSPDAClassFactory.RegisterClass(AItem:PSPDAClassItem): Integer;
+begin
+  if not Assigned(FSPDAClassFactory) then FSPDAClassFactory := TSPDAClassFactory.Create(nil);
+  Result := FSPDAClassFactory.FClassFactory.Add(AItem);
+end;
+
+function TSPDAClassFactory.Count: Integer;
+begin
+  Result := FClassFactory.Count;
+end;
+
+constructor TSPDAClassFactory.Create(AOwner: TObject);
+begin
+  FClassFactory := TList<PSPDAClassItem>.Create;
+end;
+
+destructor TSPDAClassFactory.Destroy;
+begin
+  for var p in FClassFactory do Dispose(p);
+  FClassFactory.Free;
+  inherited;
+end;
+
+function TSPDAClassFactory.GetItem(AID: Integer): TSPDAClassItem;
+begin
+  for var _item in FClassFactory do
+    if _item.ID=AID then Result := _item^;
+end;
+
+class function TSPDAClassFactory.RegisterClass(AID: Integer;AName:string;AInterface:TSPDA_InterfaceClass;ABuss:TSPDA_BussClass): Integer;
+var AItem:PSPDAClassItem;
+begin
+  Result := -1;
+  if AName=EmptyStr then Exit;
+  New(AItem);
+  AItem^.ID             := AID;
+  AItem^.Name           := AName;
+  AItem^.InterfaceClass := AInterface;
+  AItem^.BussClass      := ABuss;
+  Result := TSPDAClassFactory.RegisterClass(AItem);
+end;
+
+initialization
+  FSPDAClassFactory := TSPDAClassFactory.Create(nil);
+finalization
+  if Assigned(FSPDAClassFactory) then FreeAndNil(FSPDAClassFactory);
+
+
+
+end.

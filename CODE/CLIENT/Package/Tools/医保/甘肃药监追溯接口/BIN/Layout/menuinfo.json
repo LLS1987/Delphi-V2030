@@ -1,0 +1,73 @@
+{
+    "item": [
+        {
+            "caption": "甘肃药监",
+            "item": [
+                {
+                    "action": "",
+                    "caption": "药监数据上传",
+                    "classname": "TTransBill",
+                    "classtype": 0,
+                    "shortcut": "Ctrl+R",
+                    "sort": 1
+                },
+                {
+                    "action": "",
+                    "caption": "药监传输记录",
+                    "classname": "TQuery_TransRecord",
+                    "classtype": 0,
+                    "sort": 2
+                },
+				{
+                    "action": "",
+                    "caption": "药监接口配置",
+                    "classname": "TConfig_GanSu",
+                    "classtype": 0,
+                    "sort": 0
+                }
+            ],
+            "sort": 0
+        },        
+        {
+            "caption": "系统",
+            "item": [
+                {
+                    "action": "Action_ChangeUser",
+                    "caption": "更换用户",
+                    "classname": "",
+                    "classtype": 0,
+                    "sort": 0
+                },
+                {
+                    "action": "Action_ChangeDB",
+                    "caption": "更换账套",
+                    "classname": "",
+                    "classtype": 0,
+                    "sort": 1
+                },
+                {
+                    "action": "Action_Upgrade",
+                    "caption": "数据库升级",
+                    "classname": "",
+                    "classtype": 0,
+                    "sort": 2
+                },
+{
+                    "action": "Action_About",
+                    "caption": "关于",
+                    "classname": "",
+                    "classtype": 0,
+                    "sort": 3
+                },				
+                {
+                    "action": "Action_Close",
+                    "caption": "退出系统",
+                    "classname": "",
+                    "classtype": 0,
+                    "sort": 4
+                }
+            ],
+            "sort": 3
+        }
+    ]
+}

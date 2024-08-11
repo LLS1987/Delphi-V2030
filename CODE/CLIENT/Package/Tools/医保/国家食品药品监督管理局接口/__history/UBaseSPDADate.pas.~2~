@@ -1,0 +1,15 @@
+unit UBaseSPDADate;
+
+interface
+
+uses
+  UBaseSPDADefine;
+
+type
+  TBaseSPDABuss = class(TBaseSPDA)
+
+  end;
+
+implementation
+
+end.

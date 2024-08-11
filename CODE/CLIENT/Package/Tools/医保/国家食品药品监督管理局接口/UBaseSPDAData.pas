@@ -1,0 +1,166 @@
+unit UBaseSPDAData;
+
+interface
+
+uses
+  UBaseSPDADefine, System.SysUtils, IdHTTP, System.Classes,
+  System.Generics.Collections;
+
+type
+  TBaseSPDAData = class(TBaseSPDA)
+  private
+    FOutputStr: string;
+    FInputStr: string;
+    FSuccessed: Boolean;
+    FBussID: string;
+    procedure SetOutput(const Value: string);
+    //FOutputDic:TDictionary<string,string>;
+  protected
+    procedure AfterExecute(const AInner:Integer); virtual;
+    procedure BeforeExecute; virtual;
+    function InnerExecute: Integer; virtual; abstract;
+    function CheckReturnSuccessed(OutputStr : string): Boolean; virtual;
+  public
+    destructor Destroy; override;
+    function Execute: Integer;
+    property Successed: Boolean read FSuccessed;
+    ///业务
+    property BussID: string read FBussID    write FBussID;
+    ///入参
+    property Input : string read FInputStr  write FInputStr;
+    ///出参
+    property Output: string read FOutputStr write SetOutput;
+  end;
+  ///  indyhttp
+  TIdHttpSPDAData = class(TBaseSPDAData)
+  private
+    FHttp: TIdHTTP;
+    FReadTimeout: Integer;
+    function GetHttpUrl(ABussID: string): string; virtual;
+    function GetHttp: TIdHTTP;
+  protected
+    function CheckReturnSuccessed(OutputStr : string): Boolean; override;
+    function InnerExecute: Integer; override;
+    property Http:TIdHTTP read GetHttp write FHttp;
+    property ReadTimeout: Integer read FReadTimeout write FReadTimeout;
+  public
+    constructor Create; override;
+  end;
+  ///  rest client
+  TRestClientSPDAData = class(TBaseSPDAData)
+  protected
+    function InnerExecute: Integer; override;
+  public
+
+  end;
+  ///  TsgcWebSocketClient
+
+  ///  dll
+
+implementation
+
+uses
+  System.JSON, UJsonObjectHelper;
+
+{ TBaseSPDAData }
+
+procedure TBaseSPDAData.AfterExecute(const AInner:Integer);
+begin
+  FSuccessed := CheckReturnSuccessed(Output);
+end;
+
+procedure TBaseSPDAData.BeforeExecute;
+begin
+  FSuccessed := False;
+  LastErrorMessage := EmptyStr;
+end;
+
+function TBaseSPDAData.CheckReturnSuccessed(OutputStr : string): Boolean;
+begin
+  Result := False;
+end;
+
+destructor TBaseSPDAData.Destroy;
+begin
+
+  inherited;
+end;
+
+function TBaseSPDAData.Execute: Integer;
+begin
+  Result := -1;
+  BeforeExecute;
+  try
+    Result := InnerExecute;
+  finally
+    AfterExecute(Result);
+  end;
+end;
+
+procedure TBaseSPDAData.SetOutput(const Value: string);
+begin
+  FOutputStr := Value;
+  ParamList.Add(BussID,Value);   //将返回值写入列表
+end;
+
+{ TIdHttpSPDAData }
+
+function TIdHttpSPDAData.CheckReturnSuccessed(OutputStr: string): Boolean;
+begin
+  Result := inherited CheckReturnSuccessed(OutputStr);
+end;
+
+constructor TIdHttpSPDAData.Create;
+begin
+  inherited;
+  ReadTimeout := 60*1000;
+end;
+
+function TIdHttpSPDAData.GetHttp: TIdHTTP;
+begin
+  if Not Assigned(FHTTP) then
+  begin
+    FHTTP:=TIdHTTP.Create(nil);
+    FHTTP.HandleRedirects := True; //允许头转向
+    FHTTP.ReadTimeout :=ReadTimeout; //请求超时设置
+    FHTTP.Request.ContentType := 'application/json;charset=UTF-8'; //设置内容类型为json
+    FHTTP.Request.ContentEncoding := 'utf-8';
+    FHTTP.ProtocolVersion := pv1_1;
+    FHTTP.Request.CustomHeaders.FoldLines := False;
+  end;
+  Result := FHttp;
+end;
+
+function TIdHttpSPDAData.GetHttpUrl(ABussID: string): string;
+begin
+  Result := ParamList.AsString('ApiUrl').TrimEnd(['/']) +'/'+ ABussID;
+end;
+
+function TIdHttpSPDAData.InnerExecute: Integer;
+var ASend:TStringStream;
+begin
+  Result := 0;
+  Log('URL = %s',[GetHttpUrl(BussID)]);
+  Log('InJosn = %s',[Input]);
+  ASend := TStringStream.Create(UTF8Encode(Input));
+  try
+    try
+      Output := Http.Post(GetHttpUrl(BussID),ASend);
+      Log('OutJosn = %s',[Output]);
+    except
+      on e:EIdHTTPProtocolException do Error('异常：'+e.ErrorMessage);
+      on e:Exception do Error('异常：'+e.Message);
+    end;
+  finally
+    ASend.Free;
+  end;
+end;
+
+{ TRestClientSPDAData }
+
+function TRestClientSPDAData.InnerExecute: Integer;
+begin
+  Result := 0;
+end;
+
+end.

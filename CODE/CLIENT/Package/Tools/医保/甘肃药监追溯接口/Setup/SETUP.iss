@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "千方百剂 甘肃药监接口"
-#define MyAppVersion "1.0.1.0"
+#define MyAppVersion "1.0.2.0"
 #define MyProductVersion "2023.08.19"
 #define MyAppPublisher "成都任我行千方百剂软件有限公司"
 #define MyAppURL "http://www.rwxqfbj.com/"
@@ -61,6 +61,7 @@ Source: ..\..\..\..\RELEASE\*.*; DestDir: {app}; Flags: ignoreversion;
 //Source: ..\..\..\..\RELEASE\SQL\*.*; DestDir: {app}\SQL; Flags: ignoreversion; 
 Source: ..\..\..\..\RELEASE\SQL\*.*; DestDir: {app}\SQL\; 
 Source: ..\..\..\..\RELEASE\Layout\*.*; DestDir: {app}\Layout\; 
+Source: RELEASE\Layout\*.*; DestDir: {app}\Layout\;
 Source: ..\..\..\..\..\..\..\Runtimes\BPL\*.*; DestDir: {app}; 
 Source: ..\..\..\..\..\..\..\Runtimes\PRINT\*.*; DestDir: {app}; 
 

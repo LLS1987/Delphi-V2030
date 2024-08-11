@@ -1,0 +1,178 @@
+unit USPDA_QingHai;
+
+interface
+
+uses
+  UBaseSPDADefine,UBaseSPDAData,UBaseSPDABuss, Datasnap.DBClient,
+  System.SysUtils, System.JSON, System.Classes;
+
+type
+  ///接口
+  TSPDA_Interface_QingHai = class(TIdHttpSPDAData)
+  private
+    FTK:string;
+    function GetTK:string;
+  protected
+    function CheckReturnSuccessed(OutputStr: string): Boolean; override;
+  public
+    property TK:string read GetTK;
+  end;
+  ///业务
+  TSPDA_Buss_QingHai = class(TBaseSPDABuss)
+  protected
+    function Post():string;
+    function GetSignNo: string; override;
+    procedure BeforeExecute(ABussID: string); override;
+  public
+    function P_3503(AData : TClientDataSet):Boolean;                            //商品采购     通过此交易上传商品采购信息。
+    function P_3504(AData : TClientDataSet):Boolean;                            //商品采购退货 通过此交易上传商品采购退货信息。
+    function P_3505(AData : TClientDataSet):Boolean;                            //商品销售     通过此交易上传商品销售信息
+  end;
+
+implementation
+
+uses
+  UBaseSPDAClassFactory, UJsonObjectHelper, UDbHelper, UComvar, IdHTTP,
+  IdMultipartFormData, REST.Client, System.Net.HttpClient, REST.Types;
+
+{ TSPDA_Buss_QingHai }
+
+procedure TSPDA_Buss_QingHai.BeforeExecute(ABussID: string);
+begin
+  inherited;
+  if Assigned(InJson) then
+  begin
+    InJson.RemovePairAndNil('BillID');
+    InJson.RemovePairAndNil('ord');
+  end;
+end;
+
+function TSPDA_Buss_QingHai.GetSignNo: string;
+var idhttp:TIdHTTP;
+begin
+  Goo.Msg.ShowMsg(Goo.Crypto.AES_Encrypt('企业对接测试','Ktk4CxTq60fGslgcNhGk77fIb5jxzKLk',''));
+  Goo.Msg.ShowMsg(Post);
+  IdHTTP := TIdHTTP.Create(nil);
+  //var FormData := TIdMultiPartFormDataStream.Create;
+  var FormData := TStringList.Create;
+  try
+    IdHTTP.HandleRedirects := True; //允许头转向
+    IdHTTP.Request.Accept  := '*/*';
+    IdHTTP.Request.Connection  := 'keep-alive';
+    IdHTTP.Request.ContentType := 'multipart/form-data'; //设置内容类型为json
+    //IdHTTP.Request.ContentEncoding := 'utf-8';
+    IdHTTP.ProtocolVersion := pv1_1;
+    //IdHTTP.Request.CustomHeaders.FoldLines := False;
+    //网络代理，方便本地跟踪
+    IdHTTP.ProxyParams.ProxyServer := '127.0.0.1';
+    IdHTTP.ProxyParams.ProxyPort   := 8888;
+    //IdHTTP.HTTPOptions := IdHTTP.HTTPOptions + [hoForceEncodeParams];
+    FormData.Add('UserName=企业对接测试');
+    Result := IdHTTP.Post('http://218.95.241.36:34000/n-32061/YPPF_RKXXBYeWu/HuoQuTK',FormData);
+    //Result := UTF8Decode(Result);
+  finally
+    FormData.Free;
+    IdHTTP.Free;
+  end;
+  if Assigned(InJson) then FreeAndNil(InJson);
+  InJson := TJSONObject.SO;
+  InJson.S['UserName'] := '企业对接测试';
+  //Execute('YPPF_RKXXBYeWu/HuoQuTK');
+end;
+
+function TSPDA_Buss_QingHai.Post: string;
+var RESTClient1: TRESTClient;
+    RESTRequest1: TRESTRequest;
+    RESTResponse1: TRESTResponse;
+begin
+  RESTClient1:= TRESTClient.Create(strpas('http://218.95.241.36:34000/n-32061/YPPF_RKXXBYeWu/HuoQuTK'));
+  RESTRequest1:= TRESTRequest.Create(nil);
+  RESTResponse1:= TRESTResponse.Create(nil);
+  try
+    var LSecProts: THTTPSecureProtocols := [THTTPSecureProtocol.SSL2, THTTPSecureProtocol.SSL3, THTTPSecureProtocol.TLS1, THTTPSecureProtocol.TLS11, THTTPSecureProtocol.TLS12, THTTPSecureProtocol.TLS13];
+    RESTClient1.SecureProtocols := LSecProts;
+    RESTClient1.Accept          := CONTENTTYPE_MULTIPART_FORM_DATA+';q=0.9,text/plain;q=0.9,text/html';
+    RESTClient1.AcceptCharset   := 'UTF-8';
+    RESTClient1.ProxyServer     := '127.0.0.1';
+    RESTClient1.ProxyPort       := 8888;
+    RESTRequest1.AssignedValues := [TCustomRESTRequest.TAssignedValue.rvAccept,
+        TCustomRESTRequest.TAssignedValue.rvAcceptCharset, TCustomRESTRequest.TAssignedValue.rvConnectTimeout,
+        TCustomRESTRequest.TAssignedValue.rvReadTimeout];
+    RESTRequest1.Client  := RESTClient1;
+    RESTRequest1.Response:= RESTResponse1;
+    RESTRequest1.Timeout := 0;
+    RESTRequest1.Method  :=rmPOST;
+//    RESTRequest1.AddParameter('<Name>','<Value>',TRESTRequestParameterKind.pkHTTPHEADER);
+    RESTRequest1.AddBody('UserName=企业对接测试',ContentTypeFromString(CONTENTTYPE_MULTIPART_FORM_DATA));
+    RESTRequest1.Execute;
+    Result := RESTResponse1.Content;
+  finally
+    RESTClient1.Free;
+    RESTRequest1.Free;
+    RESTResponse1.Free;
+  end;
+end;
+
+function TSPDA_Buss_QingHai.P_3503(AData: TClientDataSet): Boolean;
+begin
+  Result := False;
+  if not Assigned(AData) then Exit;
+  if not AData.Active then Exit;
+  if AData.RecordCount=0 then Exit;
+  Goo.Msg.ShowMsg(SignNo);
+  if Assigned(InJson) then FreeAndNil(InJson);
+  InJson := AData.ToJSONObject;
+  Result := (Execute('')=0) and Successed;
+end;
+
+function TSPDA_Buss_QingHai.P_3504(AData: TClientDataSet): Boolean;
+begin
+  Result := False;
+  if not Assigned(AData) then Exit;
+  if not AData.Active then Exit;
+  if AData.RecordCount=0 then Exit;
+  if Assigned(InJson) then FreeAndNil(InJson);
+  InJson := AData.ToJSONObject;
+  Result := (Execute('')=0) and Successed;
+end;
+
+function TSPDA_Buss_QingHai.P_3505(AData: TClientDataSet): Boolean;
+begin
+  Result := False;
+  if not Assigned(AData) then Exit;
+  if not AData.Active then Exit;
+  if AData.RecordCount=0 then Exit;
+  if Assigned(InJson) then FreeAndNil(InJson);
+  InJson := AData.ToJSONObject;
+  Result := (Execute('')=0) and Successed;
+end;
+
+{ TSPDA_Interface_QingHai }
+
+function TSPDA_Interface_QingHai.CheckReturnSuccessed(OutputStr: string): Boolean;
+var Json:TJSONObject;
+begin
+  Result := inherited CheckReturnSuccessed(OutputStr);
+  Json := TJSONObject.SO(OutputStr);
+  try
+    if not Assigned(Json) then Exit;
+    Result := Json.B['Success'];
+    if not Result then Error('错误信息');
+  finally
+    Json.Free;
+  end;
+end;
+
+function TSPDA_Interface_QingHai.GetTK: string;
+begin
+  if FTK=EmptyStr then
+  begin
+    FTK := '';
+  end;
+  Result := FTK;
+end;
+
+initialization
+  TSPDAClassFactory.RegisterClass(SPDA_ID_QINGHAI,'青海省',TSPDA_Interface_QingHai,TSPDA_Buss_QingHai);
+
+end.

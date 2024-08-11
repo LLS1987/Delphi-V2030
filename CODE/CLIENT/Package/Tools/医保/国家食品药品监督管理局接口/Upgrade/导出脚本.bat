@@ -1,0 +1,9 @@
+pquery.exe -auto -path Table -file Table.txt
+pquery.exe -auto -path Procedure -file Procedure.txt
+pquery.exe -auto -path Config -file Config.txt
+
+Copy Table.txt+Procedure.txt+Config.txt Upgrade.sql
+
+del Table.txt
+del Procedure.txt
+del Config.txt

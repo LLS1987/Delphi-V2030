@@ -1,0 +1,128 @@
+{
+    "root": {
+        "ButtonList": [
+            {
+                "Caption": ""
+            }
+        ],
+        "Caption": "",
+        "CondtionRoot": [
+            {
+                "Caption": "",
+                "Group": [
+                    {
+                        "Caption": "",
+                        "Group": [
+                            {},
+                            {}
+                        ],
+                        "Index": 0,
+                        "Item": [
+                            {
+                                "AlignHorz": "ahClient",
+                                "AlignVert": "avClient",
+                                "Caption": "",
+                                "CondtionName": "",
+                                "ControlType": "",
+                                "DefaultValue": "",
+                                "Index": 0,
+                                "MustField": "",
+                                "OtherInfo": "",
+                                "TextHint": "",
+                                "Visible": ""
+                            },
+                            {
+                                "AlignHorz": "ahClient",
+                                "AlignVert": "avClient",
+                                "Caption": "",
+                                "CondtionName": "",
+                                "ControlType": "",
+                                "DefaultValue": "",
+                                "DisplayName": "",
+                                "Index": "",
+                                "MustField": "",
+                                "OtherInfo": "",
+                                "TextHint": "",
+                                "Visible": ""
+                            }
+                        ],
+                        "LayoutDirection": "ldHorizontal",
+                        "ShowBorder": true
+                    }
+                ],
+                "Index": 0,
+                "Item": [
+                    {
+                        "AlignHorz": "ahClient",
+                        "AlignVert": "avClient",
+                        "Caption": "",
+                        "CondtionName": "",
+                        "ControlType": "",
+                        "DefaultValue": "",
+                        "Index": 0,
+                        "MustField": "",
+                        "OtherInfo": "",
+                        "TextHint": "",
+                        "Visible": ""
+                    },
+                    {
+                        "AlignHorz": "ahClient",
+                        "AlignVert": "avClient",
+                        "Caption": "",
+                        "CondtionName": "",
+                        "ControlType": "",
+                        "DefaultValue": "",
+                        "DisplayName": "",
+                        "Index": "",
+                        "MustField": "",
+                        "OtherInfo": "",
+                        "TextHint": "",
+                        "Visible": ""
+                    }
+                ],
+                "LayoutDirection": "ldHorizontal",
+                "ShowBorder": true
+            }
+        ],
+        "GridList": [
+            {
+                "FieldList": [
+                    {
+                        "Caption": "",
+                        "DataType": "",
+                        "Editing": 0,
+                        "Expression": "",
+                        "FieldName": "",
+                        "Index": 0,
+                        "LimitType": 0,
+                        "ShowTotal": 0,
+                        "Version": 255,
+                        "Visible": 1,
+                        "VisibleForCustomization": 1,
+                        "Width": 80
+                    },
+                    {
+                        "Caption": "",
+                        "DataType": "",
+                        "Editing": 0,
+                        "Expression": "",
+                        "FieldName": "",
+                        "Index": 0,
+                        "LimitType": 0,
+                        "ShowTotal": 0,
+                        "Version": 255,
+                        "Visible": 1,
+                        "VisibleForCustomization": 1,
+                        "Width": 80
+                    }
+                ],
+                "LevelCaption": "",
+                "LevelName": "",
+                "ProcName": "",
+                "ProcParamValues": "",
+                "ProcParams": "",
+                "ViewName": ""
+            }
+        ]
+    }
+}

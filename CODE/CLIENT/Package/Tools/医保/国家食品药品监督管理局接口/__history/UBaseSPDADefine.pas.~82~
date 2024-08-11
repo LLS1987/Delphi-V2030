@@ -1,0 +1,124 @@
+unit UBaseSPDADefine;
+
+interface
+
+uses
+  System.SysUtils, ULogger, UParamList;
+
+type
+  TBaseSPDA = class(TObject)
+  private
+    FLogger:TLogger;
+    FParamList: TParamList;
+    FLastErrorMessage: string;
+    function GetLogger: TLogger;
+    function GetParamList: TParamList;
+  public
+    constructor Create; virtual;
+    destructor Destroy; override;
+    property Logger :TLogger read GetLogger;
+    property ParamList: TParamList read GetParamList write FParamList;
+    property LastErrorMessage: string read FLastErrorMessage;
+    procedure Log(AInfo: string); overload;
+    procedure Log(const AInfo: string; const Args: array of const); overload;
+    procedure Error(AInfo: string); overload;
+    procedure Error(const AInfo: string; const Args: array of const); overload;
+  end;
+
+const
+  //所有的医保ID，按照国家区位编码来
+  SPDA_ID_Null =0;          //无
+  SPDA_ID_DeBug=1;          //医保测试库
+  SPDA_ID_BEIJING=10;       //北京
+  SPDA_ID_GUANGDONG=20;     //广东
+  SPDA_ID_SHANGHAI=21;      //上海
+  SPDA_ID_TIANJIN=22;       //天津
+  SPDA_ID_CHONGQING=23;     //重庆
+  SPDA_ID_Liaoning=24;      //辽宁
+  SPDA_ID_JIANGSU=25;       //江苏
+  SPDA_ID_HUBEI=27;         //湖北
+  SPDA_ID_SICHUAN=28;       //四川
+  SPDA_ID_SHANXI=29;        //陕西
+  SPDA_ID_HEBEI=311;        //河北
+  SPDA_ID_HENAN=371;        //河南
+  SPDA_ID_HUNAN=731;        //湖南
+  SPDA_ID_JIANGXI=791;      //江西
+  SPDA_ID_JILIN=431;        //吉林
+  SPDA_ID_HEILONGJIANG=451; //黑龙江
+  SPDA_ID_JIN=351;          //山西--晋
+  SPDA_ID_SHANDONG=531;     //山东
+  SPDA_ID_QINGHAI=971;      //青海
+  SPDA_ID_ANHUI=551;        //安徽
+  SPDA_ID_HAINAN=898;       //海南
+  SPDA_ID_GUIZHOU=851;      //贵州
+  SPDA_ID_ZHEJIANG=571;     //浙江
+  SPDA_ID_FUJIANG=591;      //福建
+  SPDA_ID_GANSU=931;        //甘肃
+  SPDA_ID_YUNNAN=871;       //云南
+  SPDA_ID_XIZANG=891;       //西藏
+  SPDA_ID_NINGXIA=951;      //宁夏
+  SPDA_ID_XINJIANG=991;     //新疆
+  SPDA_ID_NEIMENG=471;      //内蒙
+  SPDA_ID_GUANGXI=771;      //广西
+  SPDA_ID_HUNANYD=7310;     //湖南异地
+  SPDA_ID_ZiGong= 51030;    //四川自贡，只上传数据
+  SPDA_ID_JIANGYIN= 510;    //江阴
+  SPDA_ID_SUZHOU= 512;      //苏州
+
+implementation
+
+uses
+  LoggerPro;
+
+{ TBaseSPDA }
+
+constructor TBaseSPDA.Create;
+begin
+
+end;
+
+destructor TBaseSPDA.Destroy;
+begin
+  if Assigned(FLogger) then FreeAndNil(FLogger);
+  if Assigned(FParamList) then FreeAndNil(FParamList);  
+  inherited;
+end;
+
+procedure TBaseSPDA.Error(const AInfo: string; const Args: array of const);
+begin
+  Error(Format(AInfo,Args));
+end;
+
+procedure TBaseSPDA.Error(AInfo: string);
+begin
+  FLastErrorMessage :=
+  Logger.Error(AInfo,'药监');
+end;
+
+function TBaseSPDA.GetLogger: TLogger;
+begin
+  if not Assigned(FLogger) then
+  begin
+    FLogger := TLogger.Create;
+    FLogger.LogTypes := [TLogType.Debug,TLogType.Info,TLogType.Warning,TLogType.Error];
+  end;
+  Result := FLogger;
+end;
+
+function TBaseSPDA.GetParamList: TParamList;
+begin
+  if not Assigned(FParamList) then FParamList := TParamList.Create;
+  Result := FParamList;
+end;
+
+procedure TBaseSPDA.Log(const AInfo: string; const Args: array of const);
+begin
+  self.Log(Format(AInfo,Args));
+end;
+
+procedure TBaseSPDA.Log(AInfo: string);
+begin
+  Logger.Info(AInfo,'药监');
+end;
+
+end.

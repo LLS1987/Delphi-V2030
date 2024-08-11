@@ -1,0 +1,144 @@
+unit USPDA_Config;
+
+interface
+
+uses
+  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
+  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, UBaseInfoEdit, cxStyles, cxClasses,
+  System.ImageList, Vcl.ImgList, System.Actions, Vcl.ActnList, Vcl.ExtCtrls,
+  Vcl.ComCtrls, UBaseNormalForm, UBaseControlManagerLayout, Vcl.StdCtrls;
+
+type
+  TSPDA_Config = class(TBaseNormalForm)
+    PageControl1: TPageControl;
+    TabSheet_Base: TTabSheet;
+    TabSheet_Assist: TTabSheet;
+    ScrollBox_Base: TScrollBox;
+    ScrollBox_Assist: TScrollBox;
+    Action_Save: TAction;
+    combo_Area: TComboBox;
+    Label1: TLabel;
+    procedure Action_SaveExecute(Sender: TObject);
+  private
+    FButtonList: TButtonManager;
+    FConditionList: TControlManagerLayout;
+  protected
+    FCloseButtonRec:Integer;
+    FPrintButtonRec:Integer;
+    FSaveButtonRec:Integer;
+    procedure CreateAfter;override;
+    procedure OnIniButton(Sender: TObject); virtual;
+    /// <summary>
+    /// 初始化窗体
+    /// </summary>
+    procedure OnIniCondition(Sender: TObject); virtual;
+    procedure BeforeFormShow; override;
+    procedure DoPrintHeader; override;
+  public
+    destructor Destroy; override;
+    property Condition:TControlManagerLayout read FConditionList;
+    property ButtonList:TButtonManager read FButtonList;
+  end;
+
+var
+  SPDA_Config: TSPDA_Config;
+
+implementation
+
+uses
+  UBaseSPDAClassFactory, UComvar, System.IniFiles;
+
+{$R *.dfm}
+
+{ TSPDA_Config }
+
+procedure TSPDA_Config.BeforeFormShow;
+begin
+  inherited;
+  Condition.RefreshCondition;
+  ButtonList.RefreshButton;
+end;
+
+procedure TSPDA_Config.CreateAfter;
+begin
+  inherited;
+  if not Assigned(FConditionList) then FConditionList := TControlManagerLayout.Create(Self,ScrollBox_Base);
+  if not Assigned(FButtonList) then FButtonList := TButtonManager.Create;
+  FConditionList.Memory := True;
+  FConditionList.MemoryFile := 'SPDA_Config.ini';
+  ButtonList.Parent := Panel_Button;
+  ButtonList.OWnerObject := Self;
+  OnIniCondition(nil);
+  OnIniButton(nil);
+end;
+
+destructor TSPDA_Config.Destroy;
+begin
+  if Assigned(FConditionList) then FreeAndNil(FConditionList);
+  if Assigned(FButtonList) then FreeAndNil(FButtonList);
+  inherited;
+end;
+
+procedure TSPDA_Config.Action_SaveExecute(Sender: TObject);
+begin
+  inherited;
+  if combo_Area.ItemIndex<0 then
+  begin
+    Goo.Msg.ShowError('请选择药监地区！');
+    combo_Area.SetFocus;
+    Exit;
+  end;
+  Condition.ParamList.Add('SPDA_AREA',Integer(combo_Area.Items.Objects[combo_Area.ItemIndex]));
+
+  if not Condition.RefreshParamList then Exit;
+  var ini := TIniFile.Create(Goo.SystemDataPath+'\'+Condition.MemoryFile);
+  try
+    ini.WriteInteger('','',0);
+    combo_Area.ItemIndex := combo_Area.Items.IndexOfObject(TObject(ini.ReadInteger('TSPDA_Config','SPDA_AREA',-1)));
+  finally
+    ini.Free;
+  end;
+  ModalResult := mrOk;
+end;
+
+procedure TSPDA_Config.DoPrintHeader;
+begin
+  inherited;
+  if Assigned(FConditionList) then
+  begin
+    for var i := 0 to Condition.Count-1 do
+    begin
+      PrintItems.Add(Condition.ConditionIndex[i].Caption,Condition.ConditionIndex[i].ValueText);
+    end;
+  end;
+end;
+
+procedure TSPDA_Config.OnIniButton(Sender: TObject);
+begin
+  FCloseButtonRec := ButtonList.Add(Action_Close,True); //关闭
+  FSaveButtonRec  := ButtonList.Add(Action_Save,True);  //关闭
+  FPrintButtonRec := ButtonList.Add(Action_Print,True); //打印
+  if FormStyle in [fsNormal,fsStayOnTop] then ButtonList.Button[FCloseButtonRec].Cancel := True;
+end;
+
+procedure TSPDA_Config.OnIniCondition(Sender: TObject);
+begin
+  if Assigned(LayoutJson) then Caption := LayoutJson.GetValue<string>('Caption',Caption);
+  Condition.AddFromFile(LayoutFilePath);
+  combo_Area.Items.AddObject('无',TObject(-1));
+  for var i := 0 to FSPDAClassFactory.Count-1 do
+  begin
+    combo_Area.Items.AddObject(FSPDAClassFactory.ClassFactory[i].Name,TObject(FSPDAClassFactory.ClassFactory[i].ID));
+  end;
+  var ini := TIniFile.Create(Goo.SystemDataPath+'\'+Condition.MemoryFile);
+  try
+    combo_Area.ItemIndex := combo_Area.Items.IndexOfObject(TObject(ini.ReadInteger('TSPDA_Config','SPDA_AREA',-1)));
+  finally
+    ini.Free;
+  end;
+end;
+
+initialization
+  Goo.Reg.RegisterClass(TSPDA_Config);
+
+end.

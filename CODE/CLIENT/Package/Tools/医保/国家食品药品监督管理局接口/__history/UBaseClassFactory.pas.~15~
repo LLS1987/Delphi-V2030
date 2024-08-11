@@ -1,0 +1,19 @@
+unit UBaseClassFactory;
+
+interface
+
+type
+  ///节点
+  TSPDAClassItem = class
+
+  end;
+  PRegisterClassItem = ^TRegisterClassItem;
+  ///全国药监工厂类
+  TSPDAClassFactory = class(TObject)
+  private
+    FClassFactory: TList<PRegisterClassItem>;
+  end;
+
+implementation
+
+end.

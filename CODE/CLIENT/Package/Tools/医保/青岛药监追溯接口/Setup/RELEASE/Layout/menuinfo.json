@@ -1,0 +1,65 @@
+{
+    "item": [
+        {
+            "caption": "青岛药监",
+            "item": [
+                {
+                    "action": "",
+                    "caption": "医保设置",
+                    "classname": "TConfig_SPDA_QingDao",
+                    "classtype": 0,
+                    "sort": 0
+                },
+				{
+                    "action": "",
+                    "caption": "医保数据上传",
+                    "classname": "TUploadData_QingDao",
+                    "classtype": 0,
+                    "sort": 1
+                }
+            ],
+            "sort": 0
+        },        
+        {
+            "caption": "系统",
+            "item": [
+                {
+                    "action": "Action_ChangeUser",
+                    "caption": "更换用户",
+                    "classname": "",
+                    "classtype": 0,
+                    "sort": 0
+                },
+                {
+                    "action": "Action_ChangeDB",
+                    "caption": "更换账套",
+                    "classname": "",
+                    "classtype": 0,
+                    "sort": 1
+                },
+                {
+                    "action": "Action_Upgrade",
+                    "caption": "数据库升级",
+                    "classname": "",
+                    "classtype": 0,
+                    "sort": 2
+                },				
+                {
+                    "action": "Action_Close",
+                    "caption": "退出系统",
+                    "classname": "",
+                    "classtype": 0,
+                    "sort": 3
+                },
+				{
+                    "action": "Action_About",
+                    "caption": "关于",
+                    "classname": "",
+                    "classtype": 0,
+                    "sort": 4
+                }
+            ],
+            "sort": 3
+        }
+    ]
+}

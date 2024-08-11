@@ -1,0 +1,4 @@
+2023-08-02 21:40:06: injson={"loginId":"91621122MA7410UY83","password":"Xx0eWQHGgcvYlLDUCHj8Rw=="}
+2023-08-02 21:40:07: outjson={"code":200,"msg":"success","data":"eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJhdXRoMCIsImFwcEtleSI6IjBQYWNIYmU1R05GTTAydHpBZStGbVVXNUdOTDFmU21Mdk16TEZvaHN6akk9IiwiZXhwIjoxNjkwOTg0NTc2LCJ1c2VybmFtZSI6IjkxNjIxMTIyTUE3NDEwVVk4MyJ9.TO1Pp--uzw19VOY5eOsOSKLgb_Bw7fDyUwdgJMyE5tQ"}
+2023-08-02 21:40:07: injson=[{"drugType":"YD","drugName":"利福平胶囊","quantity":"1","purchaserName":"123","purchaserld":"511381198710264514","purchaserPhone":"1898090","purchaserResidence":"成都","drugstoreName":"门店","drugstoreTyshxydm":"91621122MA7410UY83","saleTime":"2023-04-26 17:51:43","approvalNo":"","dataSource":"1"}]
+2023-08-02 21:40:07: outjson={"code":454,"msg":"参数检验失败","data":"批准文号不能为空"}

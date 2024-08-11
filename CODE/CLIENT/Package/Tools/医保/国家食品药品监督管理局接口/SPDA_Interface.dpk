@@ -1,0 +1,46 @@
+package SPDA_Interface;
+
+{$R *.res}
+{$IFDEF IMPLICITBUILDING This IFDEF should not be used by users}
+{$ALIGN 8}
+{$ASSERTIONS ON}
+{$BOOLEVAL OFF}
+{$DEBUGINFO OFF}
+{$EXTENDEDSYNTAX ON}
+{$IMPORTEDDATA ON}
+{$IOCHECKS ON}
+{$LOCALSYMBOLS ON}
+{$LONGSTRINGS ON}
+{$OPENSTRINGS ON}
+{$OPTIMIZATION OFF}
+{$OVERFLOWCHECKS ON}
+{$RANGECHECKS ON}
+{$REFERENCEINFO ON}
+{$SAFEDIVIDE OFF}
+{$STACKFRAMES ON}
+{$TYPEDADDRESS OFF}
+{$VARSTRINGCHECKS ON}
+{$WRITEABLECONST OFF}
+{$MINENUMSIZE 1}
+{$IMAGEBASE $400000}
+{$DEFINE DEBUG}
+{$ENDIF IMPLICITBUILDING}
+{$IMPLICITBUILD ON}
+
+requires
+  rtl,
+  BaseForm,
+  BaseQuery,
+  GlobalObject;
+
+contains
+  UBaseSPDAClassFactory in 'UBaseSPDAClassFactory.pas',
+  UBaseSPDADefine in 'UBaseSPDADefine.pas',
+  USPDA_QingHai in 'USPDA_QingHai.pas',
+  UBaseSPDABuss in 'UBaseSPDABuss.pas',
+  UBaseSPDAData in 'UBaseSPDAData.pas',
+  USPDA_Config in 'USPDA_Config.pas' {SPDA_Config},
+  USPDA_Query in 'USPDA_Query.pas',
+  USPDA_UploadBill in 'USPDA_UploadBill.pas';
+
+end.

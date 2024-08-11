@@ -1,0 +1,616 @@
+unit UConfig_SPDA_QingDao;
+
+interface
+
+uses
+  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
+  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, UBaseDialogForm, Vcl.ExtCtrls, cxStyles,
+  cxClasses, System.ImageList, Vcl.ImgList, System.Actions, Vcl.ActnList,
+  Vcl.StdCtrls, Vcl.Mask, System.JSON, System.Generics.Collections,
+  sgcBase_Classes, sgcSocket_Classes, sgcTCP_Classes, sgcWebSocket_Classes,
+  sgcWebSocket_Classes_Indy, sgcWebSocket_Client, sgcWebSocket;
+
+type
+  TConfig_SPDA_QingDao = class(TBaseDialogForm)
+    Panel1: TPanel;
+    Button1: TButton;
+    Button2: TButton;
+    edt_PosCode: TLabeledEdit;
+    edt_PosName: TLabeledEdit;
+    edt_infver: TLabeledEdit;
+    edt_mdtrtarea_admvs: TLabeledEdit;
+    edt_insuplc_admdvs: TLabeledEdit;
+    edt_accessSecret: TLabeledEdit;
+    edt_HostIP: TLabeledEdit;
+    edt_HostPort: TLabeledEdit;
+    edt_PosID: TButtonedEdit;
+    Label1: TLabel;
+    procedure Button1Click(Sender: TObject);
+    procedure edt_PosIDKeyPress(Sender: TObject; var Key: Char);
+    procedure edt_PosIDRightButtonClick(Sender: TObject);
+  private
+    { Private declarations }
+  public
+    { Public declarations }
+    procedure BeforeFormShow; override;
+  end;
+  //医保接口交互
+  TInterface_SPDA_QingDao = class
+  private
+    FsgcWebSocketClient:TsgcWebSocketClient;
+    FOutPutStr: string;
+    FLastErrorMessage: string;
+    FOutPutJson: TJSONObject;
+    FPosCode: string;
+    procedure OnWebSocketMessage(Connection: TsgcWSConnection; const Text: string);
+  public
+    constructor Create(AHostIP:string;APort:Integer);
+    destructor Destroy; override;
+    function OutputReturnSucceed: Boolean;
+    function Execute(AData:string): Boolean;
+    property PosCode:string read FPosCode write FPosCode;
+    property OutPutStr:string read FOutPutStr write FOutPutStr;
+    property OutPutJson:TJSONObject read FOutPutJson;
+    property LastErrorMessage:string read FLastErrorMessage write FLastErrorMessage;
+  end;
+  //医保业务
+  TCommAPI_SPDA_QingDao = class
+  private
+    Fsign_no: string;
+    FInput: string;
+    FPosCode: string;
+    FPosName: string;
+    FAccessSecret,Finfver,Fmdtrtarea_admvs,Finsuplc_admdvs,FHostIP,FHostPort: string;
+    FInterface:TInterface_SPDA_QingDao;
+    FPosID: Integer;
+    function GetMsgid: string;
+    function GetSignNo: string;
+    function BuildSignString(AJson: TJSONObject):string;
+    function BuildSignStringInner(Params: TDictionary<string, string>): string;
+    function ConvertJson2Map(AJson: TJSONObject; var Map: TDictionary<string, TObject>): TDictionary<string, TObject>;
+    procedure ConvertJsonArray2List(JsonArray: TJSONArray; var List: TList<TObject>);
+    function JsonMap2Map(Map: TDictionary<string, TObject>; Target: TDictionary<string, string>; KeyIndex: TDictionary<string, Integer>): TDictionary<string, string>;
+    function JsonList2Map(List: TList<TObject>; var Target: TDictionary<string,string>; Key: string; KeyIndex: TDictionary<string, Integer>): TDictionary<string, string>;
+  protected
+    //数据组装
+    function SendData(ActCode:string):string;
+  public
+    constructor Create;
+    destructor Destroy; override;
+    property PosID: Integer read FPosID;
+    property PosCode:string read FPosCode;
+    property PosName:string read FPosName;
+    property SignNo :string read GetSignNo;	                                    //交易签到流水号	ANS	30		通过签到【9001】交易获取
+    property Msgid :string read GetMsgid;                                       //获取报文ID
+    property Input:string read FInput write FInput;                             //数据输入节点
+    property YBDataInterface :TInterface_SPDA_QingDao read FInterface;
+    function Execute(ActCode,AData:string): Boolean;
+    function P9948(AJson:TJSONObject):Boolean;                                  //4.4商品盘存上传（ActCode=9948）
+    function P9949(AJson:TJSONObject):Boolean;                                  //4.5商品库存变更（ActCode=9949）
+    function P9950(AJson:TJSONObject):Boolean;                                  //4.6商品采购（ActCode=9950）
+    function P9951(AJson:TJSONObject):Boolean;                                  //4.7商品采购退货（ActCode=9951）
+    function P9952(AJson:TJSONObject):Boolean;                                  //4.8商品销售（ActCode=9952）
+    function P9953(AJson:TJSONObject):Boolean;                                  //4.9商品销售退货（ActCode=9953）
+    function P9954(AJson:TJSONObject):Boolean;                                  //4.10商品信息删除（ActCode=9954）
+  end;
+
+var
+  Config_SPDA_QingDao: TConfig_SPDA_QingDao;
+
+implementation
+
+uses
+  UComvar, UJsonObjectHelper, Datasnap.DBClient, System.IniFiles,
+  UComDBStorable, UBaseParams, UComConst;
+
+{$R *.dfm}
+
+procedure TConfig_SPDA_QingDao.BeforeFormShow;
+var ini:TIniFile;
+begin
+  inherited;
+  ini := TIniFile.Create(Goo.SystemDataPath+'\Config_SPDA_QingDao.ini');
+  try
+    edt_PosCode.Text          := ini.ReadString('Config','PosCode',edt_PosCode.Text);
+    edt_PosName.Text          := ini.ReadString('Config','PosName',edt_PosName.Text);
+    edt_accessSecret.Text     := ini.ReadString('Config','accessSecret',edt_accessSecret.Text);
+    edt_infver.Text           := ini.ReadString('Config','infver',edt_infver.Text);
+    edt_mdtrtarea_admvs.Text  := ini.ReadString('Config','mdtrtarea_admvs',edt_mdtrtarea_admvs.Text);
+    edt_insuplc_admdvs.Text   := ini.ReadString('Config','insuplc_admdvs',edt_insuplc_admdvs.Text);
+    edt_HostIP.Text           := ini.ReadString('Config','HostIP',edt_HostIP.Text);
+    edt_HostPort.Text         := ini.ReadString('Config','HostPort',edt_HostPort.Text);
+    edt_PosID.Tag             := ini.ReadInteger('Config','PosID',0);
+    if edt_PosID.Tag>0 then edt_PosID.Text := Goo.Local.GetRec<TStorable_MType>(edt_PosID.Tag).FullName;
+    if edt_PosID.Text=EmptyStr then edt_PosID.Text := edt_PosName.Text;    
+  finally
+    ini.Free;
+  end;
+end;
+
+procedure TConfig_SPDA_QingDao.Button1Click(Sender: TObject);
+begin
+  inherited;
+  Goo.Msg.CheckAndAbort(edt_PosID.Tag>0,'请选择千方门店信息');
+  Goo.Msg.CheckAndAbort(edt_PosCode.Text<>EmptyStr,'医疗机构编码不能为空');
+  Goo.Msg.CheckAndAbort(edt_PosName.Text<>EmptyStr,'医疗机构名称不能为空');
+  Goo.Msg.CheckAndAbort(edt_accessSecret.Text<>EmptyStr,'访问秘钥（accessSecret）不能为空');
+  Goo.Msg.CheckAndAbort(edt_infver.Text<>EmptyStr,'医保版本号(infver,按照本地区设置)不能为空');
+  Goo.Msg.CheckAndAbort(edt_mdtrtarea_admvs.Text<>EmptyStr,'就医地医保区划不能为空');
+  Goo.Msg.CheckAndAbort(edt_insuplc_admdvs.Text<>EmptyStr,'参保地医保区划不能为空');
+
+  Goo.ComVar.Add('@YB_QingDao_PosCode',edt_PosCode.Text);
+  Goo.ComVar.Add('@YB_QingDao_PosName',edt_PosName.Text);
+  Goo.ComVar.Add('@YB_QingDao_accessSecret',edt_accessSecret.Text);
+  Goo.ComVar.Add('@YB_QingDao_infver',edt_infver.Text);
+  Goo.ComVar.Add('@YB_QingDao_mdtrtarea_admvs',edt_mdtrtarea_admvs.Text);
+  Goo.ComVar.Add('@YB_QingDao_insuplc_admdvs',edt_insuplc_admdvs.Text);
+  Goo.ComVar.Add('@YB_QingDao_HostIP',edt_HostIP.Text);
+  Goo.ComVar.Add('@YB_QingDao_HostPort',edt_HostPort.Text);
+  Goo.ComVar.Add('@YB_QingDao_PosID',edt_PosID.Tag);
+  
+  var ini := TIniFile.Create(Goo.SystemDataPath+'\Config_SPDA_QingDao.ini');
+  try
+    ini.WriteString('Config','PosCode',edt_PosCode.Text);
+    ini.WriteString('Config','PosName',edt_PosName.Text);
+    ini.WriteString('Config','accessSecret',edt_accessSecret.Text);
+    ini.WriteString('Config','infver',edt_infver.Text);
+    ini.WriteString('Config','mdtrtarea_admvs',edt_mdtrtarea_admvs.Text);
+    ini.WriteString('Config','insuplc_admdvs',edt_insuplc_admdvs.Text);
+    ini.WriteString('Config','HostIP',edt_HostIP.Text);
+    ini.WriteString('Config','HostPort',edt_HostPort.Text);
+    ini.WriteInteger('Config','PosID',edt_PosID.Tag);
+  finally
+    ini.Free;
+  end;
+
+  ModalResult := mrOk;
+end;
+
+procedure TConfig_SPDA_QingDao.edt_PosIDKeyPress(Sender: TObject; var Key: Char);
+begin
+  inherited;
+  case key of
+    #13:edt_PosIDRightButtonClick(Sender);
+    #46,#8:edt_PosID.Tag := 0;
+  end;  
+end;
+
+procedure TConfig_SPDA_QingDao.edt_PosIDRightButtonClick(Sender: TObject);
+begin
+  inherited;//
+  var _base := Goo.GetBaseinfo(btMtype);
+  if not Assigned(_base) then Exit;
+  var _item := _base.First
+  if not Assigned(_base.First) then Exit;
+  edt_PosID.Text := _base.First.FullName;
+  edt_PosID.Tag  := _base.First.Rec;
+end;
+
+{ TCommAPI_SPDA_QingDao }
+
+function TCommAPI_SPDA_QingDao.BuildSignString(AJson: TJSONObject): string;
+begin
+  var jsonMap := TDictionary<string, TObject>.Create;
+  var stringMap := TDictionary<string, string>.Create;
+  var keyIndex := TDictionary<String, Integer>.Create;
+  try
+    jsonMap := convertJson2Map(AJson.Sort,jsonMap);
+    stringMap := JsonMap2Map(jsonMap,stringMap,keyIndex);
+
+    Result := buildSignStringInner(stringMap);
+    Goo.Logger.Info('代签字符串：'+Result,'青岛医保');
+    Result := Goo.Crypto.HMAC_SM3(Result,FAccessSecret);
+  finally
+    jsonMap.Free;
+    stringMap.Free;
+    keyIndex.Free;
+  end;
+end;
+
+function TCommAPI_SPDA_QingDao.BuildSignStringInner(Params: TDictionary<string, string>): string;
+var
+  Keys: TStringList;
+  Key: string;
+  Value: string;
+  Buf: TStringBuilder;
+  I: Integer;
+begin
+  Keys := TStringList.Create;
+  try
+    for Key in Params.Keys do
+    begin
+      Value := Params.Items[Key];
+      if VarIsEmpty(Value) or VarIsNull(Value) or (Value = '') then
+        Continue;
+      Keys.Add(Key);
+    end;
+    Keys.Sorted := False;
+    Keys.CaseSensitive := True; //此句设置排序大小写敏感
+    Keys.UseLocale     := False;   //切记必须有这一句，否则排序会出现 大写字母不在小写前面的问题
+    Keys.Sort; // Sort keys alphabetically
+
+    Buf := TStringBuilder.Create;
+    try
+      for I := 0 to Keys.Count - 1 do
+      begin
+        Key := Keys[I];
+        Value := Params.Items[Key];
+        if I = Keys.Count - 1 then // Do not include the last '&' character
+          Buf.Append(Key + '=' + Value)
+        else
+          Buf.Append(Key + '=' + Value + '&');
+      end;
+
+      Result := Buf.ToString;
+    finally
+      Buf.Free;
+    end;
+  finally
+    Keys.Free;
+  end;
+end;
+
+function TCommAPI_SPDA_QingDao.ConvertJson2Map(AJson: TJSONObject; var Map: TDictionary<string, TObject>): TDictionary<string, TObject>;
+var
+  JsonValue: TJSONValue;
+  SubMap: TDictionary<string, TObject>;
+  List: TList<TObject>;
+  I: Integer;
+begin
+  for var Key in AJson do
+  begin
+    JsonValue := Key.JsonValue;
+    if JsonValue is TJSONObject then
+    begin
+      SubMap := TDictionary<string, TObject>.Create;
+      Map.Add(Key.JsonString.Value, SubMap);
+      ConvertJson2Map(TJSONObject(JsonValue), SubMap);
+    end
+    else if JsonValue is TJSONArray then
+    begin
+      List := TList<TObject>.Create;
+      Map.Add(Key.JsonString.Value, List);
+      ConvertJsonArray2List(TJSONArray(JsonValue), List);
+    end
+    else
+    begin
+      if not (JsonValue is TJSONNull) and not JsonValue.Value.IsEmpty then
+      begin
+        Map.Add(Key.JsonString.Value, TJSONString.Create(JsonValue.Value));
+      end;
+    end;
+  end;
+  Result := Map;
+end;
+
+procedure TCommAPI_SPDA_QingDao.ConvertJsonArray2List(JsonArray: TJSONArray; var List: TList<TObject>);
+var
+  I: Integer;
+  JsonValue: TJSONValue;
+begin
+  for I := 0 to JsonArray.Count - 1 do
+  begin
+    JsonValue := JsonArray.Items[I];
+    if JsonValue is TJSONObject then
+    begin
+      var d := TDictionary<string, TObject>.Create;
+      List.Add(ConvertJson2Map(TJSONObject(JsonValue), d));
+    end
+    else if JsonValue is TJSONArray then
+    begin
+      var _l :TList<TObject> := TList<TObject>.Create;
+      List.Add(_l);
+      ConvertJsonArray2List(TJSONArray(JsonValue), _l);
+    end
+    else
+    begin
+      List.Add(TJSONString.Create(JsonValue.Value));
+    end;
+  end;
+end;
+
+constructor TCommAPI_SPDA_QingDao.Create;
+begin
+  Fsign_no := EmptyStr;
+  var ini := TIniFile.Create(Goo.SystemDataPath+'\Config_SPDA_QingDao.ini');
+  try
+    FPosCode          := ini.ReadString('Config','PosCode','');
+    FPosName          := ini.ReadString('Config','PosName','');
+    FAccessSecret     := ini.ReadString('Config','accessSecret','');
+    Finfver           := ini.ReadString('Config','infver','');
+    Fmdtrtarea_admvs  := ini.ReadString('Config','mdtrtarea_admvs','');
+    Finsuplc_admdvs   := ini.ReadString('Config','insuplc_admdvs','');
+    FHostIP           := ini.ReadString('Config','HostIP','');
+    FHostPort         := ini.ReadString('Config','HostPort','');
+    FPosID            := ini.ReadInteger('Config','PosID',0);
+  finally
+    ini.Free;
+  end;
+  FInterface := TInterface_SPDA_QingDao.Create(FHostIP,StrToIntDef(FHostPort,48905));
+  FInterface.PosCode := Self.PosCode;
+end;
+
+destructor TCommAPI_SPDA_QingDao.Destroy;
+begin
+  if Assigned(FInterface) then FInterface.Free;  
+  inherited;
+end;
+
+function TCommAPI_SPDA_QingDao.Execute(ActCode, AData: string): Boolean;
+begin
+  Input := AData;
+  Result := YBDataInterface.Execute(SendData(ActCode));
+end;
+
+function TCommAPI_SPDA_QingDao.GetMsgid: string;
+begin
+  Result := EmptyStr;
+  var _YbLSNo := Goo.DB.ExecProc('GP_QingDao_GetLSH');
+  Result := Format('%s%s%s', [PosCode,FormatDateTime('YYYYMMDDHHMMSS', Now),Format('%.4d', [_YbLSNo])]);
+end;
+
+function TCommAPI_SPDA_QingDao.GetSignNo: string;
+begin
+  if Fsign_no=EmptyStr then Fsign_no := Goo.DB.QueryOneFiled<string>('select SignNo from YB_Sign where QdFlag=1 and Erec=%d and QdDate=''%s''',[Goo.Login.LoginUserRec,FormatDateTime('yyyy-MM-dd',Now)]);
+  //如果今天还没有签到，就在线获取
+  if Fsign_no=EmptyStr then
+  begin
+    var AJosn := TJSONObject.SO();
+    try
+      AJosn.O['signIn'] := TJSONObject.SO();
+      AJosn.O['signIn'].S['opter_no'] := Goo.Login.LoginUserCode;
+      AJosn.O['signIn'].S['mac']      := Goo.GetRealMacAddress;
+      AJosn.O['signIn'].S['ip']       := Goo.Login.LocalIPAddress;
+      Input := AJosn.ToString;
+    finally
+      AJosn.Free;
+    end;
+    if not YBDataInterface.Execute(SendData('9960')) then Exit;
+    Fsign_no := YBDataInterface.OutPutJson.O['signinoutb'].S['sign_no'];
+    //将当天的签到保存到数据库
+    if Fsign_no<>EmptyStr then Goo.DB.ExecProc('GP_InsertYBSign', ['@Erec', '@SignNo', '@QdDate', '@QdFlag'],[Goo.Login.LoginUserRec,Fsign_no, FormatDateTime('yyyy-MM-dd',Now), 1]);
+  end;
+  Result := Fsign_no;
+end;
+
+function TCommAPI_SPDA_QingDao.JsonList2Map(List: TList<TObject>;
+  var Target: TDictionary<string, string>; Key: string;KeyIndex: TDictionary<string, Integer>): TDictionary<string, string>;
+var
+  i: Integer;
+  NewKey, Value, AppendValue: string;
+begin
+  for i := 0 to List.Count - 1 do
+  begin
+    if List[i] is TList<TObject> then
+    begin
+      JsonList2Map(TList<TObject>(List[i]), Target, '', KeyIndex);
+    end
+    else if List[i] is TDictionary<string, TObject> then
+    begin
+      JsonMap2Map(TDictionary<string, TObject>(List[i]), Target, KeyIndex);
+    end
+    else
+    begin
+      AppendValue := TJSONString(List[i]).Value;
+      if (AppendValue <> TJSONNull.Create.ToString) and (AppendValue <> '') then
+      begin
+        if Target.ContainsKey(Key) then
+        begin
+          Value := Target[Key];
+          Target[Key] := Value + ',' + AppendValue;
+        end
+        else
+        begin
+          if KeyIndex.ContainsKey(Key) then
+          begin
+            NewKey := Key + IntToStr(KeyIndex[Key] + 1);
+            KeyIndex[Key] := KeyIndex[Key] + 1;
+            Target.Add(NewKey, AppendValue);
+          end
+          else
+          begin
+            KeyIndex.Add(Key, 0);
+            Target.Add(Key, AppendValue);
+          end;
+        end;
+      end;
+    end;
+  end;
+Result := Target
+
+end;
+
+function TCommAPI_SPDA_QingDao.JsonMap2Map(Map: TDictionary<string, TObject>;Target: TDictionary<string, string>; KeyIndex: TDictionary<string, Integer>): TDictionary<string, string>;
+var
+  Key, NewKey, Value: string;
+  SubMap: TDictionary<string, TObject>;
+  SubList: TList<TObject>;
+  Index: Integer;
+begin
+  for Key in Map.Keys do
+  begin
+    if Map[Key] is TDictionary<string, TObject> then
+    begin
+      SubMap := TDictionary<string, TObject>(Map[Key]);
+      Target := JsonMap2Map(SubMap, Target, KeyIndex);
+    end
+    else if Map[Key] is TList<TObject> then
+    begin
+      SubList := TList<TObject>(Map[Key]);
+      Target := JsonList2Map(SubList, Target, Key, KeyIndex);
+    end
+    else
+    begin
+      Value := TJSONString(Map[Key]).Value;
+      if (Value <> TJSONNull.Create.ToString) and (Value <> '') then
+      begin
+        if KeyIndex.ContainsKey(Key) then
+        begin
+          Index := KeyIndex[Key] + 1;
+          NewKey := Key + IntToStr(Index);
+          KeyIndex[Key] := Index;
+          Target.Add(NewKey, Value);
+        end
+        else
+        begin
+          KeyIndex.Add(Key, 0);
+          Target.Add(Key, Value);
+        end;
+      end;
+    end;
+  end;
+  Result := Target;
+
+end;
+
+function TCommAPI_SPDA_QingDao.P9948(AJson: TJSONObject): Boolean;
+begin
+  Input := AJson.ToString;                    
+  Result := YBDataInterface.Execute(SendData('9948'));
+end;
+
+function TCommAPI_SPDA_QingDao.P9949(AJson: TJSONObject): Boolean;
+begin
+  Input := AJson.ToString;
+  Result := YBDataInterface.Execute(SendData('9949'));
+end;
+
+function TCommAPI_SPDA_QingDao.P9950(AJson: TJSONObject): Boolean;
+begin
+  Input := AJson.ToString;
+  Result := YBDataInterface.Execute(SendData('9950'));
+end;
+
+function TCommAPI_SPDA_QingDao.P9951(AJson: TJSONObject): Boolean;
+begin
+  Input := AJson.ToString;
+  Result := YBDataInterface.Execute(SendData('9951'));
+end;
+
+function TCommAPI_SPDA_QingDao.P9952(AJson: TJSONObject): Boolean;
+begin
+  Input := AJson.ToString;
+  Result := YBDataInterface.Execute(SendData('9952'));
+end;
+
+function TCommAPI_SPDA_QingDao.P9953(AJson: TJSONObject): Boolean;
+begin
+  Input := AJson.ToString;
+  Result := YBDataInterface.Execute(SendData('9953'));
+end;
+
+function TCommAPI_SPDA_QingDao.P9954(AJson: TJSONObject): Boolean;
+begin
+  Input := AJson.ToString;
+  Result := YBDataInterface.Execute(SendData('9954'));
+end;
+
+function TCommAPI_SPDA_QingDao.SendData(ActCode: string): string;
+begin
+  var Json := TJSONObject.SO();
+  try
+    Json.O['baseData'] := TJSONObject.SO();
+    Json.O['baseData'].S['msgSendTime'] := FormatDateTime('yyyyMMddHHmmss',Now);
+    Json.O['baseData'].S['msgCrrltnId'] := '44cc3a9b-c9c3-44c7-ad93-c05f1206ef58';
+    Json.O['baseData'].S['accessId']    := PosCode;
+    Json.O['bizData']  := TJSONObject.SO();
+    Json.O['bizData'].S['ActCode'] := ActCode;
+    Json.O['bizData'].S['MchntNo'] := '180856928442219';
+    Json.O['bizData'].S['Flag']    := '1';
+    Json.O['bizData'].S['ReqTime'] := FormatDateTime('yyyy-MM-dd HH:mm:ss',Now);
+    Json.O['bizData'].S['Ver']     := '0';
+    //公共参数
+    Json.O['bizData'].S['infno']          := ActCode; //'9001';
+    Json.O['bizData'].S['msgid']          := Msgid;
+    Json.O['bizData'].S['cainfo']         := '';
+    Json.O['bizData'].S['signtype']       := '';
+    Json.O['bizData'].S['infver']         := Finfver;
+    Json.O['bizData'].S['mdtrtarea_admvs']:= Fmdtrtarea_admvs;
+    Json.O['bizData'].S['insuplc_admdvs'] := Finsuplc_admdvs;
+    Json.O['bizData'].S['recer_sys_code'] := 'MBS_LOCAL';
+    Json.O['bizData'].S['dev_no']         := '';
+    Json.O['bizData'].S['dev_safe_info']  := '';
+    Json.O['bizData'].S['opter_type']     := '1';
+    Json.O['bizData'].S['opter']          := Goo.Login.LoginUserCode;
+    Json.O['bizData'].S['opter_name']     := Goo.Login.LoginUserName;
+    Json.O['bizData'].S['inf_time']       := FormatDateTime('yyyy-MM-dd HH:mm:ss',Now);
+    Json.O['bizData'].S['fixmedins_code'] := PosCode;
+    Json.O['bizData'].S['fixmedins_name'] := PosName;
+    if Fsign_no<>EmptyStr then Json.O['bizData'].S['sign_no'] := SignNo;
+    if Input<>EmptyStr then
+    begin
+      Json.O['bizData'].O['input'] := TJSONObject.SO();
+      for var i in TJSONObject.SO(Input) do Json.O['bizData'].O['input'].AddPair(i.JsonString,i.JsonValue);
+    end;
+    //增加签名
+    Json.O['baseData'].S['sign'] := BuildSignString(Json).ToUpper;
+    Result := Json.ToString;
+    Goo.Logger.Info('入参：'+Result,'青岛医保');
+  finally
+    Json.Free;
+  end;
+end;
+
+{ TInterface_SPDA_QingDao }
+
+constructor TInterface_SPDA_QingDao.Create(AHostIP:string;APort:Integer);
+begin
+  FsgcWebSocketClient := TsgcWebSocketClient.Create(nil);
+  FsgcWebSocketClient.Host := AHostIP;
+  FsgcWebSocketClient.Port := APort;
+  //FsgcWebSocketClient.OnMessage := OnWebSocketMessage;
+  try
+    FsgcWebSocketClient.Active := True;
+  except on E: Exception do Goo.Logger.Info('小U中间键连接错误：'+e.Message,'青岛医保');
+  end;
+  FOutPutStr := EmptyStr;
+end;
+
+destructor TInterface_SPDA_QingDao.Destroy;
+begin
+  if Assigned(FsgcWebSocketClient) then FsgcWebSocketClient.Free;  
+  if Assigned(FOutPutJson) then FOutPutJson.Free;  
+  inherited;
+end;
+
+function TInterface_SPDA_QingDao.Execute(AData:string): Boolean;
+begin
+  Result := False;
+  Goo.Msg.CheckAndAbort(Goo.Cert.CheckRegistered(1800713706080243714,PosCode));
+  if Assigned(FOutPutJson) then FreeAndNil(FOutPutJson);  
+  if FsgcWebSocketClient.Active then
+  begin
+    try
+      FOutPutStr := FsgcWebSocketClient.WriteAndWaitData(AData,10000);
+      Goo.Logger.Info('出参：'+FOutPutStr,'青岛医保');
+      FOutPutJson := TJSONObject.SO(FOutPutStr);
+      Result := OutputReturnSucceed;      
+    except on E: Exception do Goo.Logger.Info('异常：'+e.Message,'青岛医保');
+    end;
+  end;
+end;
+
+procedure TInterface_SPDA_QingDao.OnWebSocketMessage(Connection: TsgcWSConnection; const Text: string);
+begin
+  OutPutStr := Text;
+end;
+
+function TInterface_SPDA_QingDao.OutputReturnSucceed: Boolean;
+begin
+  Result := False;
+  LastErrorMessage := EmptyStr;
+  if OutPutStr=EmptyStr then Exit;
+  if not Assigned(OutPutJson) then Exit;
+  
+  Result := OutPutJson.S['RespCode'] = '0000';
+  LastErrorMessage := OutPutJson.S['RespDesc'];
+  if OutPutJson.Exists('success') then Result := Result and OutPutJson.B['success'];
+  if not Result and OutPutJson.Exists('message') then LastErrorMessage := OutPutJson.S['message'];
+  if not Result and OutPutJson.Exists('model') and OutPutJson.O['model'].Exists('errMsg') and (OutPutJson.O['model'].S['errMsg']<>EmptyStr) then
+    LastErrorMessage := OutPutJson.O['model'].S['errMsg'];
+end;
+
+initialization
+  Goo.Reg.RegisterClass(TConfig_SPDA_QingDao);
+
+end.

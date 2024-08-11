@@ -1,0 +1,8 @@
+IF NOT EXISTS(SELECT * FROM SYSOBJECTS WHERE NAME='YB_GoodsStockChange' AND XTYPE='U')
+CREATE TABLE [dbo].YB_GoodsStockChange
+(
+	BillID	ctInt,
+	Ord	ctInt	PRIMARY KEY(BillID,Ord)
+)
+
+GO

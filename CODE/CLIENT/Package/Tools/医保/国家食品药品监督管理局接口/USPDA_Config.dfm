@@ -1,0 +1,94 @@
+inherited SPDA_Config: TSPDA_Config
+  BorderStyle = bsDialog
+  Caption = #35774#32622
+  ClientHeight = 478
+  ClientWidth = 694
+  Position = poMainFormCenter
+  Visible = False
+  ExplicitWidth = 710
+  ExplicitHeight = 517
+  PixelsPerInch = 96
+  TextHeight = 15
+  inherited Panel_Top: TPanel
+    Width = 694
+    Color = clBtnShadow
+    ParentBackground = False
+    ExplicitWidth = 694
+    object Label1: TLabel
+      Left = 16
+      Top = 16
+      Width = 83
+      Height = 15
+      Caption = #36873#25321#33647#30417#22320#21306'*'
+    end
+    object combo_Area: TComboBox
+      Left = 109
+      Top = 10
+      Width = 244
+      Height = 23
+      Style = csDropDownList
+      TabOrder = 0
+      TextHint = #35831#36873#25321#33647#30417#22320#21306
+    end
+  end
+  inherited Panel_Client: TPanel
+    Width = 694
+    Height = 396
+    ExplicitWidth = 694
+    ExplicitHeight = 396
+    object PageControl1: TPageControl
+      Left = 0
+      Top = 0
+      Width = 694
+      Height = 396
+      ActivePage = TabSheet_Base
+      Align = alClient
+      TabOrder = 0
+      object TabSheet_Base: TTabSheet
+        Caption = #22522#26412#35774#32622
+        object ScrollBox_Base: TScrollBox
+          Left = 0
+          Top = 0
+          Width = 686
+          Height = 366
+          Align = alClient
+          BorderStyle = bsNone
+          Color = clWindow
+          ParentColor = False
+          TabOrder = 0
+        end
+      end
+      object TabSheet_Assist: TTabSheet
+        Caption = #36741#21161#20449#24687
+        ImageIndex = 1
+        TabVisible = False
+        object ScrollBox_Assist: TScrollBox
+          Left = 0
+          Top = 0
+          Width = 686
+          Height = 366
+          Align = alClient
+          BorderStyle = bsNone
+          Color = clWindow
+          ParentColor = False
+          TabOrder = 0
+        end
+      end
+    end
+  end
+  inherited Panel_Button: TPanel
+    Top = 437
+    Width = 694
+    ExplicitTop = 437
+    ExplicitWidth = 694
+  end
+  inherited ActionList: TActionList
+    object Action_Save: TAction
+      Caption = #20445#23384
+      OnExecute = Action_SaveExecute
+    end
+  end
+  inherited cxStyleRepository: TcxStyleRepository
+    PixelsPerInch = 96
+  end
+end

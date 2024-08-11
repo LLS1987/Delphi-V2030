@@ -1,0 +1,18 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<BorlandProject>
+	<Transactions>
+    <Transaction>1899-12-30 00:00:00.000.114,=D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\Tools\医保\青岛药监追溯接口\Unit1.pas</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.198,=sgcWebSocketsD11.dcp</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.366,=sgcWebSocketsD11.dcp</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.587,=BaseQuery.dcp</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.436,D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\Tools\医保\青岛药监追溯接口\Unit1.pas=D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\Tools\医保\青岛药监追溯接口\UConfig_SPDA_QingDao.pas</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.000,=D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\Tools\医保\青岛药监追溯接口\Unit1.pas</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.546,=BaseForm.dcp</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.436,D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\Tools\医保\青岛药监追溯接口\Unit1.dfm=D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\Tools\医保\青岛药监追溯接口\UConfig_SPDA_QingDao.dfm</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.728,D:\LLS\Documents\Embarcadero\Studio\Projects\Package1.dproj=D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\Tools\医保\青岛药监追溯接口\SPDA_QingDao.dproj</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.750,D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\Tools\医保\青岛药监追溯接口\UUploadData_QingDao.pas=D:\LLS_WORK\Delphi 11\V2030\CODE\CLIENT\Package\Tools\医保\青岛药监追溯接口\Unit1.pas</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.110,=rtl.dcp</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.884,=rtl.dcp</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.620,=GlobalObject.dcp</Transaction>
+  </Transactions>
+</BorlandProject>
