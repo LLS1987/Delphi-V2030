@@ -727,6 +727,7 @@ end;
 function TBaseForm.CreatecxGridView(AGrid: TcxGrid; AParentLevel: TcxGridLevel;AViewClass: TcxCustomGridViewClass; AGridName: string): TcxGridLevel;
 begin
   Result := AParentLevel.Add;
+  //Result.Caption   := AGridName;
   Result.GridView  := AViewClass.Create(AGrid);
   if AGridName = '' then AGridName := 'MainGridView' + (Result.Level*100 + AParentLevel.Count).ToString;
   Result.GridView.Name := AGridName;

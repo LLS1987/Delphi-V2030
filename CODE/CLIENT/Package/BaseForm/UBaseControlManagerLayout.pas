@@ -141,6 +141,7 @@ type
   private
     FBaseInfo:TBaseParam;
     FBaseType: Integer;
+    FRootParID:string;
     procedure OnRightButtonClick(Sender:TObject);
     procedure OnEditKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
     function GetBaseInfo: TBaseParam;
@@ -188,6 +189,7 @@ type
     function GetValueText: string;override;
     function GetValue: Variant; override;
     procedure SetValue(const Value: Variant);override;
+    procedure SetWidth(const Value: Integer);override;
   public
     function CreateControl: TWinControl; override;
   published
@@ -234,6 +236,7 @@ type
     destructor Destroy; override;
     property OWnerObject:TObject read FOWnerObject write FOWnerObject;
     property Parent:TWinControl read FParent write FParent;
+    ///通过节点查找
     property ConditionItem[const AKey: string]:TControlItem read GetCondition;
     property ConditionIndex[const Index: Integer]:TControlItem read GetConditionIndex;
     property ControlItem[const AKey: string]:TWinControl read GetControl;
@@ -268,6 +271,7 @@ type
     FWidth: Integer;
     FMemory: Boolean;
     FEnumerateControl:TList<TControlItemClass>;
+    FMemoryFile: string;
     function GetParamList: TParamList;
     function CreateControl(ADataType:Integer): TControlItem;overload;
     function CreateControl(ADataType:TConditionContorlType): TControlItem;overload;
@@ -321,8 +325,10 @@ type
     property ParamList:TParamList read GetParamList;
     ///是否记忆参数，默认不记忆
     property Memory:Boolean       read FMemory write FMemory;
-    //设置父类的宽度默认就是窗体的宽度
+    ///设置父类的宽度默认就是窗体的宽度
     property Width: Integer read FWidth write FWidth;
+    ///设置配置文件的保存，没有设置，默认就 Daterecord.ini
+    property MemoryFile:string read FMemoryFile write FMemoryFile;
   end;
 
   const Control_Border_Width = 15;
@@ -1235,11 +1241,24 @@ begin
     begin
       if ShowMsg then
       begin
-        Goo.Msg.ShowMsg('%s 不能为空',[item.Value.Caption]);
+        Goo.Msg.ShowMsg('%s 不能为空！',[item.Value.Caption]);
         item.Value.TrySetFocus;
       end;
       Result := False;
       Break;
+    end;
+    if item.Value.MustEnter and (item.Value is TControlItem_ButtonEdit) then
+    begin
+      if (TControlItem_ButtonEdit(item.Value).BaseType>0) and (item.Value.Value=0) then
+      begin
+        if ShowMsg then
+        begin
+          Goo.Msg.ShowMsg('%s 不能为空！',[item.Value.Caption]);
+          item.Value.TrySetFocus;
+        end;
+        Result := False;
+        Break;
+      end;
     end;
   end;
 end;
@@ -1250,6 +1269,7 @@ begin
   self.OWnerObject := AOwner;
   self.Parent      := AParent;
   Width            := AParent.Width;
+  FMemoryFile      := 'Daterecord.ini';
 end;
 
 function TControlManagerLayout.CreateControl(ADataType: TConditionContorlType): TControlItem;
@@ -1325,9 +1345,9 @@ begin
     item.Value.GroupParent.Top  := ATop;
     ALeft := item.Value.GroupParent.Left + item.Value.GroupParent.Width;
     //读取记忆
-    if Memory then
+    if Memory and FileExists(Goo.SystemDataPath+'\'+MemoryFile) then
     begin
-      var inifile := TIniFile.Create(Goo.SystemDataPath+'\Daterecord.ini');
+      var inifile := TIniFile.Create(Goo.SystemDataPath+'\'+MemoryFile);
       try
         try
           if inifile.ValueExists(OWnerObject.ClassName,item.Value.Name.TrimLeft(['@'])) then
@@ -1352,7 +1372,7 @@ function TControlManagerLayout.RefreshParamList: boolean;
 begin
   Result := CheckData;
   if not Result then Abort;
-  var inifile := TIniFile.Create(Goo.SystemDataPath+'\Daterecord.ini');
+  var inifile := TIniFile.Create(Goo.SystemDataPath+'\'+MemoryFile);
   try
     for var item in Self do
     begin
@@ -1470,6 +1490,7 @@ begin
   if not AJson.Exists('Caption') then Exit;
   Result := Add(AJson.I['ControlType'],AJson.S['Name'],AJson.S['Caption'],AJson.B['MustEnter'],AJson.GetValue<Boolean>('Visible',True),AJson.S['TextHint']);
   if Result<0 then Exit;
+  if AJson.B['Fat'] then Self.Items[Result].Value.Width := Self.Items[Result].Value.Width*2;
   for var item in AJson do
   begin
     if SameText(item.JsonString.Value,'ControlType') then Continue;
@@ -1554,6 +1575,7 @@ end;
 function TControlItem_ButtonEdit.CreateControl: TWinControl;
 begin
   inherited;
+  FRootParID := EmptyStr;
   Result := TButtonedEdit.Create(CenterPanel);
   TButtonedEdit(Result).TextHint := TextHint;
   TButtonedEdit(Result).RightButton.Visible := True;
@@ -1587,6 +1609,7 @@ begin
       btVchType:FBaseInfo := TBillTypeParam.Create(GroupParent);
     else FBaseInfo := TMTypeParam.Create(GroupParent);
     end;
+    if Assigned(FBaseInfo) then FRootParID := FBaseInfo.ParID;
   end;
   Result := FBaseInfo;
 end;
@@ -1604,7 +1627,7 @@ begin
     end else Result := TMTypeParam(BaseInfo).First.Rec
   end
   else
-    Result := 0;
+    Result := TButtonedEdit(Control).Tag;
 end;
 
 function TControlItem_ButtonEdit.GetValueText: string;
@@ -1617,6 +1640,7 @@ begin
   case Key of
     13   : 
       begin
+        BaseInfo.ParID        := FRootParID;
         BaseInfo.SearchString := TButtonedEdit(Control).Text;
         if BaseInfo.GetBaseInfoSelect>0 then
           Value := BaseInfo.First.FullName;
@@ -1633,6 +1657,7 @@ end;
 
 procedure TControlItem_ButtonEdit.OnRightButtonClick(Sender: TObject);
 begin
+  BaseInfo.ParID := FRootParID;
   if BaseInfo.GetBaseInfoSelect>0 then Value := BaseInfo.First.FullName;
 end;
 
@@ -1640,12 +1665,25 @@ procedure TControlItem_ButtonEdit.SetValue(const Value: Variant);
 begin
   inherited;
   TButtonedEdit(Control).Text := Value;
+  if (BaseType>0) and (StrToIntDef(Value,0)>0) then
+  begin
+    TButtonedEdit(Control).Tag  := Value;
+    var _dic := Goo.Local.BasicData[TBasicType(BaseType)];
+    if Assigned(_dic) then
+    begin
+      var _data := _dic.GetRec(Value);
+      if Assigned(_data) then TButtonedEdit(Control).Text := _data.FullName;
+    end;
+  end;
 end;
 
 function TControlItem_RadioGroup.CreateControl: TWinControl;
 begin
+  inherited;
   Result := TRadioGroup.Create(CenterPanel);
   Result.Parent := CenterPanel;
+  TRadioGroup(Result).Top := -10;
+  TRadioGroup(Result).Height := 35;
   TRadioGroup(Result).ShowFrame := False;
   TRadioGroup(Result).StyleElements := [];
   TRadioGroup(Result).Caption := EmptyStr;
@@ -1699,6 +1737,12 @@ procedure TControlItem_RadioGroup.SetValue(const Value: Variant);
 begin
   inherited;
   TRadioGroup(Control).ItemIndex := Value;
+end;
+
+procedure TControlItem_RadioGroup.SetWidth(const Value: Integer);
+begin
+  inherited;
+  Control.Top := -11; //RadioGroup边框靠上些
 end;
 
 { TControlItem_Label }
