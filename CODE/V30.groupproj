@@ -6,6 +6,9 @@
         <Projects Include="SERVER\DServer.dproj">
             <Dependencies/>
         </Projects>
+        <Projects Include="CLIENT\Package\GlobalObject\CertRegister\CertRegister.dproj">
+            <Dependencies/>
+        </Projects>
         <Projects Include="CLIENT\Package\GlobalObject\GlobalObject.dproj">
             <Dependencies/>
         </Projects>
@@ -40,6 +43,15 @@
     </Target>
     <Target Name="DServer:Make">
         <MSBuild Projects="SERVER\DServer.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="CertRegister">
+        <MSBuild Projects="CLIENT\Package\GlobalObject\CertRegister\CertRegister.dproj"/>
+    </Target>
+    <Target Name="CertRegister:Clean">
+        <MSBuild Projects="CLIENT\Package\GlobalObject\CertRegister\CertRegister.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="CertRegister:Make">
+        <MSBuild Projects="CLIENT\Package\GlobalObject\CertRegister\CertRegister.dproj" Targets="Make"/>
     </Target>
     <Target Name="GlobalObject">
         <MSBuild Projects="CLIENT\Package\GlobalObject\GlobalObject.dproj"/>
@@ -96,13 +108,13 @@
         <MSBuild Projects="CLIENT\Package\MainForm\DClient.dproj" Targets="Make"/>
     </Target>
     <Target Name="Build">
-        <CallTarget Targets="DServer;GlobalObject;BaseForm;BaseQuery;Login;SPDA_GanSu;DClient"/>
+        <CallTarget Targets="DServer;CertRegister;GlobalObject;BaseForm;BaseQuery;Login;SPDA_GanSu;DClient"/>
     </Target>
     <Target Name="Clean">
-        <CallTarget Targets="DServer:Clean;GlobalObject:Clean;BaseForm:Clean;BaseQuery:Clean;Login:Clean;SPDA_GanSu:Clean;DClient:Clean"/>
+        <CallTarget Targets="DServer:Clean;CertRegister:Clean;GlobalObject:Clean;BaseForm:Clean;BaseQuery:Clean;Login:Clean;SPDA_GanSu:Clean;DClient:Clean"/>
     </Target>
     <Target Name="Make">
-        <CallTarget Targets="DServer:Make;GlobalObject:Make;BaseForm:Make;BaseQuery:Make;Login:Make;SPDA_GanSu:Make;DClient:Make"/>
+        <CallTarget Targets="DServer:Make;CertRegister:Make;GlobalObject:Make;BaseForm:Make;BaseQuery:Make;Login:Make;SPDA_GanSu:Make;DClient:Make"/>
     </Target>
     <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
 </Project>

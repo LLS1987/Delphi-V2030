@@ -33,7 +33,7 @@ type
     ///公司信息
     property Company:string read FCompany write FCompany;
     /// 是否已经注册了
-    property Registered: Boolean read GetRegistered;
+    property Registered: Boolean read GetRegistered write FRegistered;
     ///最后一次在线验证时间
     property LastNetCheckDate:TDateTime read FLastNetCheckDate;
     ///提前X天过期提醒
@@ -80,7 +80,13 @@ begin
   begin
     Result := TCertItem.Create(AID,ACertNO);
     Certs.Add(AID,Result);
-  end else Result.CertNO := ACertNO;
+  end else begin
+    if Result.CertNO <> ACertNO then     //当注册证号变化的时候，就重新验证
+    begin
+      Result.Registered := False;
+      Result.CertNO := ACertNO;
+    end;
+  end;
 end;
 
 function TCertManage.CheckRegistered(ACertItem: TCertItem): Boolean;
