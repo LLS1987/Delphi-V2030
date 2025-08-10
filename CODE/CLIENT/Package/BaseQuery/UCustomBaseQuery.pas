@@ -681,7 +681,10 @@ end;
 procedure TConditionManager.RefreshCondition;
 begin
   Self.Width := Self.Width-200;
-  inherited;
+  try
+    inherited;
+  except on E: Exception do Goo.Logger.Error('查询报表加载错误[%s].RefreshCondition:%s',[self.OWnerObject.ClassName,e.Message]);
+  end;
   //单独刷新查询按钮
   FindButton.Parent  := self.Parent;
   FindButton.Caption := '查询';
