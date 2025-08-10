@@ -398,7 +398,7 @@ begin
       begin
         cxLocalizer1.FileName := Goo.SystemPath + '\Layout\DevChs.ini';
         cxLocalizer1.Active := True;
-        cxLocalizer1.Language := '中文(简体，中国)';
+        cxLocalizer1.Locale := 2052;  //cxLocalizer1.Language := '中文(简体，中国)';
       end).Start;
   end;
 end;
