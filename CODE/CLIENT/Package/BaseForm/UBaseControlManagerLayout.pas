@@ -197,9 +197,12 @@ type
   end;
   // 时间
   TControlItem_Date = class(TControlItem)
+  const
+    C_DateBetween_Name = 'Memory_QueryDateBetween';
   private
     FBetweenButton:TImage;
     FBetweenPopMenu:TPopupMenu;
+    FBetweenPopItem_Memory:TMenuItem;
     procedure OnBetweenButtonClick(Sender:Tobject);
     procedure OnBetweenPopmenuClick(Sender:Tobject);
     procedure ClearDatePopMenu;
@@ -212,6 +215,7 @@ type
     destructor Destroy; override;
     function CreateControl: TWinControl; override;
     function CreateBetweenButton:TImage;
+    procedure MemoryDateBetween;  //清空控件的时候，记忆查询日期
   end;
 
   TControlItem_DateTime = class(TControlItem)
@@ -272,6 +276,7 @@ type
     FMemory: Boolean;
     FEnumerateControl:TList<TControlItemClass>;
     FMemoryFile: string;
+    FEndDateBetweenItem:TControlItem_Date;
     function GetParamList: TParamList;
     function CreateControl(ADataType:Integer): TControlItem;overload;
     function CreateControl(ADataType:TConditionContorlType): TControlItem;overload;
@@ -332,7 +337,7 @@ type
   end;
 
   const Control_Border_Width = 15;
-  const DADEPOPMENUCAPTION: array[0..9] of string =('本日','本周','本月', '本季度','本年','-','上周','上月','上季度','上年');
+  const DADEPOPMENUCAPTION: array[0..11] of string =('本日','本周','本月', '本季度','本年','-','上周','上月','上季度','上年','-','记忆查询日期');
   const EditButtonFilterImageIndex: array[TEditButtonFilterVer] of Integer = (-1,7,8,9,10,11,12,13,14,15,16,17,18);
   const EditButtonFilterLink: array[TEditButtonFilterVer] of string = ('','=','<>','<','<=','>','>=','like','not like','','','like','like');
   const EditButtonFilterCaption: array[TEditButtonFilterVer] of string = ('','等于','不等于','小于','小于等于','大于','大于等于','相似','不相似','包含','不包含','左相似','右相似');
@@ -748,6 +753,7 @@ end;
 
 constructor TControlItem_Date.Create;
 begin
+  FBetweenPopItem_Memory := nil;
   inherited;
   FGroupWidth  := Trunc(FGroupWidth/2);
   FControlLeft := 60;
@@ -792,6 +798,25 @@ begin
     vitem.Tag := i;
     vitem.OnClick := OnBetweenPopmenuClick;
     vitem.AutoHotkeys := maParent;
+    if (OWnerObject is TControlManagerLayout) and (vitem.Caption=DADEPOPMENUCAPTION[11]) then  //记忆查询日期
+    begin
+      FBetweenPopItem_Memory := vitem;
+      var inifile := TIniFile.Create(Goo.SystemDataPath+'\Daterecord.ini');
+      try
+        vitem.Checked := inifile.ReadBool(OWnerObject.OWnerObject.ClassName,C_DateBetween_Name,False);
+        if vitem.Checked then
+        begin
+          var _csdate := OWnerObject.ConditionIndex[Control.Tag];
+          if Assigned(_csdate) then
+          begin
+            _csdate.Value := inifile.ReadDate(OWnerObject.OWnerObject.ClassName,_csdate.Name.TrimLeft(['@']),VarToDateTime(_csdate.Value));
+          end;
+          Self.Value := inifile.ReadDate(OWnerObject.OWnerObject.ClassName,Name.TrimLeft(['@']),VarToDateTime(Value));
+        end;
+      finally
+        inifile.Free;
+      end;
+    end;
     FBetweenPopMenu.Items.Add(vitem);
   end;
 end;
@@ -809,6 +834,37 @@ begin
   Result := DateToStr(TDateTimePicker(Control).Date);
 end;
 
+procedure TControlItem_Date.MemoryDateBetween;
+begin
+  if not Assigned(Control) then Exit;  
+  if not Assigned(FBetweenPopItem_Memory) then Exit;
+  if not FBetweenPopItem_Memory.Checked then Exit;
+  if OWnerObject is TControlManagerLayout then
+  begin
+    if not (OWnerObject as TControlManagerLayout).Memory then               //当报表不记忆查询条件的时候才单独处理记忆时间
+    begin
+      var inifile := TIniFile.Create(Goo.SystemDataPath+'\Daterecord.ini');
+      try
+        inifile.WriteBool(OWnerObject.OWnerObject.ClassName,C_DateBetween_Name,FBetweenPopItem_Memory.Checked);
+        if FBetweenPopItem_Memory.Checked then
+        begin
+          var csdate := OWnerObject.ConditionIndex[Control.Tag];
+          if not Assigned(csdate) then Exit;
+          if not Assigned(csdate.Control) then Exit;
+          var tsdate := csdate.Control as TDateTimePicker;
+          var tedate := Control as TDateTimePicker;
+          //开始日期
+          inifile.WriteDate(OWnerObject.OWnerObject.ClassName,csdate.Name.TrimLeft(['@']),tsdate.Date);
+          //结束日期
+          inifile.WriteDate(OWnerObject.OWnerObject.ClassName,self.Name.TrimLeft(['@']),tedate.Date);
+        end;
+      finally
+        inifile.Free;
+      end;
+    end;
+  end;
+end;
+
 procedure TControlItem_Date.OnBetweenButtonClick(Sender: Tobject);
 begin
   FBetweenPopMenu.PopupComponent := TComponent(Sender);
@@ -821,8 +877,10 @@ var
   vitem: string;
   vmonth,vyear, vday: word;
   vdate: TDateTime;
+  csdate: TControlItem;
 begin
-  tsdate := OWnerObject.ConditionIndex[Control.Tag].Control as TDateTimePicker;
+  csdate := OWnerObject.ConditionIndex[Control.Tag];
+  tsdate := csdate.Control as TDateTimePicker;
   tedate := Control as TDateTimePicker;
   if Assigned(tsdate) and Assigned(tedate) then
   begin
@@ -882,6 +940,11 @@ begin
       tsdate.Date := DateOf(StartOfAYear(vyear));
       tedate.Date := DateOf(EndOfAYear(vyear));
     end
+    else if vitem = DADEPOPMENUCAPTION[11] then //'记忆查询日期'
+    begin
+      (Sender as TMenuItem).Checked := not (Sender as TMenuItem).Checked;
+      MemoryDateBetween;
+    end;
   end;
 end;
 
@@ -1118,15 +1181,16 @@ begin
   var _endindex := Add(3,SplitString(AName,1),SplitString(ACaption,1),AMustEnter,AVisible);
   if _endindex<0 then Exit;  
   Items[Result].Value.LastPanel.Width := 5;
-  Items[_endindex].Value.FControlLeft := 65;
+  FEndDateBetweenItem := Items[_endindex].Value as TControlItem_Date;
+  FEndDateBetweenItem.FControlLeft := 65;
   Items[Result].Value.Width := Items[Result].Value.Width + 10;
   Items[Result].Value.Value := FormatDateTime('YYYY-MM-01',Now);
-  Items[Result].Value.Control.Tag     := _endindex;                             //开始时间上面标记结束时间的控件
-  Items[_endindex].Value.Control.Tag  := Result;                                //结束时间上面标记开始时间的控件
-  Items[_endindex].Value.FControlLeft := 30;
+  Items[Result].Value.Control.Tag  := _endindex;                             //开始时间上面标记结束时间的控件
+  FEndDateBetweenItem.Control.Tag  := Result;                                //结束时间上面标记开始时间的控件
+  FEndDateBetweenItem.FControlLeft := 30;
   //Items[_endindex].Value.FirstPanel.Alignment := taLeftJustify;
-  Items[_endindex].Value.Width := Items[_endindex].Value.Width - 10;
-  TControlItem_Date(Items[_endindex].Value).CreateBetweenButton;
+  FEndDateBetweenItem.Width := FEndDateBetweenItem.Width - 10;
+  FEndDateBetweenItem.CreateBetweenButton;
 end;
 
 function TControlManagerLayout.AddFat(ADataType: Integer; AName, ACaption: string; AMustEnter, AVisible: Boolean): Integer;
@@ -1218,6 +1282,7 @@ begin
   inherited;
   Width := Application.MainForm.Width;
   FMemory := False;
+  FEndDateBetweenItem := nil;
 end;
 
 function TControlManagerLayout.CheckData(const ShowMsg:Boolean): Boolean;
@@ -1301,6 +1366,7 @@ end;
 destructor TControlManagerLayout.Destroy;
 begin
   if Assigned(FEnumerateControl) then FreeAndNil(FEnumerateControl);
+  if Assigned(FEndDateBetweenItem) then FEndDateBetweenItem.MemoryDateBetween;  
   inherited;
 end;
 
