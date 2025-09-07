@@ -141,6 +141,7 @@ type
   TPlayMediaObject = class(TBaseCommObject)
   private
     FMediaPlayer: TMediaPlayer;
+    function GetPlayer:TMediaPlayer;
   public
     constructor Create(AOwner: TObject);
     destructor Destroy; override;
@@ -783,19 +784,24 @@ begin
   inherited;
 end;
 
-procedure TPlayMediaObject.Play(AFile: string);
+function TPlayMediaObject.GetPlayer: TMediaPlayer;
 begin
-  if not FileExists(AFile) then Exit;
   if not Assigned(FMediaPlayer) then
   begin
     FMediaPlayer := TMediaPlayer.Create(nil);
     FMediaPlayer.Visible := False;
     FMediaPlayer.Parent  := Application.MainForm;
   end;
-  FMediaPlayer.Close;
-  FMediaPlayer.FileName := AFile;
-  FMediaPlayer.Open;
-  FMediaPlayer.Play;
+  Result :=  FMediaPlayer;
+end;
+
+procedure TPlayMediaObject.Play(AFile: string);
+begin
+  if not FileExists(AFile) then Exit;
+  GetPlayer.Close;
+  GetPlayer.FileName := AFile;
+  GetPlayer.Open;
+  GetPlayer.Play;
 end;
 
 end.
