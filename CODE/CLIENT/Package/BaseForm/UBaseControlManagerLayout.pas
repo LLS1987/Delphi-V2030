@@ -276,7 +276,7 @@ type
     FMemory: Boolean;
     FEnumerateControl:TList<TControlItemClass>;
     FMemoryFile: string;
-    FEndDateBetweenItem:TControlItem_Date;
+    FEndDateBetweenItem:TControlItem_Date;    // 日期控件，处理
     function GetParamList: TParamList;
     function CreateControl(ADataType:Integer): TControlItem;overload;
     function CreateControl(ADataType:TConditionContorlType): TControlItem;overload;
